@@ -302,10 +302,10 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
       <div class="crumb">Fundos › <b id="fund-name">HPC22</b></div>
       <div class="fhhead">
         <div><div class="tk" id="fund-tk">HPC22</div><div class="nm" id="fund-desc">Harpian Capital · Agressivo · USD · Custódia Tier 1</div></div>
-        <div class="fhstat"><div class="l">NAV</div><div class="v">$ 22,10</div></div>
-        <div class="fhstat"><div class="l">Dia</div><div class="v g">+2,31%</div></div>
-        <div class="fhstat"><div class="l">YTD</div><div class="v g">+24,3%</div></div>
-        <div class="fhstat"><div class="l">Risk Nº</div><div class="v">38</div></div>
+        <div class="fhstat"><div class="l">NAV</div><div class="v" id="fh-nav">$ 22,10</div></div>
+        <div class="fhstat"><div class="l">Dia</div><div class="v g" id="fh-dia">+2,31%</div></div>
+        <div class="fhstat"><div class="l">YTD</div><div class="v g" id="fh-ytd">+24,3%</div></div>
+        <div class="fhstat"><div class="l">Risk Nº</div><div class="v" id="fh-rn">38</div></div>
         <div style="margin-left:auto;display:flex;gap:8px"><button class="btn ghost"><i class="ti ti-table"></i>Excel</button><button class="btn" onclick="orderForFund()"><i class="ti ti-send"></i>Enviar ordem</button></div>
       </div>
       <div class="tabs">
@@ -329,12 +329,12 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
         </div>
         <div class="grid g3" id="fundo-grid">
           <div class="card" style="grid-column:span 2">
-            <h3><i class="ti ti-info-circle"></i>O que é o HPC22</h3>
-            <p style="font-size:13.5px;line-height:1.7;color:var(--tx2)">Motor de ataque puro: rotação dos ativos de maior momento na bolsa americana, com a mesma camada de <b style="color:var(--tx)">defesa e temperatura</b> homologada dos demais fundos. Veículo para o investidor que aceita mais oscilação em troca de mais retorno — sempre com a rampa de defesa armada.</p>
+            <h3><i class="ti ti-info-circle"></i>O que é o <span id="fund-title">HPC22</span></h3>
+            <p style="font-size:13.5px;line-height:1.7;color:var(--tx2)" id="fund-about">Motor de ataque puro: rotação dos ativos de maior momento na bolsa americana, com a mesma camada de defesa e temperatura homologada dos demais fundos. Veículo para o investidor que aceita mais oscilação em troca de mais retorno — sempre com a rampa de defesa armada.</p>
             <div class="flex wrap mt" style="gap:16px 28px">
-              <div><div class="muted">Mandato</div><div style="font-family:var(--mono)">Agressivo · ataque</div></div>
+              <div><div class="muted">Mandato</div><div style="font-family:var(--mono)" id="fund-mandato">Agressivo · ataque</div></div>
               <div><div class="muted">Estrutura</div><div style="font-family:var(--mono)">Private ETN · Lynk</div></div>
-              <div><div class="muted">ISIN</div><div style="font-family:var(--mono)">XS2…HPC22</div></div>
+              <div><div class="muted">ISIN</div><div style="font-family:var(--mono)" id="fund-isin">XS2…HPC22</div></div>
               <div><div class="muted">Moeda</div><div style="font-family:var(--mono)">USD</div></div>
               <div><div class="muted">Custódia</div><div style="font-family:var(--mono)">Euroclear / Clearstream</div></div>
               <div><div class="muted">Mínimo</div><div style="font-family:var(--mono)">US$ 10.000</div></div>
@@ -345,8 +345,8 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
           </div>
           <div class="card">
             <h3><i class="ti ti-gauge"></i>Risco do fundo</h3>
-            <div class="flex" style="gap:14px"><div class="gauge"><svg width="96" height="96" viewBox="0 0 96 96"><circle cx="48" cy="48" r="40" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="7"/><circle cx="48" cy="48" r="40" fill="none" stroke="#F5A623" stroke-width="7" stroke-dasharray="251" stroke-dashoffset="155" stroke-linecap="round" transform="rotate(-90 48 48)"/></svg><div class="n"><b style="color:#F5A623">38</b><span>RISK Nº</span></div></div>
-            <div class="muted" style="line-height:1.5">Mais alto que o HPC11 (34) e bem abaixo do S&amp;P 500 (71). Agressivo, mas com defesa.</div></div>
+            <div class="flex" style="gap:14px"><div class="gauge"><svg width="96" height="96" viewBox="0 0 96 96"><circle cx="48" cy="48" r="40" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="7"/><circle id="fund-arc" cx="48" cy="48" r="40" fill="none" stroke="#F5A623" stroke-width="7" stroke-dasharray="251" stroke-dashoffset="155" stroke-linecap="round" transform="rotate(-90 48 48)"/></svg><div class="n"><b style="color:#F5A623" id="fund-gauge-num">38</b><span>RISK Nº</span></div></div>
+            <div class="muted" style="line-height:1.5" id="fund-rn-desc">Mais alto que o HPC11 (34) e bem abaixo do S&amp;P 500 (71). Agressivo, mas com defesa.</div></div>
           </div>
         </div>
         <div class="card mt"><h3><i class="ti ti-bolt"></i>Estado agora</h3>
@@ -365,15 +365,15 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
           <h3><i class="ti ti-chart-line"></i>Performance · histórico diário</h3>
           <div id="perf-chart" style="height:360px;width:100%"></div>
           <div class="legend">
-            <i><b style="background:#D4AF45"></b>HPC22</i><i><b style="background:#5AA0E6"></b>S&amp;P 500</i>
+            <i><b style="background:#D4AF45"></b><span id="fund-legend">HPC22</span></i><i><b style="background:#5AA0E6"></b>S&amp;P 500</i>
             <span class="muted" style="margin-left:auto">~1.000 pontos diários · EOD (FastTrack) · zoom e crosshair</span>
           </div>
         </div>
         <div class="grid g4 mt">
-          <div class="card"><div class="muted">CAGR</div><div class="big g" style="font-size:22px">44,2%</div></div>
-          <div class="card"><div class="muted">Sharpe</div><div class="big" style="font-size:22px">1,44</div></div>
-          <div class="card"><div class="muted">Max DD</div><div class="big r" style="font-size:22px">−27,9%</div></div>
-          <div class="card"><div class="muted">Win rate</div><div class="big" style="font-size:22px">71%</div></div>
+          <div class="card"><div class="muted">CAGR</div><div class="big g" style="font-size:22px" id="fund-cagr">44,2%</div></div>
+          <div class="card"><div class="muted">Sharpe</div><div class="big" style="font-size:22px" id="fund-sharpe">1,44</div></div>
+          <div class="card"><div class="muted">Max DD</div><div class="big r" style="font-size:22px" id="fund-dd">−27,9%</div></div>
+          <div class="card"><div class="muted">Win rate</div><div class="big" style="font-size:22px" id="fund-win">71%</div></div>
         </div>
       </div>
 
@@ -627,15 +627,30 @@ function go(id){
   if(id==='clientes')renderClients();
   window.scrollTo(0,0);
 }
-function openFund(f){
-  var map={HPC22:['HPC22','Harpian Capital · Agressivo · USD · Custódia Tier 1'],
-           HPC11:['HPC11','Harpian Capital · Investment Grade · USD · Custódia Tier 1'],
-           WL:['WL','Fundo white-label · marca do assessor · USD']};
-  document.getElementById('fund-tk').textContent=map[f][0];
-  document.getElementById('fund-name').textContent=map[f][0];
-  document.getElementById('fund-desc').textContent=map[f][1];
-  go('fundo'); ftab('visao');
+var currentFund='HPC22';
+var FUNDS={
+ HPC22:{tk:'HPC22',sub:'Harpian Capital · Agressivo · USD · Custódia Tier 1',nav:'$ 22,10',dia:'+2,31%',ytd:'+24,3%',rn:38,col:'#F5A623',mandato:'Agressivo · ataque',isin:'XS2…HPC22',cagr:'44,2%',sharpe:'1,44',dd:'−27,9%',win:'71%',drift:0.468,
+  about:'Motor de ataque puro: rotação dos ativos de maior momento na bolsa americana, com a mesma camada de defesa e temperatura homologada dos demais fundos. Veículo para o investidor que aceita mais oscilação em troca de mais retorno — sempre com a rampa de defesa armada.',
+  rndesc:'Mais alto que o HPC11 (34) e bem abaixo do S&P 500 (71). Agressivo, mas com defesa.'},
+ HPC11:{tk:'HPC11',sub:'Harpian Capital · Investment Grade · USD · Custódia Tier 1',nav:'$ 14,82',dia:'+1,44%',ytd:'+7,5%',rn:34,col:'#3EE68B',mandato:'Investment Grade · equilibrado',isin:'XS2…HPC11',cagr:'18,5%',sharpe:'1,82',dd:'−7,6%',win:'62%',drift:0.482,
+  about:'Investment Grade: carteira de qualidade com a defesa estrutural da casa. Foco em consistência e drawdown contido — o veículo equilibrado para quem quer o método Harpian com menos oscilação.',
+  rndesc:'Conservador. Bem abaixo do S&P 500 (71). Defesa estrutural com drawdown contido.'},
+ WL:{tk:'WL',sub:'Fundo white-label · marca do assessor · USD',nav:'$ 10,40',dia:'+0,9%',ytd:'+6,2%',rn:36,col:'#3EE68B',mandato:'Configurável',isin:'XS2…WL',cagr:'—',sharpe:'—',dd:'—',win:'—',drift:0.482,
+  about:'Versão white-label: o mesmo motor Harpian, com a marca do assessor. Estrutura e defesa idênticas; a identidade é do parceiro.',
+  rndesc:'Espelha o perfil de risco escolhido pelo assessor.'}
+};
+function set(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
+function renderFund(f){var d=FUNDS[f]||FUNDS.HPC22;currentFund=f;
+ set('fund-tk',d.tk);set('fund-name',d.tk);set('fund-desc',d.sub);set('fund-title',d.tk);set('fund-legend',d.tk);
+ set('fh-nav',d.nav);set('fh-dia',d.dia);set('fh-ytd',d.ytd);set('fh-rn',d.rn);
+ set('fund-about',d.about);set('fund-mandato',d.mandato);set('fund-isin',d.isin);
+ set('fund-gauge-num',d.rn);set('fund-rn-desc',d.rndesc);
+ set('fund-cagr',d.cagr);set('fund-sharpe',d.sharpe);set('fund-dd',d.dd);set('fund-win',d.win);
+ var num=document.getElementById('fund-gauge-num');if(num)num.style.color=d.col;
+ var arc=document.getElementById('fund-arc');if(arc){arc.setAttribute('stroke',d.col);arc.setAttribute('stroke-dashoffset',Math.round(251*(1-d.rn/100)));}
+ ['fh-dia','fh-ytd'].forEach(function(idd){var e=document.getElementById(idd);if(e)e.className='v '+((e.textContent||'').indexOf('−')===0?'':'g');});
 }
+function openFund(f){renderFund(f);if(perfChart){try{perfChart.remove();}catch(e){}perfChart=null;}go('fundo');ftab('visao');}
 function ftab(t){
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.ft===t));
   document.querySelectorAll('.ftab-pane').forEach(p=>p.classList.remove('on'));
@@ -703,8 +718,9 @@ function ensurePerfChart(){
    rightPriceScale:{borderColor:'rgba(255,255,255,0.1)'},timeScale:{borderColor:'rgba(255,255,255,0.1)'},
    crosshair:{mode:0,vertLine:{color:'rgba(212,175,69,0.45)',labelBackgroundColor:'#B8902f'},horzLine:{color:'rgba(212,175,69,0.45)',labelBackgroundColor:'#B8902f'}}});
   var s1=perfChart.addLineSeries({color:'#D4AF45',lineWidth:2}),s2=perfChart.addLineSeries({color:'#5AA0E6',lineWidth:1});
+  var fd=FUNDS[currentFund]||FUNDS.HPC22;var dr=fd.drift||0.468;var vol=currentFund==='HPC11'?0.012:0.02;
   var d1=[],d2=[],v1=100,v2=100,dt=new Date(2021,0,1);
-  for(var k=0;k<1000;k++){v1*=(1+(Math.random()-0.468)*0.02);v2*=(1+(Math.random()-0.49)*0.016);
+  for(var k=0;k<1000;k++){v1*=(1+(Math.random()-dr)*vol);v2*=(1+(Math.random()-0.49)*0.016);
    var ds=dt.toISOString().slice(0,10);d1.push({time:ds,value:+v1.toFixed(2)});d2.push({time:ds,value:+v2.toFixed(2)});dt.setDate(dt.getDate()+1);}
   s1.setData(d1);s2.setData(d2);perfChart.timeScale().fitContent();
   window.addEventListener('resize',function(){if(perfChart){var e=document.getElementById('perf-chart');if(e)perfChart.applyOptions({width:e.clientWidth});}});
