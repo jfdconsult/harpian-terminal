@@ -511,26 +511,50 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
 
     <section class="screen" id="screen-ordem">
       <div class="crumb">Ordens › <b>via Lynk</b></div>
-      <div class="flex between mb"><div><div class="h1">Ordens</div><div class="sub" style="margin:0">Histórico, envio e acompanhamento — subscrição/resgate do ETN.</div></div>
-        <span class="eodlabel"><i class="ti ti-clock"></i>NAV do dealing day · forward</span></div>
-      <div class="tabs">
-        <div class="tab on" data-ot="hist" onclick="ordTab('hist');renderOrders()"><i class="ti ti-history"></i>Histórico</div>
-        <div class="tab" data-ot="nova" onclick="ordTab('nova');renderOrder()"><i class="ti ti-plus"></i>Nova ordem</div>
-      </div>
-      <div class="otab-pane on" id="ot-hist">
-        <div class="flex wrap mb" style="gap:10px">
-          <select id="of-cli" class="wl-input" onchange="renderOrders()"></select>
-          <select id="of-prod" class="wl-input" onchange="renderOrders()"></select>
-          <div class="seg" id="of-tipo"><span class="on" onclick="ordFilterTipo(this,'all')">Todas</span><span onclick="ordFilterTipo(this,'sub')">Subscrição</span><span onclick="ordFilterTipo(this,'res')">Resgate</span></div>
-          <select id="of-status" class="wl-input" onchange="renderOrders()"></select>
-        </div>
-        <div class="card"><table>
-          <thead><tr><th>Ref</th><th>Data</th><th>Cliente</th><th>Produto</th><th>Tipo</th><th class="num">Valor</th><th>Status</th><th></th></tr></thead>
-          <tbody id="ord-body"></tbody></table>
-          <div class="muted mt" id="ord-empty" style="font-size:11px"></div>
+      <div class="flex between mb">
+        <div><div class="h1">Ordens</div><div class="sub" style="margin:0">Pendentes, histórico e envio — subscrição/resgate do ETN via Lynk.</div></div>
+        <div class="flex" style="gap:8px">
+          <button class="btn ghost" onclick="renderOrders()"><i class="ti ti-refresh"></i>Atualizar</button>
+          <button class="btn" onclick="ordNova()"><i class="ti ti-plus"></i>Nova ordem</button>
         </div>
       </div>
-      <div class="otab-pane" id="ot-nova">
+      <div id="ot-hist">
+        <div class="card mb">
+          <div class="flex between mb"><h3 style="margin:0"><i class="ti ti-clock-pause"></i>Ordens pendentes</h3><span class="tag o" id="pend-count">0</span></div>
+          <div class="grid g3 mb">
+            <div class="card"><div class="muted">Total de ordens</div><div class="big" id="pend-n" style="font-size:21px">0</div></div>
+            <div class="card"><div class="muted">Total em caixa</div><div class="big g" id="pend-cash" style="font-size:21px">US$ 0</div></div>
+            <div class="card"><div class="muted">Notas nominais</div><div class="big" id="pend-notes" style="font-size:21px">0</div></div>
+          </div>
+          <div class="flex wrap mb" style="gap:8px">
+            <input id="pf-isin" class="wl-input" placeholder="ISIN ou produto" oninput="renderPending()">
+            <input id="pf-ctrl" class="wl-input" placeholder="Control ID" oninput="renderPending()">
+            <select id="pf-cli" class="wl-input" onchange="renderPending()"></select>
+            <button class="btn ghost" onclick="ordClear('pend')"><i class="ti ti-filter-off"></i>Limpar filtros</button>
+          </div>
+          <table><thead><tr><th>Ref</th><th>Produto</th><th>Cliente</th><th>Tipo</th><th class="num">Caixa</th><th>Status</th><th></th></tr></thead><tbody id="pend-body"></tbody></table>
+          <div class="muted mt" id="pend-empty" style="font-size:11px"></div>
+        </div>
+        <div class="card">
+          <div class="flex between mb"><h3 style="margin:0"><i class="ti ti-history"></i>Histórico de trades</h3><button class="btn ghost" onclick="ordExport()"><i class="ti ti-download"></i>Exportar CSV</button></div>
+          <div class="grid g3 mb">
+            <div class="card"><div class="muted">Total de trades</div><div class="big" id="trd-n" style="font-size:21px">0</div></div>
+            <div class="card"><div class="muted">Total em caixa</div><div class="big g" id="trd-cash" style="font-size:21px">US$ 0</div></div>
+            <div class="card"><div class="muted">Notas nominais</div><div class="big" id="trd-notes" style="font-size:21px">0</div></div>
+          </div>
+          <div class="flex wrap mb" style="gap:8px">
+            <input id="tf-isin" class="wl-input" placeholder="ISIN ou produto" oninput="renderTrades()">
+            <select id="tf-status" class="wl-input" onchange="renderTrades()"></select>
+            <select id="tf-op" class="wl-input" onchange="renderTrades()"></select>
+            <select id="tf-cli" class="wl-input" onchange="renderTrades()"></select>
+            <button class="btn ghost" onclick="ordClear('trd')"><i class="ti ti-filter-off"></i>Limpar filtros</button>
+          </div>
+          <table><thead><tr><th>Ref</th><th>Produto</th><th>Cliente</th><th>Data</th><th>Tipo</th><th class="num">Caixa</th><th>Status</th><th></th></tr></thead><tbody id="trd-body"></tbody></table>
+          <div class="muted mt" id="trd-empty" style="font-size:11px"></div>
+        </div>
+      </div>
+      <div id="ot-nova" style="display:none">
+      <button class="btn ghost mb" onclick="ordVoltar()"><i class="ti ti-arrow-left"></i>Voltar ao histórico</button>
       <div class="grid g2">
         <div class="card"><h3><i class="ti ti-package"></i>Produto</h3>
           <label class="muted" style="display:block;font-size:11px">Fundo (ETN)</label>
@@ -552,7 +576,7 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
         </div>
       </div>
       <div class="card mt" id="o-gate"></div>
-      <div class="flex mt" style="gap:8px"><button class="btn" id="o-review" onclick="orderReview()"><i class="ti ti-eye"></i>Revisar ordem</button></div>
+      <div class="flex mt" style="gap:8px"><button class="btn" id="o-review" onclick="orderReview()"><i class="ti ti-send"></i>Enviar ordem</button></div>
       <div class="card mt" id="o-status" style="display:none"></div>
       </div>
     </section>
@@ -838,9 +862,13 @@ function renderOrder(){
  var sel=document.getElementById('o-client');if(sel)sel.innerHTML=CLIENTS.map(function(c){return '<option value="'+c.id+'">'+c.nome+' · mandato '+c.mandato+'</option>';}).join('');
  orderSide='sub';var ss=document.getElementById('o-side');if(ss)ss.querySelectorAll('span').forEach(function(x,i){x.classList.toggle('on',i===0);});
  var os=document.getElementById('o-status');if(os)os.style.display='none';orderGate();}
-function openOrder(){go('ordem');ordTab('hist');renderOrders();}
-function orderForFund(){renderOrder();var fs=document.getElementById('o-fund');if(fs)fs.value=currentFund;orderGate();go('ordem');ordTab('nova');}
-function orderFor(id){renderOrder();var sel=document.getElementById('o-client');if(sel)sel.value=id;orderGate();go('ordem');ordTab('nova');}
+function showHist(){document.getElementById('ot-hist').style.display='block';document.getElementById('ot-nova').style.display='none';}
+function showNova(){document.getElementById('ot-hist').style.display='none';document.getElementById('ot-nova').style.display='block';}
+function openOrder(){go('ordem');showHist();renderOrders();}
+function ordNova(){go('ordem');showNova();renderOrder();}
+function ordVoltar(){showHist();renderOrders();}
+function orderForFund(){go('ordem');showNova();renderOrder();var fs=document.getElementById('o-fund');if(fs)fs.value=currentFund;orderGate();}
+function orderFor(id){go('ordem');showNova();renderOrder();var sel=document.getElementById('o-client');if(sel)sel.value=id;orderGate();}
 function orderGate(){var sel=document.getElementById('o-client');if(!sel)return;var c=CLIENTS.find(function(x){return x.id===+sel.value;});
  var fk=(document.getElementById('o-fund')||{}).value||currentFund;var fd=FUNDS[fk]||FUNDS.HPC22;var pr=fd.rn;
  set('o-isin',fd.isin);set('o-nav',fd.nav);set('o-prodrisk','Risk Nº '+pr);
@@ -871,7 +899,7 @@ function orderSend(){var sel=document.getElementById('o-client');var c=CLIENTS.f
  var st=document.getElementById('o-status');var steps=['Submetida','Recebida pelo emissor','Precificada (NAV de hoje)','Liquidada (DvP Euroclear)','Concluída'];
  st.innerHTML='<h3><i class="ti ti-route"></i>Status da ordem</h3><div class="muted mb" style="font-size:11px">Ref. '+newId+' · via adapter OrderGateway (Lynk) · adicionada ao histórico</div>'
  +'<div style="display:flex;flex-direction:column;gap:8px">'+steps.map(function(s,i){var done=i<1;return '<div class="flex" style="gap:9px"><span style="color:'+(done?'var(--green)':'var(--tx3)')+'">'+(done?'●':'○')+'</span><span style="color:'+(done?'var(--tx)':'var(--tx3)')+'">'+s+'</span></div>';}).join('')+'</div>'
- +'<div class="flex mt" style="gap:8px"><button class="btn ghost" onclick="ordTab(\'hist\');renderOrders()"><i class="ti ti-history"></i>Ver no histórico</button></div>'
+ +'<div class="flex mt" style="gap:8px"><button class="btn ghost" onclick="ordVoltar()"><i class="ti ti-history"></i>Ver no histórico</button></div>'
  +'<div class="muted mt" style="font-size:11px">Mockup — integração real via Lynk•Port (sem API pública confirmada; adapter plugável).</div>';}
 var ordSeq=0;
 var ORDERS=[
@@ -881,24 +909,41 @@ var ORDERS=[
  {id:'ORD-2026-0411',data:'20/06/2026',cid:1,fundo:'HPC11',lado:'sub',valor:500000,status:'Liquidada'},
  {id:'ORD-2026-0409',data:'18/06/2026',cid:2,fundo:'HPC22',lado:'res',valor:150000,status:'Rejeitada'}
 ];
-var ordTipo='all';
-function ordTab(t){var sec=document.getElementById('screen-ordem');if(!sec)return;sec.querySelectorAll('.tab').forEach(function(x){x.classList.toggle('on',x.dataset.ot===t);});sec.querySelectorAll('.otab-pane').forEach(function(p){p.classList.remove('on');});var el=document.getElementById('ot-'+t);if(el)el.classList.add('on');}
-function ordFilters(){var cli=document.getElementById('of-cli');if(cli&&cli.options.length===0)cli.innerHTML='<option value="0">Todos os clientes</option>'+CLIENTS.map(function(c){return '<option value="'+c.id+'">'+c.nome+'</option>';}).join('');
- var pr=document.getElementById('of-prod');if(pr&&pr.options.length===0)pr.innerHTML='<option value="all">Todos os produtos</option>'+Object.keys(FUNDS).map(function(k){return '<option value="'+k+'">'+FUNDS[k].tk+'</option>';}).join('');
- var stt=document.getElementById('of-status');if(stt&&stt.options.length===0)stt.innerHTML='<option value="all">Todos os status</option>'+['Rascunho','Submetida','Recebida','Precificada','Liquidada','Concluída','Rejeitada','Cancelada'].map(function(s){return '<option>'+s+'</option>';}).join('');}
-function ordFilterTipo(el,t){ordTipo=t;el.parentNode.querySelectorAll('span').forEach(function(x){x.classList.remove('on');});el.classList.add('on');renderOrders();}
 function statusCls(s){return {'Concluída':'g','Liquidada':'g','Precificada':'b','Recebida':'b','Submetida':'b','Rascunho':'o','Rejeitada':'r','Cancelada':'r'}[s]||'b';}
-function renderOrders(){ordFilters();var b=document.getElementById('ord-body');if(!b)return;
- var fc=+(document.getElementById('of-cli')||{}).value||0;var fp=(document.getElementById('of-prod')||{}).value||'all';var fs=(document.getElementById('of-status')||{}).value||'all';
- var rows=ORDERS.filter(function(o){return (fc===0||o.cid===fc)&&(fp==='all'||o.fundo===fp)&&(ordTipo==='all'||o.lado===ordTipo)&&(fs==='all'||o.status===fs);});
- b.innerHTML=rows.map(function(o){var c=CLIENTS.find(function(x){return x.id===o.cid;})||{nome:'—'};var ed=(o.status==='Rascunho'||o.status==='Submetida');
-  return '<tr><td>'+o.id+'</td><td>'+o.data+'</td><td>'+c.nome+'</td><td>'+o.fundo+'</td><td>'+(o.lado==='sub'?'Subscrição':'Resgate')+'</td><td class="num">US$ '+o.valor.toLocaleString('pt-BR')+'</td><td><span class="tag '+statusCls(o.status)+'">'+o.status+'</span></td>'
-  +'<td class="num"><span class="muted" style="cursor:pointer" onclick="ordView(\''+o.id+'\')">ver</span>'+(ed?' · <span class="muted" style="cursor:pointer" onclick="ordEdit(\''+o.id+'\')">editar</span>':'')+'</td></tr>';}).join('');
- var em=document.getElementById('ord-empty');if(em)em.textContent=rows.length?(rows.length+' ordem(ns)'):'Nenhuma ordem com esses filtros.';}
+var PEND=['Rascunho','Submetida','Recebida'];
+function fillSel(id,html){var e=document.getElementById(id);if(e&&e.options.length===0)e.innerHTML=html;}
+function nfmt(n){return n.toLocaleString('pt-BR');}
+function ordSelects(){var cliOpts='<option value="0">Todos os clientes</option>'+CLIENTS.map(function(c){return '<option value="'+c.id+'">'+c.nome+'</option>';}).join('');
+ fillSel('pf-cli',cliOpts);fillSel('tf-cli',cliOpts);
+ fillSel('tf-status','<option value="all">Todos os status</option>'+['Precificada','Liquidada','Concluída','Rejeitada','Cancelada'].map(function(s){return '<option>'+s+'</option>';}).join(''));
+ fillSel('tf-op','<option value="all">Todos os tipos</option><option value="sub">Subscrição</option><option value="res">Resgate</option>');}
+function ordRow(o,kind){var c=CLIENTS.find(function(x){return x.id===o.cid;})||{nome:'—'};var ed=(o.status==='Rascunho'||o.status==='Submetida');
+ var acts='<button class="btn ghost" style="padding:3px 9px;font-size:11px" onclick="ordView(\''+o.id+'\')">Ver</button>'+(ed?' <button class="btn ghost" style="padding:3px 9px;font-size:11px" onclick="ordEdit(\''+o.id+'\')">Editar</button>':'');
+ var tipo=(o.lado==='sub'?'Subscrição':'Resgate'),caixa='US$ '+nfmt(o.valor),stt='<span class="tag '+statusCls(o.status)+'">'+o.status+'</span>';
+ if(kind==='pend')return '<tr><td>'+o.id+'</td><td>'+o.fundo+'</td><td>'+c.nome+'</td><td>'+tipo+'</td><td class="num">'+caixa+'</td><td>'+stt+'</td><td class="num">'+acts+'</td></tr>';
+ return '<tr><td>'+o.id+'</td><td>'+o.fundo+'</td><td>'+c.nome+'</td><td>'+o.data+'</td><td>'+tipo+'</td><td class="num">'+caixa+'</td><td>'+stt+'</td><td class="num">'+acts+'</td></tr>';}
+function renderPending(){ordSelects();var b=document.getElementById('pend-body');if(!b)return;
+ var fi=((document.getElementById('pf-isin')||{}).value||'').toLowerCase(),fctrl=((document.getElementById('pf-ctrl')||{}).value||'').toLowerCase(),fc=+(document.getElementById('pf-cli')||{}).value||0;
+ var rows=ORDERS.filter(function(o){return PEND.indexOf(o.status)>-1;}).filter(function(o){var fd=FUNDS[o.fundo]||{};var hay=(o.fundo+' '+(fd.isin||'')).toLowerCase();return (!fi||hay.indexOf(fi)>-1)&&(!fctrl||o.id.toLowerCase().indexOf(fctrl)>-1)&&(fc===0||o.cid===fc);});
+ b.innerHTML=rows.map(function(o){return ordRow(o,'pend');}).join('');
+ var cash=rows.reduce(function(s,o){return s+o.valor;},0);
+ document.getElementById('pend-n').textContent=rows.length;document.getElementById('pend-cash').textContent='US$ '+nfmt(cash);document.getElementById('pend-notes').textContent=nfmt(Math.round(cash/1000));document.getElementById('pend-count').textContent=rows.length;
+ document.getElementById('pend-empty').textContent=rows.length?'':'Nenhuma ordem pendente nesse escopo.';}
+function renderTrades(){ordSelects();var b=document.getElementById('trd-body');if(!b)return;
+ var fi=((document.getElementById('tf-isin')||{}).value||'').toLowerCase(),fs=(document.getElementById('tf-status')||{}).value||'all',fop=(document.getElementById('tf-op')||{}).value||'all',fc=+(document.getElementById('tf-cli')||{}).value||0;
+ var rows=ORDERS.filter(function(o){return PEND.indexOf(o.status)===-1;}).filter(function(o){var fd=FUNDS[o.fundo]||{};var hay=(o.fundo+' '+(fd.isin||'')).toLowerCase();return (!fi||hay.indexOf(fi)>-1)&&(fs==='all'||o.status===fs)&&(fop==='all'||o.lado===fop)&&(fc===0||o.cid===fc);});
+ b.innerHTML=rows.map(function(o){return ordRow(o,'trd');}).join('');
+ var cash=rows.reduce(function(s,o){return s+o.valor;},0);
+ document.getElementById('trd-n').textContent=rows.length;document.getElementById('trd-cash').textContent='US$ '+nfmt(cash);document.getElementById('trd-notes').textContent=nfmt(Math.round(cash/1000));
+ document.getElementById('trd-empty').textContent=rows.length?'':'Nenhum trade nesse escopo.';}
+function renderOrders(){renderPending();renderTrades();}
+function ordClear(which){if(which==='pend'){['pf-isin','pf-ctrl'].forEach(function(i){var e=document.getElementById(i);if(e)e.value='';});var c=document.getElementById('pf-cli');if(c)c.value='0';renderPending();}else{var t=document.getElementById('tf-isin');if(t)t.value='';['tf-status','tf-op'].forEach(function(i){var e=document.getElementById(i);if(e)e.value='all';});var c=document.getElementById('tf-cli');if(c)c.value='0';renderTrades();}}
+function ordExport(){var rows=ORDERS.filter(function(o){return PEND.indexOf(o.status)===-1;});var csv='Ref,Data,Cliente,Produto,Tipo,Caixa_USD,Status\n'+rows.map(function(o){var cl=(CLIENTS.find(function(x){return x.id===o.cid;})||{nome:''}).nome;return [o.id,o.data,cl,o.fundo,(o.lado==='sub'?'Subscricao':'Resgate'),o.valor,o.status].join(',');}).join('\n');
+ var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='ordens_harpian.csv';a.click();}
 function ordView(id){var o=ORDERS.find(function(x){return x.id===id;});if(!o)return;var c=CLIENTS.find(function(x){return x.id===o.cid;})||{nome:'—'};var fd=FUNDS[o.fundo]||{};
- document.getElementById('ord-modal-body').innerHTML='<div class="kv"><span>Ref</span><span class="v">'+o.id+'</span></div><div class="kv"><span>Data</span><span class="v">'+o.data+'</span></div><div class="kv"><span>Cliente</span><span class="v">'+c.nome+'</span></div><div class="kv"><span>Produto</span><span class="v">'+o.fundo+' · '+(fd.isin||'')+'</span></div><div class="kv"><span>Tipo</span><span class="v">'+(o.lado==='sub'?'Subscrição':'Resgate')+'</span></div><div class="kv"><span>Valor</span><span class="v">US$ '+o.valor.toLocaleString('pt-BR')+'</span></div><div class="kv"><span>Status</span><span class="v"><span class="tag '+statusCls(o.status)+'">'+o.status+'</span></span></div>';
+ document.getElementById('ord-modal-body').innerHTML='<div class="kv"><span>Ref</span><span class="v">'+o.id+'</span></div><div class="kv"><span>Data</span><span class="v">'+o.data+'</span></div><div class="kv"><span>Cliente</span><span class="v">'+c.nome+'</span></div><div class="kv"><span>Produto</span><span class="v">'+o.fundo+' · '+(fd.isin||'')+'</span></div><div class="kv"><span>Tipo</span><span class="v">'+(o.lado==='sub'?'Subscrição':'Resgate')+'</span></div><div class="kv"><span>Caixa</span><span class="v">US$ '+nfmt(o.valor)+'</span></div><div class="kv"><span>Status</span><span class="v"><span class="tag '+statusCls(o.status)+'">'+o.status+'</span></span></div>';
  document.getElementById('ord-modal').classList.add('open');}
-function ordEdit(id){var o=ORDERS.find(function(x){return x.id===id;});if(!o)return;renderOrder();ordTab('nova');var ff=document.getElementById('o-fund');if(ff)ff.value=o.fundo;var cc=document.getElementById('o-client');if(cc)cc.value=o.cid;var vv=document.getElementById('o-value');if(vv)vv.value=o.valor;orderSide=o.lado;var ss=document.getElementById('o-side');if(ss)ss.querySelectorAll('span').forEach(function(x,i){x.classList.toggle('on',(i===0)===(o.lado==='sub'));});orderGate();}
+function ordEdit(id){var o=ORDERS.find(function(x){return x.id===id;});if(!o)return;showNova();renderOrder();var ff=document.getElementById('o-fund');if(ff)ff.value=o.fundo;var cc=document.getElementById('o-client');if(cc)cc.value=o.cid;var vv=document.getElementById('o-value');if(vv)vv.value=o.valor;orderSide=o.lado;var ss=document.getElementById('o-side');if(ss)ss.querySelectorAll('span').forEach(function(x,i){x.classList.toggle('on',(i===0)===(o.lado==='sub'));});orderGate();}
 
 var ASSETS={
  NVDA:{name:'NVIDIA',price:'118,64',day:'+2,4%',dc:'pos',ytd:'+42,1%',y1:'+96%',forca:'+22',sharpe:'1,30',dd:'−32%',rsi:'64',w52:'48,2 – 140,8',drift:0.455},
