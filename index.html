@@ -9,24 +9,24 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#070C14; --bg2:#0C1420; --panel:#101B2B; --panel2:#0C1726; --raise:#15233A;
-  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
-  --gold:#D4AF45; --gold2:#E8C766; --green:#3EE68B; --red:#FF5C5C; --orange:#F5A623; --blue:#5AA0E6;
-  --tx:#EAF0F7; --tx2:#A4B3C6; --tx3:#647890;
-  --sans:'Space Grotesk',sans-serif; --mono:'DM Mono',monospace; --r:10px;
+  --bg:#0A1A30; --bg2:#0C2039; --panel:#0F2747; --panel2:#0C2039; --raise:#14315a;
+  --line:#16304f; --line2:#1d3a5f;
+  --gold:#C9A02C; --gold2:#e0c160; --green:#2ECC71; --red:#E74C3C; --orange:#F39C12; --blue:#4A90D9;
+  --tx:#E8ECF1; --tx2:#7d96b3; --tx3:#5b7a99;
+  --sans:'Segoe UI',system-ui,-apple-system,sans-serif; --mono:'Segoe UI',system-ui,sans-serif; --r:12px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--tx);font-family:var(--sans);font-size:13.5px;-webkit-font-smoothing:antialiased;min-height:100vh}
+body{background:radial-gradient(1100px 520px at 50% -8%,#102a4a 0%,var(--bg) 58%) fixed;color:var(--tx);font-family:var(--sans);font-size:13.5px;-webkit-font-smoothing:antialiased;min-height:100vh}
 .app{display:flex;flex-direction:column;min-height:100vh}
 
 /* ===== OFFICE TOP BAR ===== */
 .topbar{display:flex;align-items:center;gap:2px;background:var(--bg2);border-bottom:1px solid var(--line2);padding:0 14px;height:52px;position:sticky;top:0;z-index:50}
 .brand{display:flex;align-items:center;gap:9px;font-weight:600;letter-spacing:.4px;margin-right:14px;cursor:pointer}
-.brand .lg{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#E8C766,#B8902f);color:#1a1205;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px}
+.brand .lg{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#e0c160,#b08010);color:#1a1205;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px}
 .brand .sub{font-weight:400;color:var(--tx3);font-size:11px;letter-spacing:1px}
 .menu{position:relative}
 .menu>.mtab{display:flex;align-items:center;gap:5px;padding:8px 14px;border-radius:8px;font-size:13.5px;color:var(--tx2);cursor:pointer;user-select:none}
-.menu:hover>.mtab,.menu>.mtab.on{background:rgba(212,175,69,.13);color:var(--gold)}
+.menu:hover>.mtab,.menu>.mtab.on{background:rgba(201,160,44,.13);color:var(--gold)}
 .menu>.mtab .ti{font-size:15px}
 .dropdown{position:absolute;top:46px;left:0;background:var(--panel);border:1px solid var(--line2);border-radius:12px;
   box-shadow:0 18px 50px rgba(0,0,0,.55);padding:8px;min-width:240px;opacity:0;visibility:hidden;transform:translateY(-6px);
@@ -38,10 +38,10 @@ body{background:var(--bg);color:var(--tx);font-family:var(--sans);font-size:13.5
 .dd-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;font-size:13px;color:var(--tx2);cursor:pointer}
 .dd-item:hover{background:var(--raise);color:var(--tx)}
 .dd-item .ti{font-size:16px;color:var(--gold)}
-.dd-item.cur{background:rgba(212,175,69,.12);color:var(--gold)}
+.dd-item.cur{background:rgba(201,160,44,.12);color:var(--gold)}
 .dd-item.cur .ti{color:var(--gold)}
 .topbar .right{margin-left:auto;display:flex;align-items:center;gap:14px}
-.pillstate{display:flex;align-items:center;gap:7px;background:rgba(62,230,139,.1);border:1px solid rgba(62,230,139,.28);color:var(--green);padding:5px 11px;border-radius:7px;font-size:11.5px;font-family:var(--mono)}
+.pillstate{display:flex;align-items:center;gap:7px;background:rgba(46,204,113,.1);border:1px solid rgba(46,204,113,.28);color:var(--green);padding:5px 11px;border-radius:7px;font-size:11.5px;font-family:var(--mono)}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2.4s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .jim{display:flex;align-items:center;gap:7px;background:var(--raise);border:1px solid var(--line2);padding:5px 11px;border-radius:7px;font-size:12px;color:var(--tx2);cursor:pointer}
@@ -61,9 +61,9 @@ body{background:var(--bg);color:var(--tx);font-family:var(--sans);font-size:13.5
 /* cards / grid */
 .grid{display:grid;gap:14px}
 .g3{grid-template-columns:repeat(3,1fr)} .g2{grid-template-columns:repeat(2,1fr)} .g4{grid-template-columns:repeat(4,1fr)}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line2);border-radius:12px;padding:16px}
 .card.calm{padding:20px}
-.card h3{font-size:13px;font-weight:500;color:var(--tx2);display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.card h3{font-size:11px;font-weight:600;color:var(--gold);text-transform:uppercase;letter-spacing:1.1px;display:flex;align-items:center;gap:7px;margin-bottom:13px}
 .card h3 .ti{color:var(--gold);font-size:17px}
 .big{font-family:var(--mono);font-size:30px;font-weight:500;letter-spacing:.5px}
 .big.g{color:var(--green)} .big.r{color:var(--red)}
@@ -72,8 +72,8 @@ body{background:var(--bg);color:var(--tx);font-family:var(--sans);font-size:13.5
 .kv .v{font-family:var(--mono);color:var(--tx)}
 .muted{color:var(--tx3);font-size:12px}
 .tag{font-family:var(--mono);font-size:10px;font-weight:500;padding:3px 8px;border-radius:5px;letter-spacing:.5px}
-.tag.g{background:rgba(62,230,139,.14);color:var(--green)} .tag.o{background:rgba(245,166,35,.14);color:var(--orange)}
-.tag.r{background:rgba(255,92,92,.14);color:var(--red)} .tag.b{background:rgba(90,160,230,.14);color:var(--blue)}
+.tag.g{background:rgba(46,204,113,.14);color:var(--green)} .tag.o{background:rgba(243,156,18,.14);color:var(--orange)}
+.tag.r{background:rgba(231,76,60,.14);color:var(--red)} .tag.b{background:rgba(74,144,217,.14);color:var(--blue)}
 .btn{display:inline-flex;align-items:center;gap:7px;background:var(--gold);color:#1a1205;border:0;font-family:var(--sans);font-weight:600;
   font-size:12.5px;padding:8px 15px;border-radius:8px;cursor:pointer}
 .btn.ghost{background:transparent;color:var(--tx2);border:1px solid var(--line2)}
@@ -108,15 +108,15 @@ td{padding:8px 8px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--tx)
 td.num,th.num{text-align:right}
 .pos{color:var(--green)} .neg{color:var(--red)}
 tbody tr:hover{background:rgba(255,255,255,.025)}
-.eodlabel{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--orange);background:rgba(245,166,35,.1);padding:4px 9px;border-radius:6px}
+.eodlabel{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--orange);background:rgba(243,156,18,.1);padding:4px 9px;border-radius:6px}
 
 /* signal pills */
 .pills{display:flex;flex-wrap:wrap;gap:8px}
 .pill{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11.5px;padding:6px 11px;border-radius:7px;border:1px solid var(--line2)}
 .pill .pd{width:7px;height:7px;border-radius:50%}
-.pill.g{color:var(--green);border-color:rgba(62,230,139,.3)}.pill.g .pd{background:var(--green)}
-.pill.o{color:var(--orange);border-color:rgba(245,166,35,.3)}.pill.o .pd{background:var(--orange)}
-.pill.r{color:var(--red);border-color:rgba(255,92,92,.3)}.pill.r .pd{background:var(--red)}
+.pill.g{color:var(--green);border-color:rgba(46,204,113,.3)}.pill.g .pd{background:var(--green)}
+.pill.o{color:var(--orange);border-color:rgba(243,156,18,.3)}.pill.o .pd{background:var(--orange)}
+.pill.r{color:var(--red);border-color:rgba(231,76,60,.3)}.pill.r .pd{background:var(--red)}
 
 .placeholder{background:var(--panel2);border:1px dashed var(--line2);border-radius:12px;padding:26px;text-align:center;color:var(--tx3)}
 .placeholder .ti{font-size:30px;color:var(--tx3);display:block;margin-bottom:10px}
@@ -125,10 +125,10 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
 .chip{font-size:11.5px;color:var(--tx2);background:var(--raise);border:1px solid var(--line);padding:5px 11px;border-radius:20px}
 .seg{display:inline-flex;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:3px;gap:2px;margin-bottom:14px}
 .seg span{font-family:var(--mono);font-size:11.5px;color:var(--tx3);padding:5px 12px;border-radius:6px;cursor:pointer}
-.seg span.on{background:rgba(212,175,69,.16);color:var(--gold)}
+.seg span.on{background:rgba(201,160,44,.16);color:var(--gold)}
 .flex{display:flex;align-items:center;gap:12px}.between{justify-content:space-between}.wrap{flex-wrap:wrap}.mt{margin-top:14px}.mb{margin-bottom:14px}
 .card{position:relative}
-.rm-btn{position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:6px;background:rgba(255,92,92,.15);color:var(--red);border:1px solid rgba(255,92,92,.32);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;z-index:5}
+.rm-btn{position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:6px;background:rgba(231,76,60,.15);color:var(--red);border:1px solid rgba(231,76,60,.32);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;z-index:5}
 .editing .card{outline:1px dashed var(--line2);outline-offset:2px}
 .add-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;border:1.5px dashed var(--line2);background:transparent;color:var(--tx3);cursor:pointer;min-height:120px}
 .add-tile:hover{color:var(--tx2);border-color:var(--gold)}
@@ -141,8 +141,8 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
 .wl-input{background:#05090F;border:1px solid var(--line2);border-radius:8px;color:var(--tx);font-family:var(--mono);font-size:12px;padding:8px 10px}
 .fbtn{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:5px;border:1px solid var(--line2);color:var(--tx2);cursor:pointer;background:transparent;margin-left:6px}
 .fbtn:hover{border-color:var(--gold);color:var(--gold)}
-.fbtn.on{background:rgba(212,175,69,.15);color:var(--gold);border-color:rgba(212,175,69,.4)}
-.tag.forced{background:rgba(212,175,69,.16);color:var(--gold)}
+.fbtn.on{background:rgba(201,160,44,.15);color:var(--gold);border-color:rgba(201,160,44,.4)}
+.tag.forced{background:rgba(201,160,44,.16);color:var(--gold)}
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:100;align-items:center;justify-content:center}
 .modal-bg.open{display:flex}
 .modal{background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:22px;width:440px;max-width:92vw}
@@ -266,7 +266,7 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
         <div class="card calm">
           <h3><i class="ti ti-shield"></i>Defesa</h3>
           <div class="flex" style="gap:16px">
-            <div class="gauge"><svg width="96" height="96" viewBox="0 0 96 96"><circle cx="48" cy="48" r="40" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="7"/><circle cx="48" cy="48" r="40" fill="none" stroke="#3EE68B" stroke-width="7" stroke-dasharray="251" stroke-dashoffset="10" stroke-linecap="round" transform="rotate(-90 48 48)"/></svg><div class="n"><b>96%</b><span>OFENSIVO</span></div></div>
+            <div class="gauge"><svg width="96" height="96" viewBox="0 0 96 96"><circle cx="48" cy="48" r="40" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="7"/><circle cx="48" cy="48" r="40" fill="none" stroke="#2ECC71" stroke-width="7" stroke-dasharray="251" stroke-dashoffset="10" stroke-linecap="round" transform="rotate(-90 48 48)"/></svg><div class="n"><b>96%</b><span>OFENSIVO</span></div></div>
             <div><div class="tag g" style="display:inline-block;margin-bottom:8px">StormGuard · GROWTH</div><div class="muted" style="line-height:1.5">Sem gatilho de saída. A rampa de defesa está pronta caso o regime vire.</div></div>
           </div>
         </div>
@@ -292,7 +292,7 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
           <div class="muted mt" style="font-size:11px">Ações · ETFs · commodities · índices — bolsa US (EOD, FastTrack).</div>
         </div>
       </div>
-      <div class="card mt" style="display:flex;align-items:center;gap:14px;border-color:rgba(212,175,69,.3)">
+      <div class="card mt" style="display:flex;align-items:center;gap:14px;border-color:rgba(201,160,44,.3)">
         <i class="ti ti-sparkles" style="font-size:24px;color:var(--gold)"></i>
         <div style="flex:1"><b style="font-size:13px">Jim AI sugere:</b> <span class="muted" style="font-size:13px">CPI sai amanhã 08:30 ET — pode mexer com duration. Quer que eu prepare a leitura de impacto no HPC22?</span></div>
         <button class="btn">Preparar</button>
@@ -349,7 +349,7 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
           </div>
           <div class="card">
             <h3><i class="ti ti-gauge"></i>Risco do fundo</h3>
-            <div class="flex" style="gap:14px"><div class="gauge"><svg width="96" height="96" viewBox="0 0 96 96"><circle cx="48" cy="48" r="40" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="7"/><circle id="fund-arc" cx="48" cy="48" r="40" fill="none" stroke="#F5A623" stroke-width="7" stroke-dasharray="251" stroke-dashoffset="155" stroke-linecap="round" transform="rotate(-90 48 48)"/></svg><div class="n"><b style="color:#F5A623" id="fund-gauge-num">38</b><span>RISK Nº</span></div></div>
+            <div class="flex" style="gap:14px"><div class="gauge"><svg width="96" height="96" viewBox="0 0 96 96"><circle cx="48" cy="48" r="40" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="7"/><circle id="fund-arc" cx="48" cy="48" r="40" fill="none" stroke="#F39C12" stroke-width="7" stroke-dasharray="251" stroke-dashoffset="155" stroke-linecap="round" transform="rotate(-90 48 48)"/></svg><div class="n"><b style="color:#F39C12" id="fund-gauge-num">38</b><span>RISK Nº</span></div></div>
             <div class="muted" style="line-height:1.5" id="fund-rn-desc">Mais alto que o HPC11 (34) e bem abaixo do S&amp;P 500 (71). Agressivo, mas com defesa.</div></div>
           </div>
         </div>
@@ -369,7 +369,7 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
           <h3><i class="ti ti-chart-line"></i>Performance · histórico diário</h3>
           <div id="perf-chart" style="height:360px;width:100%"></div>
           <div class="legend">
-            <i><b style="background:#D4AF45"></b><span id="fund-legend">HPC22</span></i><i><b style="background:#5AA0E6"></b>S&amp;P 500</i>
+            <i><b style="background:#C9A02C"></b><span id="fund-legend">HPC22</span></i><i><b style="background:#4A90D9"></b>S&amp;P 500</i>
             <span class="muted" style="margin-left:auto">~1.000 pontos diários · EOD (FastTrack) · zoom e crosshair</span>
           </div>
         </div>
@@ -404,7 +404,7 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
             <div class="pills"><span class="pill o"><span class="pd"></span>VIX 22,4</span><span class="pill r"><span class="pd"></span>Fed hawkish</span><span class="pill g"><span class="pd"></span>Spreads HY ok</span><span class="pill o"><span class="pd"></span>Curva achatada</span><span class="pill g"><span class="pd"></span>Momentum +</span><span class="pill g"><span class="pd"></span>Crescimento ok</span></div>
           </div>
           <div class="card"><h3><i class="ti ti-chart-line-down"></i>Drawdown histórico</h3>
-            <svg viewBox="0 0 420 130" width="100%" style="display:block"><polyline fill="none" stroke="#FF5C5C" stroke-width="2" points="0,20 60,30 120,90 180,55 240,40 300,100 360,45 420,30"/></svg>
+            <svg viewBox="0 0 420 130" width="100%" style="display:block"><polyline fill="none" stroke="#E74C3C" stroke-width="2" points="0,20 60,30 120,90 180,55 240,40 300,100 360,45 420,30"/></svg>
             <div class="muted mt">Max DD −27,9% (crash 2025). Preço estrutural do CAGR; resolve-se na alocação, não no motor.</div>
           </div>
         </div>
@@ -452,12 +452,12 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
         <div class="card"><h3><i class="ti ti-coin"></i>Risco produto</h3><div class="big" style="color:var(--orange)">38</div><div class="muted mt">HPC22 (o fundo). HPC11 = 34.</div></div>
         <div class="card"><h3><i class="ti ti-user-heart"></i>Risco cliente</h3><div class="big">62</div><div class="muted mt">Tolerância da pessoa (perfil/questionário).</div></div>
         <div class="card"><h3><i class="ti ti-file-certificate"></i>Risco mandato</h3><div class="big">55</div><div class="muted mt">Teto contratual da conta (política de investimento).</div></div>
-        <div class="card" style="border-color:rgba(255,92,92,.3)"><h3><i class="ti ti-wallet"></i>Risco portfólio</h3><div class="big r" id="rp-num">78</div><div class="muted mt" id="rp-gap" style="color:var(--red)">▲ +23 acima do mandato</div></div>
+        <div class="card" style="border-color:rgba(231,76,60,.3)"><h3><i class="ti ti-wallet"></i>Risco portfólio</h3><div class="big r" id="rp-num">78</div><div class="muted mt" id="rp-gap" style="color:var(--red)">▲ +23 acima do mandato</div></div>
       </div>
       <div class="card">
         <h3><i class="ti ti-scale"></i>Na mesma régua — Número de Risco</h3>
         <div style="position:relative;height:44px;margin:14px 8px 0">
-          <div style="position:absolute;top:20px;left:0;right:0;height:9px;border-radius:5px;background:linear-gradient(90deg,#3EE68B,#F5A623,#FF5C5C)"></div>
+          <div style="position:absolute;top:20px;left:0;right:0;height:9px;border-radius:5px;background:linear-gradient(90deg,#2ECC71,#F39C12,#E74C3C)"></div>
           <div style="position:absolute;top:14px;left:38%;width:2px;height:22px;background:var(--gold)"></div>
           <div style="position:absolute;top:14px;left:55%;width:2px;height:22px;background:var(--blue)"></div>
           <div style="position:absolute;top:14px;left:62%;width:2px;height:22px;background:var(--tx)"></div>
@@ -467,10 +467,10 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
           </div>
         </div>
         <div class="legend" style="margin-top:6px">
-          <i><b style="background:#D4AF45"></b>HPC22 (produto) 38</i>
-          <i><b style="background:#5AA0E6"></b>Mandato (teto) 55</i>
+          <i><b style="background:#C9A02C"></b>HPC22 (produto) 38</i>
+          <i><b style="background:#4A90D9"></b>Mandato (teto) 55</i>
           <i><b style="background:#EAF0F7"></b>Cliente (tolera) 62</i>
-          <i><b style="background:#FF5C5C"></b>Portfólio (hoje) <span id="rp-leg">78</span></i>
+          <i><b style="background:#E74C3C"></b>Portfólio (hoje) <span id="rp-leg">78</span></i>
         </div>
         <div class="flex mt" style="gap:14px"><span class="muted" style="min-width:170px">Simular: migrar p/ o HPC22</span><input type="range" min="0" max="100" value="0" id="rp-slider" style="flex:1"><span id="rp-pct" style="font-family:var(--mono);min-width:46px;text-align:right">0%</span></div>
         <div id="rp-msg" class="muted mt">Mova o slider: ao migrar parte da carteira para o HPC, o risco do portfólio cai em direção ao mandato.</div>
@@ -587,7 +587,7 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
         <div class="card"><h3><i class="ti ti-wallet"></i>O que ela tem hoje</h3>
           <div class="kv"><span>Renda fixa BR</span><span class="v">52%</span></div><div class="kv"><span>Ações BR</span><span class="v">28%</span></div><div class="kv"><span>Multimercado</span><span class="v">20%</span></div><div class="kv"><span>HPC (Harpian)</span><span class="v" style="color:var(--red)">0%</span></div>
         </div>
-        <div class="card" style="border-color:rgba(255,92,92,.25)"><h3><i class="ti ti-alert-triangle"></i>Gap de risco</h3>
+        <div class="card" style="border-color:rgba(231,76,60,.25)"><h3><i class="ti ti-alert-triangle"></i>Gap de risco</h3>
           <div class="big r">+16</div><div class="muted mt" style="line-height:1.6">Risk Number 78 vs mandato 62. 100% fora da Harpian, sem a camada de defesa. Oportunidade: migrar parte para o HPC11/HPC22.</div>
           <div class="mt"><button class="btn"><i class="ti ti-calculator"></i>Simular migração</button></div>
         </div>
@@ -621,7 +621,7 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
       <div class="grid g3">
         <div class="card" style="grid-column:span 2"><h3><i class="ti ti-chart-line"></i>Retorno total · diário</h3>
           <div id="acoes-chart" style="height:320px;width:100%"></div>
-          <div class="legend"><i><b style="background:#3EE68B"></b><span id="as-legend">NVDA</span></i><i><b style="background:#5AA0E6"></b>S&amp;P 500</i><span class="muted" style="margin-left:auto">~1.000 pontos · FastTrack EOD</span></div>
+          <div class="legend"><i><b style="background:#2ECC71"></b><span id="as-legend">NVDA</span></i><i><b style="background:#4A90D9"></b>S&amp;P 500</i><span class="muted" style="margin-left:auto">~1.000 pontos · FastTrack EOD</span></div>
         </div>
         <div class="card"><h3><i class="ti ti-ruler-2"></i>Risco &amp; métricas</h3>
           <div class="kv"><span>Sharpe</span><span class="v" id="as-sharpe">1,30</span></div>
@@ -667,11 +667,11 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
         <div class="card"><h3><i class="ti ti-number-3"></i>Leia o risco do cliente</h3><div class="muted">No menu Risco, compare cliente, mandato e portfólio na mesma régua.</div></div>
         <div class="card"><h3><i class="ti ti-number-4"></i>Gere o relatório</h3><div class="muted">Na aba Relatório do fundo, exporte o PDF com a sua marca.</div></div>
       </div>
-      <div class="card mt" style="border-color:rgba(212,175,69,.3)">
+      <div class="card mt" style="border-color:rgba(201,160,44,.3)">
         <h3><i class="ti ti-layout-grid-add"></i>Personalize tudo (como o Bloomberg)</h3>
         <div class="muted" style="line-height:1.6">Cada painel tem um layout <b style="color:var(--tx)">padrão</b>, mas você <b style="color:var(--tx)">adiciona e remove informações</b> — no Painel, nos Fundos, nos Ativos e nos Clientes. Clique em "Personalizar painel", tire o que não usa, traga o que importa, e o terminal <b style="color:var(--tx)">salva o seu layout</b>. É assim que ele vira a sua ferramenta de trabalho.</div>
       </div>
-      <div class="card mt" style="display:flex;align-items:center;gap:14px;border-color:rgba(212,175,69,.3)">
+      <div class="card mt" style="display:flex;align-items:center;gap:14px;border-color:rgba(201,160,44,.3)">
         <i class="ti ti-sparkles" style="font-size:22px;color:var(--gold)"></i>
         <div style="flex:1"><b style="font-size:13px">Precisa de ajuda?</b> <span class="muted" style="font-size:13px">Pergunte ao Jim AI a qualquer momento, ou veja o glossário dos termos.</span></div>
         <button class="btn ghost">Glossário</button>
@@ -710,13 +710,13 @@ function go(id){
 }
 var currentFund='HPC22';
 var FUNDS={
- HPC22:{tk:'HPC22',sub:'Harpian CORE22 · Agressivo · USD · série LS155',nav:'$ 22,10',dia:'+2,31%',ytd:'+24,3%',rn:38,col:'#F5A623',mandato:'Agressivo · ataque',isin:'XS3386635109',min:'US$ 50.000',minNum:50000,issuer:'LS155 · Lseries DAC',due:'2056',cagr:'44,2%',sharpe:'1,44',dd:'−27,9%',win:'71%',drift:0.468,
+ HPC22:{tk:'HPC22',sub:'Harpian CORE22 · Agressivo · USD · série LS155',nav:'$ 22,10',dia:'+2,31%',ytd:'+24,3%',rn:38,col:'#F39C12',mandato:'Agressivo · ataque',isin:'XS3386635109',min:'US$ 50.000',minNum:50000,issuer:'LS155 · Lseries DAC',due:'2056',cagr:'44,2%',sharpe:'1,44',dd:'−27,9%',win:'71%',drift:0.468,
   about:'Harpian CORE22: motor de ataque puro long-only — rotação dos ativos de maior momento na bolsa americana, com a defesa e temperatura homologadas. Mais oscilação em troca de mais retorno, sempre com a rampa de defesa armada.',
   rndesc:'Mais alto que o HPC11 (34) e bem abaixo do S&P 500 (71). Agressivo, mas com defesa.'},
- HPC11:{tk:'HPC11',sub:'Harpian · Investment Grade · USD',nav:'$ 14,82',dia:'+1,44%',ytd:'+7,5%',rn:34,col:'#3EE68B',mandato:'Investment Grade · equilibrado',isin:'a confirmar',min:'US$ 50.000',minNum:50000,issuer:'Lseries DAC (série a confirmar)',due:'—',cagr:'18,5%',sharpe:'1,82',dd:'−7,6%',win:'62%',drift:0.482,
+ HPC11:{tk:'HPC11',sub:'Harpian · Investment Grade · USD',nav:'$ 14,82',dia:'+1,44%',ytd:'+7,5%',rn:34,col:'#2ECC71',mandato:'Investment Grade · equilibrado',isin:'a confirmar',min:'US$ 50.000',minNum:50000,issuer:'Lseries DAC (série a confirmar)',due:'—',cagr:'18,5%',sharpe:'1,82',dd:'−7,6%',win:'62%',drift:0.482,
   about:'Investment Grade: carteira de qualidade com a defesa estrutural da casa. Foco em consistência e drawdown contido — o veículo equilibrado para quem quer o método Harpian com menos oscilação.',
   rndesc:'Conservador. Bem abaixo do S&P 500 (71). Defesa estrutural com drawdown contido.'},
- WL:{tk:'WL',sub:'Fundo white-label · marca do assessor · USD',nav:'$ 10,40',dia:'+0,9%',ytd:'+6,2%',rn:36,col:'#3EE68B',mandato:'Configurável',isin:'—',min:'—',minNum:0,issuer:'—',due:'—',cagr:'—',sharpe:'—',dd:'—',win:'—',drift:0.482,
+ WL:{tk:'WL',sub:'Fundo white-label · marca do assessor · USD',nav:'$ 10,40',dia:'+0,9%',ytd:'+6,2%',rn:36,col:'#2ECC71',mandato:'Configurável',isin:'—',min:'—',minNum:0,issuer:'—',due:'—',cagr:'—',sharpe:'—',dd:'—',win:'—',drift:0.482,
   about:'Versão white-label: o mesmo motor Harpian, com a marca do assessor. Estrutura e defesa idênticas; a identidade é do parceiro.',
   rndesc:'Espelha o perfil de risco escolhido pelo assessor.'}
 };
@@ -797,8 +797,8 @@ function ensurePerfChart(){
    layout:{background:{type:'solid',color:'rgba(0,0,0,0)'},textColor:'#A4B3C6',fontFamily:'DM Mono, monospace',fontSize:11},
    grid:{vertLines:{color:'rgba(255,255,255,0.05)'},horzLines:{color:'rgba(255,255,255,0.05)'}},
    rightPriceScale:{borderColor:'rgba(255,255,255,0.1)'},timeScale:{borderColor:'rgba(255,255,255,0.1)'},
-   crosshair:{mode:0,vertLine:{color:'rgba(212,175,69,0.45)',labelBackgroundColor:'#B8902f'},horzLine:{color:'rgba(212,175,69,0.45)',labelBackgroundColor:'#B8902f'}}});
-  var s1=perfChart.addLineSeries({color:'#D4AF45',lineWidth:2}),s2=perfChart.addLineSeries({color:'#5AA0E6',lineWidth:1});
+   crosshair:{mode:0,vertLine:{color:'rgba(201,160,44,0.45)',labelBackgroundColor:'#b08010'},horzLine:{color:'rgba(201,160,44,0.45)',labelBackgroundColor:'#b08010'}}});
+  var s1=perfChart.addLineSeries({color:'#C9A02C',lineWidth:2}),s2=perfChart.addLineSeries({color:'#4A90D9',lineWidth:1});
   var fd=FUNDS[currentFund]||FUNDS.HPC22;var dr=fd.drift||0.468;var vol=currentFund==='HPC11'?0.012:0.02;
   var d1=[],d2=[],v1=100,v2=100,dt=new Date(2021,0,1);
   for(var k=0;k<1000;k++){v1*=(1+(Math.random()-dr)*vol);v2*=(1+(Math.random()-0.49)*0.016);
@@ -966,8 +966,8 @@ function drawAcoes(a){if(typeof LightweightCharts==='undefined')return;var el=do
   layout:{background:{type:'solid',color:'rgba(0,0,0,0)'},textColor:'#A4B3C6',fontFamily:'DM Mono, monospace',fontSize:11},
   grid:{vertLines:{color:'rgba(255,255,255,0.05)'},horzLines:{color:'rgba(255,255,255,0.05)'}},
   rightPriceScale:{borderColor:'rgba(255,255,255,0.1)'},timeScale:{borderColor:'rgba(255,255,255,0.1)'},
-  crosshair:{mode:0,vertLine:{color:'rgba(212,175,69,0.45)'},horzLine:{color:'rgba(212,175,69,0.45)'}}});
- var s1=acoesChart.addLineSeries({color:'#3EE68B',lineWidth:2}),s2=acoesChart.addLineSeries({color:'#5AA0E6',lineWidth:1});
+  crosshair:{mode:0,vertLine:{color:'rgba(201,160,44,0.45)'},horzLine:{color:'rgba(201,160,44,0.45)'}}});
+ var s1=acoesChart.addLineSeries({color:'#2ECC71',lineWidth:2}),s2=acoesChart.addLineSeries({color:'#4A90D9',lineWidth:1});
  var dr=a.drift||0.47,d1=[],d2=[],v1=100,v2=100,dt=new Date(2021,0,1);
  for(var k=0;k<1000;k++){v1*=(1+(Math.random()-dr)*0.022);v2*=(1+(Math.random()-0.49)*0.016);var ds=dt.toISOString().slice(0,10);d1.push({time:ds,value:+v1.toFixed(2)});d2.push({time:ds,value:+v2.toFixed(2)});dt.setDate(dt.getDate()+1);}
  s1.setData(d1);s2.setData(d2);acoesChart.timeScale().fitContent();}
