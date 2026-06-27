@@ -93,6 +93,7 @@ body{background:var(--bg);color:var(--tx);font-family:var(--sans);font-size:13.5
 .tab:hover{color:var(--tx)}
 .tab.on{color:var(--gold);border-bottom-color:var(--gold)}
 .ftab-pane{display:none}.ftab-pane.on{display:block;animation:fade .2s}
+.otab-pane{display:none}.otab-pane.on{display:block;animation:fade .2s}
 
 /* gauge */
 .gauge{position:relative;width:96px;height:96px;flex-shrink:0}
@@ -509,9 +510,27 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
     </section>
 
     <section class="screen" id="screen-ordem">
-      <div class="crumb">Fundos › <b>Enviar ordem (via Lynk)</b></div>
-      <div class="flex between mb"><div><div class="h1">Enviar ordem</div><div class="sub" style="margin:0">Subscrição/resgate do ETN ao NAV — enviada à Lynk sem sair do terminal.</div></div>
-        <span class="eodlabel"><i class="ti ti-clock"></i>NAV do dealing day · forward pricing</span></div>
+      <div class="crumb">Ordens › <b>via Lynk</b></div>
+      <div class="flex between mb"><div><div class="h1">Ordens</div><div class="sub" style="margin:0">Histórico, envio e acompanhamento — subscrição/resgate do ETN.</div></div>
+        <span class="eodlabel"><i class="ti ti-clock"></i>NAV do dealing day · forward</span></div>
+      <div class="tabs">
+        <div class="tab on" data-ot="hist" onclick="ordTab('hist');renderOrders()"><i class="ti ti-history"></i>Histórico</div>
+        <div class="tab" data-ot="nova" onclick="ordTab('nova');renderOrder()"><i class="ti ti-plus"></i>Nova ordem</div>
+      </div>
+      <div class="otab-pane on" id="ot-hist">
+        <div class="flex wrap mb" style="gap:10px">
+          <select id="of-cli" class="wl-input" onchange="renderOrders()"></select>
+          <select id="of-prod" class="wl-input" onchange="renderOrders()"></select>
+          <div class="seg" id="of-tipo"><span class="on" onclick="ordFilterTipo(this,'all')">Todas</span><span onclick="ordFilterTipo(this,'sub')">Subscrição</span><span onclick="ordFilterTipo(this,'res')">Resgate</span></div>
+          <select id="of-status" class="wl-input" onchange="renderOrders()"></select>
+        </div>
+        <div class="card"><table>
+          <thead><tr><th>Ref</th><th>Data</th><th>Cliente</th><th>Produto</th><th>Tipo</th><th class="num">Valor</th><th>Status</th><th></th></tr></thead>
+          <tbody id="ord-body"></tbody></table>
+          <div class="muted mt" id="ord-empty" style="font-size:11px"></div>
+        </div>
+      </div>
+      <div class="otab-pane" id="ot-nova">
       <div class="grid g2">
         <div class="card"><h3><i class="ti ti-package"></i>Produto</h3>
           <label class="muted" style="display:block;font-size:11px">Fundo (ETN)</label>
@@ -535,6 +554,7 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
       <div class="card mt" id="o-gate"></div>
       <div class="flex mt" style="gap:8px"><button class="btn" id="o-review" onclick="orderReview()"><i class="ti ti-eye"></i>Revisar ordem</button></div>
       <div class="card mt" id="o-status" style="display:none"></div>
+      </div>
     </section>
 
     <section class="screen" id="screen-carteira">
@@ -647,6 +667,11 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
     <label>Valor atual (R$)</label><input id="cm-atual" type="number">
     <label>Risk Number</label><input id="cm-rn" type="number">
     <div class="flex mt" style="justify-content:flex-end;gap:8px"><button class="btn ghost" onclick="crmClose()">Cancelar</button><button class="btn" onclick="crmSave()"><i class="ti ti-check"></i>Salvar</button></div>
+  </div>
+</div>
+<div id="ord-modal" class="modal-bg" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal"><h3>Detalhe da ordem</h3><div id="ord-modal-body"></div>
+    <div class="flex mt" style="justify-content:flex-end;gap:8px"><button class="btn ghost" onclick="document.getElementById('ord-modal').classList.remove('open')">Fechar</button></div>
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
@@ -813,9 +838,9 @@ function renderOrder(){
  var sel=document.getElementById('o-client');if(sel)sel.innerHTML=CLIENTS.map(function(c){return '<option value="'+c.id+'">'+c.nome+' · mandato '+c.mandato+'</option>';}).join('');
  orderSide='sub';var ss=document.getElementById('o-side');if(ss)ss.querySelectorAll('span').forEach(function(x,i){x.classList.toggle('on',i===0);});
  var os=document.getElementById('o-status');if(os)os.style.display='none';orderGate();}
-function openOrder(){renderOrder();go('ordem');}
-function orderForFund(){renderOrder();var fs=document.getElementById('o-fund');if(fs)fs.value=currentFund;orderGate();go('ordem');}
-function orderFor(id){renderOrder();var sel=document.getElementById('o-client');if(sel)sel.value=id;orderGate();go('ordem');}
+function openOrder(){go('ordem');ordTab('hist');renderOrders();}
+function orderForFund(){renderOrder();var fs=document.getElementById('o-fund');if(fs)fs.value=currentFund;orderGate();go('ordem');ordTab('nova');}
+function orderFor(id){renderOrder();var sel=document.getElementById('o-client');if(sel)sel.value=id;orderGate();go('ordem');ordTab('nova');}
 function orderGate(){var sel=document.getElementById('o-client');if(!sel)return;var c=CLIENTS.find(function(x){return x.id===+sel.value;});
  var fk=(document.getElementById('o-fund')||{}).value||currentFund;var fd=FUNDS[fk]||FUNDS.HPC22;var pr=fd.rn;
  set('o-isin',fd.isin);set('o-nav',fd.nav);set('o-prodrisk','Risk Nº '+pr);
@@ -840,10 +865,40 @@ function orderReview(){var sel=document.getElementById('o-client');var c=CLIENTS
  +'<div class="kv"><span>Preço</span><span class="v">NAV do dealing day (não garantido agora)</span></div>'
  +'<div class="muted mt" style="font-size:11px">Trilha de auditoria registrada · requer aprovação (maker-checker).</div>'
  +'<div class="flex mt" style="gap:8px;justify-content:flex-end"><button class="btn ghost" onclick="document.getElementById(\'o-status\').style.display=\'none\'">Cancelar</button><button class="btn" onclick="orderSend()"><i class="ti ti-send"></i>Enviar para a Lynk</button></div>';}
-function orderSend(){var st=document.getElementById('o-status');var steps=['Submetida','Recebida pelo emissor','Precificada (NAV de hoje)','Liquidada (DvP Euroclear)','Concluída'];
- st.innerHTML='<h3><i class="ti ti-route"></i>Status da ordem</h3><div class="muted mb" style="font-size:11px">Ref. ORD-2026-0418 · via adapter OrderGateway (Lynk)</div>'
- +'<div style="display:flex;flex-direction:column;gap:8px">'+steps.map(function(s,i){var done=i<3;return '<div class="flex" style="gap:9px"><span style="color:'+(done?'var(--green)':'var(--tx3)')+'">'+(done?'●':'○')+'</span><span style="color:'+(done?'var(--tx)':'var(--tx3)')+'">'+s+'</span></div>';}).join('')+'</div>'
+function orderSend(){var sel=document.getElementById('o-client');var c=CLIENTS.find(function(x){return x.id===+sel.value;});var fk=(document.getElementById('o-fund')||{}).value||currentFund;var v=+document.getElementById('o-value').value||0;
+ var newId='ORD-2026-0'+(419+(ordSeq++));
+ ORDERS.unshift({id:newId,data:'27/06/2026',cid:c?c.id:0,fundo:fk,lado:orderSide,valor:v,status:'Submetida'});
+ var st=document.getElementById('o-status');var steps=['Submetida','Recebida pelo emissor','Precificada (NAV de hoje)','Liquidada (DvP Euroclear)','Concluída'];
+ st.innerHTML='<h3><i class="ti ti-route"></i>Status da ordem</h3><div class="muted mb" style="font-size:11px">Ref. '+newId+' · via adapter OrderGateway (Lynk) · adicionada ao histórico</div>'
+ +'<div style="display:flex;flex-direction:column;gap:8px">'+steps.map(function(s,i){var done=i<1;return '<div class="flex" style="gap:9px"><span style="color:'+(done?'var(--green)':'var(--tx3)')+'">'+(done?'●':'○')+'</span><span style="color:'+(done?'var(--tx)':'var(--tx3)')+'">'+s+'</span></div>';}).join('')+'</div>'
+ +'<div class="flex mt" style="gap:8px"><button class="btn ghost" onclick="ordTab(\'hist\');renderOrders()"><i class="ti ti-history"></i>Ver no histórico</button></div>'
  +'<div class="muted mt" style="font-size:11px">Mockup — integração real via Lynk•Port (sem API pública confirmada; adapter plugável).</div>';}
+var ordSeq=0;
+var ORDERS=[
+ {id:'ORD-2026-0417',data:'26/06/2026',cid:2,fundo:'HPC22',lado:'res',valor:300000,status:'Submetida'},
+ {id:'ORD-2026-0415',data:'25/06/2026',cid:3,fundo:'HPC11',lado:'sub',valor:1000000,status:'Precificada'},
+ {id:'ORD-2026-0412',data:'24/06/2026',cid:1,fundo:'HPC22',lado:'sub',valor:250000,status:'Concluída'},
+ {id:'ORD-2026-0411',data:'20/06/2026',cid:1,fundo:'HPC11',lado:'sub',valor:500000,status:'Liquidada'},
+ {id:'ORD-2026-0409',data:'18/06/2026',cid:2,fundo:'HPC22',lado:'res',valor:150000,status:'Rejeitada'}
+];
+var ordTipo='all';
+function ordTab(t){var sec=document.getElementById('screen-ordem');if(!sec)return;sec.querySelectorAll('.tab').forEach(function(x){x.classList.toggle('on',x.dataset.ot===t);});sec.querySelectorAll('.otab-pane').forEach(function(p){p.classList.remove('on');});var el=document.getElementById('ot-'+t);if(el)el.classList.add('on');}
+function ordFilters(){var cli=document.getElementById('of-cli');if(cli&&cli.options.length===0)cli.innerHTML='<option value="0">Todos os clientes</option>'+CLIENTS.map(function(c){return '<option value="'+c.id+'">'+c.nome+'</option>';}).join('');
+ var pr=document.getElementById('of-prod');if(pr&&pr.options.length===0)pr.innerHTML='<option value="all">Todos os produtos</option>'+Object.keys(FUNDS).map(function(k){return '<option value="'+k+'">'+FUNDS[k].tk+'</option>';}).join('');
+ var stt=document.getElementById('of-status');if(stt&&stt.options.length===0)stt.innerHTML='<option value="all">Todos os status</option>'+['Rascunho','Submetida','Recebida','Precificada','Liquidada','Concluída','Rejeitada','Cancelada'].map(function(s){return '<option>'+s+'</option>';}).join('');}
+function ordFilterTipo(el,t){ordTipo=t;el.parentNode.querySelectorAll('span').forEach(function(x){x.classList.remove('on');});el.classList.add('on');renderOrders();}
+function statusCls(s){return {'Concluída':'g','Liquidada':'g','Precificada':'b','Recebida':'b','Submetida':'b','Rascunho':'o','Rejeitada':'r','Cancelada':'r'}[s]||'b';}
+function renderOrders(){ordFilters();var b=document.getElementById('ord-body');if(!b)return;
+ var fc=+(document.getElementById('of-cli')||{}).value||0;var fp=(document.getElementById('of-prod')||{}).value||'all';var fs=(document.getElementById('of-status')||{}).value||'all';
+ var rows=ORDERS.filter(function(o){return (fc===0||o.cid===fc)&&(fp==='all'||o.fundo===fp)&&(ordTipo==='all'||o.lado===ordTipo)&&(fs==='all'||o.status===fs);});
+ b.innerHTML=rows.map(function(o){var c=CLIENTS.find(function(x){return x.id===o.cid;})||{nome:'—'};var ed=(o.status==='Rascunho'||o.status==='Submetida');
+  return '<tr><td>'+o.id+'</td><td>'+o.data+'</td><td>'+c.nome+'</td><td>'+o.fundo+'</td><td>'+(o.lado==='sub'?'Subscrição':'Resgate')+'</td><td class="num">US$ '+o.valor.toLocaleString('pt-BR')+'</td><td><span class="tag '+statusCls(o.status)+'">'+o.status+'</span></td>'
+  +'<td class="num"><span class="muted" style="cursor:pointer" onclick="ordView(\''+o.id+'\')">ver</span>'+(ed?' · <span class="muted" style="cursor:pointer" onclick="ordEdit(\''+o.id+'\')">editar</span>':'')+'</td></tr>';}).join('');
+ var em=document.getElementById('ord-empty');if(em)em.textContent=rows.length?(rows.length+' ordem(ns)'):'Nenhuma ordem com esses filtros.';}
+function ordView(id){var o=ORDERS.find(function(x){return x.id===id;});if(!o)return;var c=CLIENTS.find(function(x){return x.id===o.cid;})||{nome:'—'};var fd=FUNDS[o.fundo]||{};
+ document.getElementById('ord-modal-body').innerHTML='<div class="kv"><span>Ref</span><span class="v">'+o.id+'</span></div><div class="kv"><span>Data</span><span class="v">'+o.data+'</span></div><div class="kv"><span>Cliente</span><span class="v">'+c.nome+'</span></div><div class="kv"><span>Produto</span><span class="v">'+o.fundo+' · '+(fd.isin||'')+'</span></div><div class="kv"><span>Tipo</span><span class="v">'+(o.lado==='sub'?'Subscrição':'Resgate')+'</span></div><div class="kv"><span>Valor</span><span class="v">US$ '+o.valor.toLocaleString('pt-BR')+'</span></div><div class="kv"><span>Status</span><span class="v"><span class="tag '+statusCls(o.status)+'">'+o.status+'</span></span></div>';
+ document.getElementById('ord-modal').classList.add('open');}
+function ordEdit(id){var o=ORDERS.find(function(x){return x.id===id;});if(!o)return;renderOrder();ordTab('nova');var ff=document.getElementById('o-fund');if(ff)ff.value=o.fundo;var cc=document.getElementById('o-client');if(cc)cc.value=o.cid;var vv=document.getElementById('o-value');if(vv)vv.value=o.valor;orderSide=o.lado;var ss=document.getElementById('o-side');if(ss)ss.querySelectorAll('span').forEach(function(x,i){x.classList.toggle('on',(i===0)===(o.lado==='sub'));});orderGate();}
 
 var ASSETS={
  NVDA:{name:'NVIDIA',price:'118,64',day:'+2,4%',dc:'pos',ytd:'+42,1%',y1:'+96%',forca:'+22',sharpe:'1,30',dd:'−32%',rsi:'64',w52:'48,2 – 140,8',drift:0.455},
