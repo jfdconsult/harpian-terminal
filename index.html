@@ -94,6 +94,13 @@ body{background:radial-gradient(1100px 520px at 50% -8%,#102a4a 0%,var(--bg) 58%
 .tab.on{color:var(--gold);border-bottom-color:var(--gold)}
 .ftab-pane{display:none}.ftab-pane.on{display:block;animation:fade .2s}
 .otab-pane{display:none}.otab-pane.on{display:block;animation:fade .2s}
+.prow{margin-bottom:11px}
+.phead{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;align-items:baseline}
+.phead small{color:var(--tx3);font-size:10px}
+.dist{font-size:11px;font-weight:700}
+.bullet{height:13px;border-radius:7px;position:relative;background:#08182c;overflow:hidden}
+.bz{position:absolute;top:0;bottom:0;opacity:.30}
+.bneedle{position:absolute;top:-2px;bottom:-2px;width:3px;background:#fff;border-radius:2px;box-shadow:0 0 7px rgba(255,255,255,.7)}
 
 /* gauge */
 .gauge{position:relative;width:96px;height:96px;flex-shrink:0}
@@ -264,11 +271,9 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
           <div class="muted mt" style="font-size:11px;cursor:pointer" onclick="openFund('HPC22');ftab('comp')">+16 posições · ver composição ›</div>
         </div>
         <div class="card calm">
-          <h3><i class="ti ti-shield"></i>Defesa</h3>
-          <div class="flex" style="gap:16px">
-            <div class="gauge"><svg width="96" height="96" viewBox="0 0 96 96"><circle cx="48" cy="48" r="40" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="7"/><circle cx="48" cy="48" r="40" fill="none" stroke="#2ECC71" stroke-width="7" stroke-dasharray="251" stroke-dashoffset="10" stroke-linecap="round" transform="rotate(-90 48 48)"/></svg><div class="n"><b>96%</b><span>OFENSIVO</span></div></div>
-            <div><div class="tag g" style="display:inline-block;margin-bottom:8px">StormGuard · GROWTH</div><div class="muted" style="line-height:1.5">Sem gatilho de saída. A rampa de defesa está pronta caso o regime vire.</div></div>
-          </div>
+          <h3><i class="ti ti-shield"></i>Regime &amp; defesa</h3>
+          <div id="rg-painel"></div>
+          <div class="flex between" style="margin-top:4px"><span class="tag g">StormGuard · GROWTH</span><span class="muted" style="font-size:11px">defesa armada · rampa pronta</span></div>
         </div>
         <div class="card calm">
           <h3><i class="ti ti-users"></i>Clientes que precisam de atenção</h3>
@@ -397,11 +402,11 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
 
       <div class="ftab-pane" id="ft-def">
         <div class="card mb"><h3><i class="ti ti-shield"></i>Motor de defesa · StormGuard</h3>
-          <div class="flex" style="gap:18px"><div class="big g">96%</div><div class="muted" style="line-height:1.6">Exposição ofensiva. Estado <b style="color:var(--green)">GROWTH</b>, sem gatilho de saída. O motor monitora 6 sinais; a rampa leva a exposição a 0% em poucos dias se o regime virar.</div></div>
+          <div class="flex" style="gap:18px;align-items:center"><div style="width:230px;flex-shrink:0" id="rg-fundo"></div><div class="muted" style="line-height:1.6">Exposição ofensiva <b style="color:var(--green)">96%</b>. Estado <b style="color:var(--green)">GROWTH · RISK-ON</b>, sem gatilho de saída. A rampa leva a exposição a 0% em poucos dias se o regime virar.</div></div>
         </div>
         <div class="grid g2">
-          <div class="card"><h3><i class="ti ti-activity"></i>6 sinais de regime</h3>
-            <div class="pills"><span class="pill o"><span class="pd"></span>VIX 22,4</span><span class="pill r"><span class="pd"></span>Fed hawkish</span><span class="pill g"><span class="pd"></span>Spreads HY ok</span><span class="pill o"><span class="pd"></span>Curva achatada</span><span class="pill g"><span class="pd"></span>Momentum +</span><span class="pill g"><span class="pd"></span>Crescimento ok</span></div>
+          <div class="card"><h3><i class="ti ti-activity"></i>Sinais · distância ao gatilho</h3>
+            <div id="sig-fundo"></div>
           </div>
           <div class="card"><h3><i class="ti ti-chart-line-down"></i>Drawdown histórico</h3>
             <svg viewBox="0 0 420 130" width="100%" style="display:block"><polyline fill="none" stroke="#E74C3C" stroke-width="2" points="0,20 60,30 120,90 180,55 240,40 300,100 360,45 420,30"/></svg>
@@ -596,7 +601,10 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
 
     <section class="screen" id="screen-regime">
       <div class="crumb">Mercado › <b>Sinais &amp; regime</b></div><div class="h1">Sinais &amp; regime</div><div class="sub">Nosso motor proprietário — o diferencial que o Bloomberg não tem.</div>
-      <div class="card mb"><h3><i class="ti ti-activity"></i>Estado do sistema</h3><div class="pills"><span class="pill o"><span class="pd"></span>VIX 22,4 elevado</span><span class="pill r"><span class="pd"></span>Fed hawkish</span><span class="pill g"><span class="pd"></span>Spreads HY estáveis</span><span class="pill o"><span class="pd"></span>Curva achatada</span><span class="pill g"><span class="pd"></span>Momentum positivo</span><span class="pill g"><span class="pd"></span>Crescimento resiliente</span></div></div>
+      <div class="grid g2 mb">
+        <div class="card"><h3><i class="ti ti-gauge"></i>Regime de mercado · 4 estados</h3><div id="rg-mercado"></div><div class="muted" style="font-size:11px;text-align:center">CRS 0,489 · defesa ativa</div></div>
+        <div class="card"><h3><i class="ti ti-temperature"></i>Sinais · distância ao gatilho</h3><div id="sig-mercado"></div></div>
+      </div>
       <div class="grid g2">
         <div class="card"><h3><i class="ti ti-temperature"></i>Temperatura de mercado</h3><div class="placeholder"><i class="ti ti-thermometer"></i><b>Termômetro ambiental (HSA v7)</b><div class="chips"><span class="chip">setor momentum</span><span class="chip">RPM momentum</span><span class="chip">social radar</span></div></div></div>
         <div class="card"><h3><i class="ti ti-arrows-exchange"></i>Transições de regime</h3><div class="placeholder"><i class="ti ti-history"></i><b>Quando a defesa armou/desarmou</b><div class="muted mt">linha do tempo dos gatilhos</div></div></div>
@@ -972,6 +980,26 @@ function drawAcoes(a){if(typeof LightweightCharts==='undefined')return;var el=do
  for(var k=0;k<1000;k++){v1*=(1+(Math.random()-dr)*0.022);v2*=(1+(Math.random()-0.49)*0.016);var ds=dt.toISOString().slice(0,10);d1.push({time:ds,value:+v1.toFixed(2)});d2.push({time:ds,value:+v2.toFixed(2)});dt.setDate(dt.getDate()+1);}
  s1.setData(d1);s2.setData(d2);acoesChart.timeScale().fitContent();}
 initAcoesSelect();
+
+function regimeGaugeSVG(state,sub){var map={'RISK-OFF':[0.13,'#E74C3C'],'WARNING':[0.38,'#F39C12'],'RISK-ON':[0.62,'#2ECC71'],'CÉU ABERTO':[0.88,'#4A90D9']};var m=map[state]||map['RISK-ON'];var frac=m[0],col=m[1];var ang=(180-frac*180)*Math.PI/180;var L=118;var nx=200+L*Math.cos(ang),ny=200-L*Math.sin(ang);
+ return '<svg viewBox="0 0 400 232" width="100%" style="display:block;max-height:200px">'
+ +'<path d="M40,200 A160,160 0 0,1 86.9,86.9" fill="none" stroke="#E74C3C" stroke-width="24" stroke-linecap="round" opacity=".9"/>'
+ +'<path d="M86.9,86.9 A160,160 0 0,1 200,40" fill="none" stroke="#F39C12" stroke-width="24" opacity=".9"/>'
+ +'<path d="M200,40 A160,160 0 0,1 313.1,86.9" fill="none" stroke="#2ECC71" stroke-width="24" opacity=".9"/>'
+ +'<path d="M313.1,86.9 A160,160 0 0,1 360,200" fill="none" stroke="#4A90D9" stroke-width="24" stroke-linecap="round" opacity=".9"/>'
+ +'<text x="50" y="222" fill="#E74C3C" font-size="11" font-weight="700" text-anchor="middle">RISK-OFF</text>'
+ +'<text x="128" y="58" fill="#F39C12" font-size="9.5" font-weight="700" text-anchor="middle">WARNING</text>'
+ +'<text x="300" y="66" fill="#2ECC71" font-size="11" font-weight="700" text-anchor="middle">RISK-ON</text>'
+ +'<text x="350" y="222" fill="#4A90D9" font-size="9.5" font-weight="700" text-anchor="middle">CÉU ABERTO</text>'
+ +'<line x1="200" y1="200" x2="'+nx.toFixed(1)+'" y2="'+ny.toFixed(1)+'" stroke="#fff" stroke-width="4" stroke-linecap="round"/>'
+ +'<circle cx="200" cy="200" r="9" fill="#fff"/><circle cx="200" cy="200" r="4" fill="#0A1A30"/>'
+ +'<text x="200" y="150" fill="'+col+'" font-size="28" font-weight="800" text-anchor="middle">'+state+'</text>'
+ +(sub?'<text x="200" y="174" fill="#7d96b3" font-size="11" text-anchor="middle">'+sub+'</text>':'')+'</svg>';}
+var SIGNALS=[['Inovação · SOXX','temp 0,448 / lim 0,45',55,'folga 0,002','#2ECC71'],['Líderes · QQQ','temp 0,554 / lim 0,40',45,'gatilho +0,154','#F39C12'],['Navegador · SPY','temp 0,403 / lim 0,45',60,'folga 0,047','#2ECC71'],['VIX','22,4 elevado',40,'atenção','#F39C12'],['Crédito (HY)','spreads estáveis',62,'ok','#2ECC71'],['Momentum','positivo',64,'ok','#2ECC71']];
+function regimeBar(name,sub,pct,dist,dcol){return '<div class="prow"><div class="phead"><span>'+name+' <small>'+sub+'</small></span><span class="dist" style="color:'+dcol+'">'+dist+'</span></div><div class="bullet"><div class="bz" style="left:0;width:25%;background:#E74C3C"></div><div class="bz" style="left:25%;width:25%;background:#F39C12"></div><div class="bz" style="left:50%;width:25%;background:#2ECC71"></div><div class="bz" style="left:75%;width:25%;background:#4A90D9"></div><div class="bneedle" style="left:calc('+pct+'% - 1px)"></div></div></div>';}
+function signalBars(){return SIGNALS.map(function(s){return regimeBar(s[0],s[1],s[2],s[3],s[4]);}).join('')+'<div style="font-size:9px;color:var(--tx3);margin-top:8px;line-height:1.5">agulha = estado atual · esquerda vermelho = quente/defesa · direita azul = frio/seguro. Direita = melhor, sempre.</div>';}
+function fillRegime(){['rg-painel','rg-mercado','rg-fundo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=regimeGaugeSVG('RISK-ON','exposição de ataque: 96%');});['sig-mercado','sig-fundo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=signalBars();});}
+fillRegime();
 function crmForce(id){var c=CLIENTS.find(function(x){return x.id===id;});if(c){c.forcado=!c.forcado;renderClients();}}
 var crmEditId=null;
 function crmEdit(id){var c=CLIENTS.find(function(x){return x.id===id;});if(!c)return;crmEditId=id;
