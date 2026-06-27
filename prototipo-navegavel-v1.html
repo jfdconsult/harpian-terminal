@@ -554,8 +554,33 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
     </section>
 
     <section class="screen" id="screen-acoes">
-      <div class="crumb">Mercado › <b>Ações &amp; índices US</b></div><div class="h1">Ações &amp; índices US</div><div class="sub">Visão de um ativo individual (FastTrack, EOD).</div>
-      <div class="placeholder"><i class="ti ti-chart-candle"></i><b>Tela de um ativo</b><div class="muted mt">cotação EOD · gráfico retorno total · força relativa · risco · comparação vs índice</div><div class="chips"><span class="chip">TradingView embutido</span><span class="chip">Sharpe / drawdown / RSI</span><span class="chip">vs S&amp;P</span></div></div>
+      <div class="crumb">Mercado › <b>Ações &amp; índices US</b></div>
+      <div class="flex between wrap">
+        <div><div class="h1" id="as-name">NVIDIA</div><div class="sub" style="margin:0" id="as-tk">NVDA · US</div></div>
+        <div class="flex" style="gap:10px;align-items:center">
+          <select id="as-select" class="wl-input" onchange="renderAsset(this.value)"></select>
+          <span class="eodlabel"><i class="ti ti-clock"></i>EOD · fech. dia anterior</span>
+        </div>
+      </div>
+      <div class="grid g4 mt mb">
+        <div class="card"><div class="muted">Último</div><div class="big" id="as-price">118,64</div><div class="muted" id="as-day">+2,4% hoje</div></div>
+        <div class="card"><div class="muted">YTD</div><div class="big g" id="as-ytd">+42,1%</div></div>
+        <div class="card"><div class="muted">1 ano</div><div class="big g" id="as-y1">+96%</div></div>
+        <div class="card"><div class="muted">Força relativa</div><div class="big" id="as-forca">+22</div><div class="muted">vs S&amp;P (ftalpha)</div></div>
+      </div>
+      <div class="grid g3">
+        <div class="card" style="grid-column:span 2"><h3><i class="ti ti-chart-line"></i>Retorno total · diário</h3>
+          <div id="acoes-chart" style="height:320px;width:100%"></div>
+          <div class="legend"><i><b style="background:#3EE68B"></b><span id="as-legend">NVDA</span></i><i><b style="background:#5AA0E6"></b>S&amp;P 500</i><span class="muted" style="margin-left:auto">~1.000 pontos · FastTrack EOD</span></div>
+        </div>
+        <div class="card"><h3><i class="ti ti-ruler-2"></i>Risco &amp; métricas</h3>
+          <div class="kv"><span>Sharpe</span><span class="v" id="as-sharpe">1,30</span></div>
+          <div class="kv"><span>Max drawdown</span><span class="v" id="as-dd">−32%</span></div>
+          <div class="kv"><span>RSI</span><span class="v" id="as-rsi">64</span></div>
+          <div class="kv"><span>52 semanas</span><span class="v" id="as-w52">48,2 – 140,8</span></div>
+          <div class="muted mt" style="font-size:11px">Snapshot FastTrack (Sharpe/RSI/ftalpha). Sem fundamentos — esses vêm do SEC EDGAR à parte.</div>
+        </div>
+      </div>
     </section>
 
     <section class="screen" id="screen-noticias"><div class="crumb">Mercado › <b>Notícias</b></div><div class="h1">Notícias que importam</div><div class="sub">Filtradas pelo impacto no fundo.</div>
@@ -625,6 +650,7 @@ function go(id){
   var el=document.getElementById('screen-'+id); if(el)el.classList.add('on');
   document.querySelectorAll('.mtab').forEach(m=>m.classList.remove('on'));
   if(id==='clientes')renderClients();
+  if(id==='acoes')setTimeout(function(){var s=document.getElementById('as-select');renderAsset(s&&s.value?s.value:'NVDA');},40);
   window.scrollTo(0,0);
 }
 var currentFund='HPC22';
@@ -801,6 +827,34 @@ function orderSend(){var st=document.getElementById('o-status');var steps=['Subm
  st.innerHTML='<h3><i class="ti ti-route"></i>Status da ordem</h3><div class="muted mb" style="font-size:11px">Ref. ORD-2026-0418 · via adapter OrderGateway (Lynk)</div>'
  +'<div style="display:flex;flex-direction:column;gap:8px">'+steps.map(function(s,i){var done=i<3;return '<div class="flex" style="gap:9px"><span style="color:'+(done?'var(--green)':'var(--tx3)')+'">'+(done?'●':'○')+'</span><span style="color:'+(done?'var(--tx)':'var(--tx3)')+'">'+s+'</span></div>';}).join('')+'</div>'
  +'<div class="muted mt" style="font-size:11px">Mockup — integração real via Lynk•Port (sem API pública confirmada; adapter plugável).</div>';}
+
+var ASSETS={
+ NVDA:{name:'NVIDIA',price:'118,64',day:'+2,4%',dc:'pos',ytd:'+42,1%',y1:'+96%',forca:'+22',sharpe:'1,30',dd:'−32%',rsi:'64',w52:'48,2 – 140,8',drift:0.455},
+ SPY:{name:'S&P 500 ETF',price:'543,1',day:'−0,3%',dc:'neg',ytd:'+5,1%',y1:'+14,2%',forca:'—',sharpe:'0,90',dd:'−24%',rsi:'52',w52:'410 – 545',drift:0.487},
+ AAPL:{name:'Apple',price:'214,1',day:'+0,4%',dc:'pos',ytd:'+12%',y1:'+28%',forca:'+6',sharpe:'1,10',dd:'−20%',rsi:'55',w52:'164 – 220',drift:0.47},
+ GLD:{name:'Ouro (ETF)',price:'221,4',day:'+0,8%',dc:'pos',ytd:'+9,8%',y1:'+18,5%',forca:'+9',sharpe:'0,95',dd:'−14%',rsi:'58',w52:'185 – 224',drift:0.475},
+ '^VIX':{name:'VIX (volatilidade)',price:'22,4',day:'+3,1%',dc:'pos',ytd:'+12%',y1:'−5%',forca:'—',sharpe:'—',dd:'—',rsi:'61',w52:'12 – 38',drift:0.5}
+};
+var acoesChart=null;
+function initAcoesSelect(){var sel=document.getElementById('as-select');if(sel)sel.innerHTML=Object.keys(ASSETS).map(function(t){return '<option value="'+t+'">'+t+' · '+ASSETS[t].name+'</option>';}).join('');}
+function renderAsset(t){var a=ASSETS[t]||ASSETS.NVDA;
+ set('as-name',a.name);set('as-tk',t+' · US');set('as-price',a.price);set('as-day',a.day+' hoje');set('as-ytd',a.ytd);set('as-y1',a.y1);set('as-forca',a.forca);set('as-sharpe',a.sharpe);set('as-dd',a.dd);set('as-rsi',a.rsi);set('as-w52',a.w52);set('as-legend',t);
+ var dEl=document.getElementById('as-day');if(dEl)dEl.style.color=a.dc==='neg'?'var(--red)':'var(--green)';
+ ['as-ytd','as-y1'].forEach(function(idd){var e=document.getElementById(idd);if(e)e.className='big '+((e.textContent||'').indexOf('−')===0?'r':'g');});
+ var sel=document.getElementById('as-select');if(sel&&sel.value!==t)sel.value=t;
+ drawAcoes(a);}
+function drawAcoes(a){if(typeof LightweightCharts==='undefined')return;var el=document.getElementById('acoes-chart');if(!el||!el.clientWidth)return;
+ if(acoesChart){try{acoesChart.remove();}catch(e){}acoesChart=null;}
+ acoesChart=LightweightCharts.createChart(el,{width:el.clientWidth,height:320,
+  layout:{background:{type:'solid',color:'rgba(0,0,0,0)'},textColor:'#A4B3C6',fontFamily:'DM Mono, monospace',fontSize:11},
+  grid:{vertLines:{color:'rgba(255,255,255,0.05)'},horzLines:{color:'rgba(255,255,255,0.05)'}},
+  rightPriceScale:{borderColor:'rgba(255,255,255,0.1)'},timeScale:{borderColor:'rgba(255,255,255,0.1)'},
+  crosshair:{mode:0,vertLine:{color:'rgba(212,175,69,0.45)'},horzLine:{color:'rgba(212,175,69,0.45)'}}});
+ var s1=acoesChart.addLineSeries({color:'#3EE68B',lineWidth:2}),s2=acoesChart.addLineSeries({color:'#5AA0E6',lineWidth:1});
+ var dr=a.drift||0.47,d1=[],d2=[],v1=100,v2=100,dt=new Date(2021,0,1);
+ for(var k=0;k<1000;k++){v1*=(1+(Math.random()-dr)*0.022);v2*=(1+(Math.random()-0.49)*0.016);var ds=dt.toISOString().slice(0,10);d1.push({time:ds,value:+v1.toFixed(2)});d2.push({time:ds,value:+v2.toFixed(2)});dt.setDate(dt.getDate()+1);}
+ s1.setData(d1);s2.setData(d2);acoesChart.timeScale().fitContent();}
+initAcoesSelect();
 function crmForce(id){var c=CLIENTS.find(function(x){return x.id===id;});if(c){c.forcado=!c.forcado;renderClients();}}
 var crmEditId=null;
 function crmEdit(id){var c=CLIENTS.find(function(x){return x.id===id;});if(!c)return;crmEditId=id;
