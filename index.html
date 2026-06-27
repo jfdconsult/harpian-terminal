@@ -185,6 +185,7 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
         <div class="dd-item" onclick="go('carteira')"><i class="ti ti-wallet"></i>Carteira do cliente</div>
         <div class="dd-item" onclick="go('importar')"><i class="ti ti-upload"></i>Importar / conectar</div>
         <div class="dd-item" onclick="go('alertas')"><i class="ti ti-bell"></i>Alertas</div>
+        <div class="dd-item" onclick="openOrder()"><i class="ti ti-send"></i>Ordens <span class="tag g" style="margin-left:auto">Lynk</span></div>
       </div>
     </div>
 
@@ -511,12 +512,13 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
         <span class="eodlabel"><i class="ti ti-clock"></i>NAV do dealing day · forward pricing</span></div>
       <div class="grid g2">
         <div class="card"><h3><i class="ti ti-package"></i>Produto</h3>
-          <div class="kv"><span>ETN</span><span class="v">HPC22 · Agressivo</span></div>
-          <div class="kv"><span>ISIN</span><span class="v">XS2…HPC22</span></div>
+          <label class="muted" style="display:block;font-size:11px">Fundo (ETN)</label>
+          <select id="o-fund" class="wl-input" style="width:100%;margin-top:4px" onchange="orderGate()"></select>
+          <div class="kv mt"><span>ISIN</span><span class="v" id="o-isin">XS2…HPC22</span></div>
           <div class="kv"><span>Moeda</span><span class="v">USD</span></div>
-          <div class="kv"><span>NAV (ontem)</span><span class="v">$ 22,10 · 25/jun</span></div>
+          <div class="kv"><span>NAV (ontem)</span><span class="v" id="o-nav">$ 22,10</span></div>
           <div class="kv"><span>Cut-off / dealing</span><span class="v" style="color:var(--gold)">hoje 12:00 → NAV de hoje</span></div>
-          <div class="kv"><span>Risco do produto</span><span class="v">Risk Nº 38</span></div>
+          <div class="kv"><span>Risco do produto</span><span class="v" id="o-prodrisk">Risk Nº 38</span></div>
         </div>
         <div class="card"><h3><i class="ti ti-pencil"></i>Ordem</h3>
           <div class="seg" id="o-side" style="margin-bottom:12px"><span class="on" onclick="setSide(this,'sub')">Subscrição</span><span onclick="setSide(this,'res')">Resgate</span></div>
@@ -801,22 +803,31 @@ function renderClientDetail(id){var c=CLIENTS.find(function(x){return x.id===id;
 
 var orderSide='sub';
 function setSide(el,s){orderSide=s;var p=el.parentNode;p.querySelectorAll('span').forEach(function(x){x.classList.remove('on');});el.classList.add('on');orderGate();}
-function renderOrder(){var sel=document.getElementById('o-client');if(sel)sel.innerHTML=CLIENTS.map(function(c){return '<option value="'+c.id+'">'+c.nome+' · mandato '+c.mandato+'</option>';}).join('');orderSide='sub';var ss=document.getElementById('o-side');if(ss)ss.querySelectorAll('span').forEach(function(x,i){x.classList.toggle('on',i===0);});var os=document.getElementById('o-status');if(os)os.style.display='none';orderGate();}
-function orderForFund(){renderOrder();go('ordem');}
+function renderOrder(){
+ var fs=document.getElementById('o-fund');if(fs)fs.innerHTML=Object.keys(FUNDS).map(function(k){return '<option value="'+k+'">'+FUNDS[k].tk+' — '+FUNDS[k].mandato+'</option>';}).join('');
+ if(fs)fs.value=currentFund;
+ var sel=document.getElementById('o-client');if(sel)sel.innerHTML=CLIENTS.map(function(c){return '<option value="'+c.id+'">'+c.nome+' · mandato '+c.mandato+'</option>';}).join('');
+ orderSide='sub';var ss=document.getElementById('o-side');if(ss)ss.querySelectorAll('span').forEach(function(x,i){x.classList.toggle('on',i===0);});
+ var os=document.getElementById('o-status');if(os)os.style.display='none';orderGate();}
+function openOrder(){renderOrder();go('ordem');}
+function orderForFund(){renderOrder();var fs=document.getElementById('o-fund');if(fs)fs.value=currentFund;orderGate();go('ordem');}
 function orderFor(id){renderOrder();var sel=document.getElementById('o-client');if(sel)sel.value=id;orderGate();go('ordem');}
-function orderGate(){var sel=document.getElementById('o-client');if(!sel)return;var c=CLIENTS.find(function(x){return x.id===+sel.value;});var pr=38;var g=document.getElementById('o-gate');if(!c){g.innerHTML='';return;}
+function orderGate(){var sel=document.getElementById('o-client');if(!sel)return;var c=CLIENTS.find(function(x){return x.id===+sel.value;});
+ var fk=(document.getElementById('o-fund')||{}).value||currentFund;var fd=FUNDS[fk]||FUNDS.HPC22;var pr=fd.rn;
+ set('o-isin',fd.isin);set('o-nav',fd.nav);set('o-prodrisk','Risk Nº '+pr);
+ var g=document.getElementById('o-gate');if(!c){g.innerHTML='';return;}
  var ok=pr<=c.mandato;var col=ok?'g':'r';
  g.innerHTML='<h3><i class="ti ti-shield-check"></i>Checagem pré-ordem (suitability)</h3>'
  +'<div class="flex wrap" style="gap:9px">'
- +'<span class="tag '+col+'">Risk Nº do ETN '+pr+' '+(ok?'≤':'>')+' mandato do cliente '+c.mandato+'</span>'
+ +'<span class="tag '+col+'">Risk Nº do '+fd.tk+' '+pr+' '+(ok?'≤':'>')+' mandato do cliente '+c.mandato+'</span>'
  +'<span class="tag '+(c.rn>c.mandato?'o':'g')+'">Portfólio atual: RN '+c.rn+'</span>'
  +'<span class="tag b">Investidor profissional · elegível</span>'
  +'</div>'
- +'<div class="muted mt" style="font-size:12px">'+(ok?('Ordem alinhada — o ETP (risco '+pr+') está dentro do mandato.'+(orderSide==='sub'&&c.rn>c.mandato?' A subscrição ainda reduz o risco do portfólio (RN '+c.rn+' → em direção a '+c.mandato+').':'')):'Bloqueado: o risco do ETP excede o mandato. Requer override de compliance.')+'</div>';
+ +'<div class="muted mt" style="font-size:12px">'+(ok?('Ordem alinhada — o '+fd.tk+' (risco '+pr+') está dentro do mandato.'+(orderSide==='sub'&&c.rn>c.mandato?' A subscrição ainda reduz o risco do portfólio (RN '+c.rn+' → em direção a '+c.mandato+').':'')):'Bloqueado: o risco do produto excede o mandato. Requer override de compliance.')+'</div>';
  var rb=document.getElementById('o-review');if(rb)rb.disabled=!ok;}
-function orderReview(){var sel=document.getElementById('o-client');var c=CLIENTS.find(function(x){return x.id===+sel.value;});var v=+document.getElementById('o-value').value||0;var st=document.getElementById('o-status');st.style.display='block';
+function orderReview(){var sel=document.getElementById('o-client');var c=CLIENTS.find(function(x){return x.id===+sel.value;});var fk=(document.getElementById('o-fund')||{}).value||currentFund;var fd=FUNDS[fk]||FUNDS.HPC22;var v=+document.getElementById('o-value').value||0;var st=document.getElementById('o-status');st.style.display='block';
  st.innerHTML='<h3><i class="ti ti-clipboard-check"></i>Revisão da ordem</h3>'
- +'<div class="kv"><span>Produto</span><span class="v">HPC22 · ISIN XS2…HPC22</span></div>'
+ +'<div class="kv"><span>Produto</span><span class="v">'+fd.tk+' · ISIN '+fd.isin+'</span></div>'
  +'<div class="kv"><span>Lado</span><span class="v">'+(orderSide==='sub'?'Subscrição':'Resgate')+'</span></div>'
  +'<div class="kv"><span>Cliente</span><span class="v">'+(c?c.nome:'—')+'</span></div>'
  +'<div class="kv"><span>Valor</span><span class="v">US$ '+v.toLocaleString('pt-BR')+'</span></div>'
