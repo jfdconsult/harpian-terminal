@@ -31,6 +31,27 @@ export async function yahooChart(symbol: string, range = "1y", interval = "1d"):
   return { meta: res.meta || {}, series: { t, close } };
 }
 
+export interface OHLCSeries { t: number[]; o: number[]; h: number[]; l: number[]; c: number[]; v: number[] }
+
+// OHLC + volume (para candlestick). Aceita range/interval (timeframes).
+export async function yahooOHLC(symbol: string, range = "1y", interval = "1d"): Promise<{ meta: Record<string, unknown>; s: OHLCSeries }> {
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}`;
+  const r = await fetch(url, { headers: { "User-Agent": UA }, cache: "no-store" });
+  if (!r.ok) throw new Error(`Yahoo ${symbol} HTTP ${r.status}`);
+  const j = await r.json();
+  const res = j?.chart?.result?.[0];
+  if (!res) throw new Error(`Yahoo ${symbol} sem dados`);
+  const rawT: number[] = res.timestamp || [];
+  const q = res.indicators?.quote?.[0] || {};
+  const s: OHLCSeries = { t: [], o: [], h: [], l: [], c: [], v: [] };
+  for (let i = 0; i < rawT.length; i++) {
+    if (q.close?.[i] != null && q.open?.[i] != null) {
+      s.t.push(rawT[i]); s.o.push(q.open[i]); s.h.push(q.high[i]); s.l.push(q.low[i]); s.c.push(q.close[i]); s.v.push(q.volume?.[i] || 0);
+    }
+  }
+  return { meta: res.meta || {}, s };
+}
+
 // ---------- Métricas (funções puras) ----------
 const last = (a: number[]) => a[a.length - 1];
 const mean = (a: number[]) => a.reduce((s, x) => s + x, 0) / (a.length || 1);

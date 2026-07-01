@@ -18,6 +18,7 @@ import Importar from "./screens/Importar";
 import Integracoes from "./screens/Integracoes";
 import Marca from "./screens/Marca";
 import Config from "./screens/Config";
+import ApiIntegracao from "./screens/ApiIntegracao";
 import Tutorial from "./screens/Tutorial";
 import SocialRadar from "./screens/SocialRadar";
 import NewsBroadcast from "./screens/NewsBroadcast";
@@ -65,6 +66,7 @@ export default function Terminal() {
       case "integracoes": return <Integracoes />;
       case "marca": return <Marca />;
       case "config": return <Config />;
+      case "api": return <ApiIntegracao />;
       case "tutorial": return <Tutorial go={go} />;
       default: return <Painel go={go} />;
     }

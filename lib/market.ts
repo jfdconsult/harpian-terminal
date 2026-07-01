@@ -36,16 +36,33 @@ export const MARKET_GROUPS: Record<string, SymbolDef[]> = {
     { symbol: "XLY", name: "Consumo discric." },
     { symbol: "XLI", name: "Industrial" },
   ],
+  "Commodities": [
+    { symbol: "GC=F", name: "Ouro (futuro)" },
+    { symbol: "SI=F", name: "Prata (futuro)" },
+    { symbol: "CL=F", name: "Petróleo WTI" },
+    { symbol: "BZ=F", name: "Petróleo Brent" },
+    { symbol: "NG=F", name: "Gás natural" },
+    { symbol: "HG=F", name: "Cobre" },
+  ],
 };
 
-// Seletor da tela "Ações & índices US"
-export const ASSET_LIST: SymbolDef[] = [
-  ...MARKET_GROUPS["Ações"],
-  { symbol: "^GSPC", name: "S&P 500" },
-  { symbol: "^NDX", name: "Nasdaq 100" },
-  { symbol: "QQQ", name: "Invesco Nasdaq 100" },
-  { symbol: "GLD", name: "SPDR Gold" },
+// Seletor da tela "Ações, ETFs & Commodities" — agrupado (optgroup)
+export const ASSET_GROUPS: { label: string; items: SymbolDef[] }[] = [
+  { label: "Ações", items: MARKET_GROUPS["Ações"] },
+  { label: "Índices", items: MARKET_GROUPS["Índices"] },
+  { label: "ETFs", items: MARKET_GROUPS["ETFs"] },
+  { label: "Setores", items: MARKET_GROUPS["Setores"] },
+  { label: "Commodities", items: MARKET_GROUPS["Commodities"] },
 ];
+export const ASSET_LIST: SymbolDef[] = ASSET_GROUPS.flatMap((g) => g.items);
+
+// Mapa Yahoo → símbolo TradingView (para o widget/deep-link).
+const TV_MAP: Record<string, string> = {
+  "^GSPC": "SP:SPX", "^NDX": "NASDAQ:NDX", "^DJI": "DJ:DJI", "^RUT": "TVC:RUT2K", "^SOX": "NASDAQ:SOX", "^VIX": "TVC:VIX",
+  "GC=F": "COMEX:GC1!", "SI=F": "COMEX:SI1!", "CL=F": "NYMEX:CL1!", "BZ=F": "NYMEX:BZ1!", "NG=F": "NYMEX:NG1!", "HG=F": "COMEX:HG1!",
+};
+export const tvSymbol = (s: string) => TV_MAP[s] || s.replace("^", "").replace("=F", "");
+
 
 // Carteira exemplo do cliente (agressiva) — o Risco de portfólio sai daqui, ao vivo do Yahoo.
 export const EXAMPLE_PORTFOLIO: { symbol: string; weight: number }[] = [

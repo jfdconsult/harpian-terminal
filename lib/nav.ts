@@ -18,6 +18,7 @@ export type ScreenId =
   | "integracoes"
   | "marca"
   | "config"
+  | "api"
   | "institutional"
   | "cot-sentiment"
   | "cot-legacy"
@@ -137,6 +138,7 @@ export const MENUS: Menu[] = [
       {
         items: [
           { id: "integracoes", label: "Integrações", icon: "ti-plug" },
+          { id: "api", label: "API & Integração", icon: "ti-code", tag: "dev" },
           { id: "marca", label: "Marca (white-label)", icon: "ti-palette", tag: "novo" },
           { id: "config", label: "Configurações", icon: "ti-adjustments" },
         ],
