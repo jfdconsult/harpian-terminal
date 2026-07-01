@@ -1,41 +1,44 @@
 "use client";
 
+// Ordem: Risk-Off → Cautela → Neutro → Risk-On (defensivo à esquerda, exposto à direita).
 const STATES = [
-  { key: "BULL", label: "Risk-On", color: "#2ECC71" },
-  { key: "NEUTRO", label: "Neutro", color: "#4A90D9" },
-  { key: "CAUTELA", label: "Cautela", color: "#F39C12" },
   { key: "BEAR", label: "Risk-Off", color: "#E74C3C" },
+  { key: "CAUTELA", label: "Cautela", color: "#F39C12" },
+  { key: "NEUTRO", label: "Neutro", color: "#4A90D9" },
+  { key: "BULL", label: "Risk-On", color: "#2ECC71" },
 ];
 const CURRENT = "BULL";
 
-// Sinais e distância ao gatilho de defesa (%: quanto falta para armar/desarmar).
-const SIGNALS = [
-  { name: "Momentum 126d", value: "+12,4%", dist: 74, tone: "g" },
-  { name: "Slope MA200", value: "+5,1%", dist: 61, tone: "g" },
-  { name: "VIX", value: "16,4", dist: 38, tone: "o" },
-  { name: "Breadth (% > MA50)", value: "62%", dist: 58, tone: "g" },
-  { name: "Crédito HY OAS", value: "3,1%", dist: 44, tone: "o" },
-];
+// Leitura de alto nível (cliente-safe: o QUE significa, não COMO é detectado).
+const MEANING: Record<string, string> = {
+  BULL: "Ambiente favorável ao risco. Os fundos operam com exposição plena a ações; a camada de defesa fica em prontidão, pronta para reduzir risco se o regime virar.",
+  NEUTRO: "Sem tendência dominante. Exposição moderada e monitoramento próximo — a postura pode mudar rápido nos dois sentidos.",
+  CAUTELA: "Sinais de deterioração. Os fundos começam a reduzir risco e a reforçar a proteção.",
+  BEAR: "Ambiente adverso. Defesa ativa: mais caixa e ativos defensivos, com exposição a ações reduzida.",
+};
 
-const TRANSITIONS = [
-  { date: "2026-05-02", from: "Cautela", to: "Risk-On", note: "defesa desarmada — momentum e breadth reagiram" },
-  { date: "2026-03-10", from: "Risk-On", to: "Cautela", note: "VIX e crédito sinalizaram estresse" },
-  { date: "2025-11-21", from: "Neutro", to: "Risk-On", note: "slope MA200 virou positivo" },
+// Postura por regime — resultado (o que o fundo faz), sem revelar o motor.
+const POSTURE = [
+  { r: "Risk-On", eq: "Plena", def: "Em prontidão", tone: "g" },
+  { r: "Neutro", eq: "Moderada", def: "Em prontidão", tone: "b" },
+  { r: "Cautela", eq: "Reduzida", def: "Ativando", tone: "o" },
+  { r: "Risk-Off", eq: "Baixa", def: "Ativa", tone: "r" },
 ];
 
 export default function Regime() {
+  const cur = STATES.find((s) => s.key === CURRENT)!;
   return (
     <div className="screen">
-      <div className="crumb">Mercado › <b>Sinais &amp; regime</b></div>
-      <div className="h1">Sinais &amp; regime</div>
-      <div className="sub">Nosso motor proprietário de detecção de regime — o diferencial que o Bloomberg não tem.</div>
+      <div className="crumb">Mercado › <b>Regime de mercado</b></div>
+      <div className="h1">Regime de mercado</div>
+      <div className="sub">A leitura de regime que orienta a postura de defesa dos fundos. (O método de detecção é proprietário.)</div>
 
       <div className="grid g2 mb">
         <div className="card">
-          <h3><i className="ti ti-gauge" />Regime de mercado · 4 estados</h3>
+          <h3><i className="ti ti-gauge" />Regime atual</h3>
           <div style={{ textAlign: "center", padding: "6px 0 2px" }}>
-            <div className="big g" style={{ fontSize: 30 }}>RISK-ON</div>
-            <div className="muted mt">CRS 0,489 · defesa desarmada</div>
+            <div className="big" style={{ fontSize: 30, color: cur.color }}>{cur.label.toUpperCase()}</div>
+            <div className="muted mt">defesa desarmada · exposição plena</div>
           </div>
           <div style={{ display: "flex", gap: 6, marginTop: 14 }}>
             {STATES.map((s) => {
@@ -48,47 +51,34 @@ export default function Regime() {
               );
             })}
           </div>
+          <div className="muted mt" style={{ textAlign: "center", fontSize: 11 }}>Em Risk-On desde 02/05/2026.</div>
         </div>
 
         <div className="card">
-          <h3><i className="ti ti-temperature" />Sinais · distância ao gatilho</h3>
-          {SIGNALS.map((sig) => (
-            <div key={sig.name} style={{ marginBottom: 11 }}>
-              <div className="flex between" style={{ marginBottom: 4 }}>
-                <span style={{ fontSize: 12.5, color: "var(--tx2)" }}>{sig.name}</span>
-                <span className="v" style={{ fontFamily: "var(--mono)", fontSize: 12, color: sig.tone === "g" ? "var(--green)" : "var(--orange)" }}>{sig.value}</span>
-              </div>
-              <div style={{ height: 6, borderRadius: 3, background: "#08182c", overflow: "hidden" }}>
-                <div style={{ width: `${sig.dist}%`, height: "100%", background: sig.tone === "g" ? "var(--green)" : "var(--orange)", opacity: 0.85 }} />
-              </div>
-            </div>
-          ))}
-          <div className="muted mt" style={{ fontSize: 11 }}>Barra = folga até o gatilho de defesa. Cheia = longe do gatilho (mercado saudável).</div>
+          <h3><i className="ti ti-info-circle" />O que isso significa para a sua carteira</h3>
+          <div style={{ fontSize: 14, color: "var(--tx)", lineHeight: 1.6 }}>{MEANING[CURRENT]}</div>
+          <div className="pills mt">
+            <span className="pill g"><span className="pd" />Exposição plena</span>
+            <span className="pill g"><span className="pd" />Defesa em prontidão</span>
+          </div>
         </div>
       </div>
 
-      <div className="grid g2">
-        <div className="card">
-          <h3><i className="ti ti-thermometer" />Temperatura de mercado</h3>
-          <div className="pills">
-            <span className="pill g"><span className="pd" />Setor momentum</span>
-            <span className="pill g"><span className="pd" />RPM momentum</span>
-            <span className="pill o"><span className="pd" />Social radar</span>
-          </div>
-          <div className="muted mt" style={{ lineHeight: 1.6 }}>Termômetro ambiental (HSA v7) combina momentum de setores, RPM e o Social Radar num só leitor de ambiente.</div>
-        </div>
-        <div className="card">
-          <h3><i className="ti ti-arrows-exchange" />Transições de regime</h3>
-          {TRANSITIONS.map((t, i) => (
-            <div key={i} className="kv" style={{ alignItems: "flex-start" }}>
-              <span style={{ display: "flex", flexDirection: "column" }}>
-                <span style={{ color: "var(--tx)", fontSize: 13 }}>{t.from} → <b style={{ color: "var(--gold)" }}>{t.to}</b></span>
-                <span className="muted" style={{ fontSize: 11 }}>{t.note}</span>
-              </span>
-              <span className="muted" style={{ fontFamily: "var(--mono)", fontSize: 11, whiteSpace: "nowrap" }}>{t.date}</span>
-            </div>
-          ))}
-        </div>
+      <div className="card">
+        <h3><i className="ti ti-shield-half" />Postura dos fundos por regime</h3>
+        <table>
+          <thead><tr><th>Regime</th><th>Exposição a ações</th><th>Camada de defesa</th></tr></thead>
+          <tbody>
+            {POSTURE.map((p) => (
+              <tr key={p.r} style={{ background: p.r === "Risk-On" ? "rgba(46,204,113,.05)" : undefined }}>
+                <td><span className={`tag ${p.tone}`}>{p.r}</span></td>
+                <td style={{ color: "var(--tx)" }}>{p.eq}</td>
+                <td style={{ color: "var(--tx2)" }}>{p.def}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="muted mt" style={{ fontSize: 11 }}>Mostra a postura que cada regime dispara nos fundos — não os sinais internos que definem o regime.</div>
       </div>
     </div>
   );

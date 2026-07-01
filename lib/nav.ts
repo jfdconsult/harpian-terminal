@@ -94,7 +94,7 @@ export const MENUS: Menu[] = [
     columns: [
       {
         items: [
-          { id: "regime", label: "Sinais & regime", icon: "ti-activity" },
+          { id: "regime", label: "Regime de mercado", icon: "ti-activity" },
           { id: "cotacoes", label: "Cotações (FastTrack)", icon: "ti-table", tag: "novo" },
           { id: "acoes", label: "Ações & índices US", icon: "ti-chart-candle" },
           { id: "noticias", label: "Notícias", icon: "ti-news" },

@@ -7,11 +7,11 @@ type Candle = { time: number; open: number; high: number; low: number; close: nu
 type Vol = { time: number; value: number; up: boolean };
 export interface Studies { ema: boolean; dema: boolean; tema: boolean; sma: boolean; bb: boolean; vol: boolean; rsi: boolean; mom: boolean }
 
-export default function AssetChart({ candles, volume, studies }: { candles: Candle[]; volume: Vol[]; studies: Studies }) {
+export default function AssetChart({ candles, volume, studies, compareLine }: { candles: Candle[]; volume: Vol[]; studies: Studies; compareLine?: { time: number; value: number }[] | null }) {
   const mainRef = useRef<HTMLDivElement>(null);
   const rsiRef = useRef<HTMLDivElement>(null);
   const momRef = useRef<HTMLDivElement>(null);
-  const key = JSON.stringify(studies);
+  const key = JSON.stringify(studies) + (compareLine ? `|c${compareLine.length}` : "");
 
   useEffect(() => {
     if (!mainRef.current || !candles.length) return;
@@ -50,6 +50,12 @@ export default function AssetChart({ candles, volume, studies }: { candles: Cand
     if (studies.sma) addLine(sma(closes, 50), "#7d96b3", 1);
     if (studies.bb) { const bb = bollinger(closes, 20, 2); addLine(bb.upper, "#7FA8C9", 1, true); addLine(bb.lower, "#7FA8C9", 1, true); }
 
+    // Linha de comparação (benchmark rebaseado ao nível do ativo)
+    if (compareLine && compareLine.length) {
+      const cmp = main.addLineSeries({ color: "#C77DFF", lineWidth: 2, priceLineVisible: false, lastValueVisible: true });
+      cmp.setData(compareLine as never);
+    }
+
     if (studies.rsi && rsiRef.current) {
       const rc = mk(rsiRef.current, 110); charts.push(rc);
       const rs = rc.addLineSeries({ color: "#C9A02C", lineWidth: 1, priceLineVisible: false, lastValueVisible: true });
@@ -77,7 +83,7 @@ export default function AssetChart({ candles, volume, studies }: { candles: Cand
     const ro = new ResizeObserver(() => { const w = mainRef.current?.clientWidth || 600; charts.forEach((c) => c.applyOptions({ width: w })); });
     ro.observe(mainRef.current);
     return () => { ro.disconnect(); charts.forEach((c) => c.remove()); };
-  }, [candles, key]);
+  }, [candles, key, compareLine]);
 
   return (
     <div>

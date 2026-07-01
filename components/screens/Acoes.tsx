@@ -9,7 +9,7 @@ const AssetChart = dynamic(() => import("./AssetChart"), { ssr: false });
 const TradingViewWidget = dynamic(() => import("./TradingViewWidget"), { ssr: false });
 
 interface Candle { time: number; open: number; high: number; low: number; close: number }
-interface CandlesResp { symbol: string; name: string; candles: Candle[]; volume: { time: number; value: number; up: boolean }[]; error?: boolean }
+interface CandlesResp { symbol: string; name: string; candles: Candle[]; volume: { time: number; value: number; up: boolean }[]; compareLine?: { time: number; value: number }[] | null; compareName?: string | null; error?: boolean }
 interface AssetResp { name: string; price: number; dayPct: number | null; ytdPct: number | null; yPct: number | null; sharpe: number | null; maxDD: number | null; rsi: number | null; w52: { lo: number; hi: number } }
 
 const RANGES = [{ k: "3mo", l: "3M" }, { k: "6mo", l: "6M" }, { k: "1y", l: "1A" }, { k: "2y", l: "2A" }, { k: "5y", l: "5A" }];
@@ -19,12 +19,20 @@ const INDS: { key: keyof Studies; label: string }[] = [
   { key: "sma", label: "SMA 50" }, { key: "bb", label: "Bollinger" }, { key: "vol", label: "Volume" },
   { key: "rsi", label: "RSI" }, { key: "mom", label: "Momento" },
 ];
+const COMPARE = [
+  { k: "", l: "— sem comparação" },
+  { k: "SPY", l: "S&P 500" },
+  { k: "QQQ", l: "Nasdaq 100" },
+  { k: "XLK", l: "Tecnologia (XLK)" },
+  { k: "BITO", l: "Cripto (Bitcoin)" },
+];
 
 export default function Acoes() {
   const [symbol, setSymbol] = useState("NVDA");
   const [range, setRange] = useState("1y");
   const [interval, setInterval] = useState("1d");
   const [mode, setMode] = useState<"harpian" | "tv">("harpian");
+  const [compare, setCompare] = useState("");
   const [studies, setStudies] = useState<Studies>({ ema: true, dema: true, tema: false, sma: false, bb: false, vol: true, rsi: false, mom: true });
   const [cd, setCd] = useState<CandlesResp | null>(null);
   const [asset, setAsset] = useState<AssetResp | null>(null);
@@ -37,11 +45,11 @@ export default function Acoes() {
 
   useEffect(() => {
     setLoading(true); setErr(false);
-    fetch(`/api/candles?symbol=${encodeURIComponent(symbol)}&range=${range}&interval=${interval}`)
+    fetch(`/api/candles?symbol=${encodeURIComponent(symbol)}&range=${range}&interval=${interval}${compare ? `&compare=${encodeURIComponent(compare)}` : ""}`)
       .then((r) => r.json())
       .then((j: CandlesResp) => { if (j.error) setErr(true); else setCd(j); setLoading(false); })
       .catch(() => { setErr(true); setLoading(false); });
-  }, [symbol, range, interval]);
+  }, [symbol, range, interval, compare]);
 
   const toggle = (k: keyof Studies) => setStudies((s) => ({ ...s, [k]: !s[k] }));
   const name = asset?.name || cd?.name || symbol;
@@ -91,17 +99,25 @@ export default function Acoes() {
         </div>
 
         {mode === "harpian" && (
-          <div className="flex wrap mb" style={{ gap: 6 }}>
-            <span className="flabel" style={{ marginRight: 2, alignSelf: "center" }}>Indicadores:</span>
-            {INDS.map((ind) => (
-              <button key={ind.key} onClick={() => toggle(ind.key)}
-                style={{ fontFamily: "var(--mono)", fontSize: 10.5, padding: "4px 10px", borderRadius: 6, cursor: "pointer",
-                  border: `1px solid ${studies[ind.key] ? "rgba(201,160,44,.4)" : "var(--line2)"}`,
-                  background: studies[ind.key] ? "rgba(201,160,44,.15)" : "transparent",
-                  color: studies[ind.key] ? "var(--gold)" : "var(--tx3)" }}>
-                {ind.label}
-              </button>
-            ))}
+          <div className="flex between wrap mb" style={{ gap: 10 }}>
+            <div className="flex wrap" style={{ gap: 6, alignItems: "center" }}>
+              <span className="flabel" style={{ marginRight: 2 }}>Indicadores:</span>
+              {INDS.map((ind) => (
+                <button key={ind.key} onClick={() => toggle(ind.key)}
+                  style={{ fontFamily: "var(--mono)", fontSize: 10.5, padding: "4px 10px", borderRadius: 6, cursor: "pointer",
+                    border: `1px solid ${studies[ind.key] ? "rgba(201,160,44,.4)" : "var(--line2)"}`,
+                    background: studies[ind.key] ? "rgba(201,160,44,.15)" : "transparent",
+                    color: studies[ind.key] ? "var(--gold)" : "var(--tx3)" }}>
+                  {ind.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex" style={{ gap: 6, alignItems: "center" }}>
+              <span className="flabel">Comparar com:</span>
+              <select className="fsel" value={compare} onChange={(e) => setCompare(e.target.value)}>
+                {COMPARE.map((c) => <option key={c.k} value={c.k}>{c.l}</option>)}
+              </select>
+            </div>
           </div>
         )}
 
@@ -112,7 +128,7 @@ export default function Acoes() {
         ) : loading || !cd ? (
           <div className="muted" style={{ padding: 80, textAlign: "center" }}>Carregando candles do Yahoo…</div>
         ) : (
-          <AssetChart candles={cd.candles} volume={cd.volume} studies={studies} />
+          <AssetChart candles={cd.candles} volume={cd.volume} studies={studies} compareLine={cd.compareLine} />
         )}
 
         <div className="legend" style={{ marginTop: 10 }}>
@@ -121,6 +137,7 @@ export default function Acoes() {
               <i><b style={{ background: "#4A90D9" }} />EMA</i>
               <i><b style={{ background: "#C9A02C" }} />DEMA</i>
               <i><b style={{ background: "#2ECC71" }} />TEMA</i>
+              {cd?.compareName && <i><b style={{ background: "#C77DFF" }} />vs {cd.compareName}</i>}
               <span className="muted" style={{ marginLeft: "auto" }}>Candles · Yahoo Finance · indicadores DSPT locais</span>
             </>
           ) : (
