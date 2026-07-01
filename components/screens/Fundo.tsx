@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { FUNDS, FUND_LIST, type Fund, type KV } from "@/lib/funds";
 import type { ScreenId } from "@/lib/nav";
+import RiskJourney from "./RiskJourney";
 
 type Tab = "visao" | "perf" | "risco" | "defesa" | "econ" | "comprar";
 const TABS: { id: Tab; label: string; icon: string }[] = [
@@ -23,29 +24,6 @@ function KVGrid({ rows }: { rows: KV[] }) {
         </div>
       ))}
     </div>
-  );
-}
-
-// Underwater curve ilustrativa (leitura visual do reframing de risco)
-function UnderwaterCurve() {
-  const w = 720, h = 150;
-  const pts = [0, -3, -8, -28, -20, -10, -4, 0, -6, -17, -8, -2, 0, -12, -28, -22, -14, -6, 0, -2];
-  const step = w / (pts.length - 1);
-  const y = (v: number) => (Math.abs(v) / 30) * (h - 20);
-  let d = `M 0 0`;
-  pts.forEach((v, i) => { d += ` L ${i * step} ${y(v)}`; });
-  d += ` L ${w} 0 Z`;
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} style={{ width: "100%", height: "auto", display: "block" }}>
-      <defs>
-        <linearGradient id="uw" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--red)" stopOpacity="0.05" />
-          <stop offset="100%" stopColor="var(--red)" stopOpacity="0.35" />
-        </linearGradient>
-      </defs>
-      <line x1="0" y1="1" x2={w} y2="1" stroke="var(--line2)" strokeWidth="1" />
-      <path d={d} fill="url(#uw)" stroke="var(--red)" strokeWidth="1.2" strokeOpacity="0.6" />
-    </svg>
   );
 }
 
@@ -159,13 +137,7 @@ export default function Fundo({ fundId, onSelectFund, go }: { fundId: string; on
       {tab === "risco" && (
         fund.journeyRisk.length === 0 ? <Empty label="Análise de risco do HPC11" /> : (
           <>
-            <div className="card mb">
-              <h3><i className="ti ti-wave-sine" />A jornada, visualizada · curva submersa (drawdown vs. topo anterior)</h3>
-              <div className="muted mb" style={{ lineHeight: 1.6 }}>O drawdown máximo é uma foto, não um filme: mostra o quanto o capital caiu, mas não por quanto tempo ficou abaixo do topo. Cada área mede a duração submersa, não só a profundidade.</div>
-              <UnderwaterCurve />
-              <div className="muted mt" style={{ fontSize: 10, textAlign: "right" }}>Leitura visual ilustrativa do estudo CORE22+.</div>
-            </div>
-            <div className="grid g2">
+            <div className="grid g2 mb">
               <div className="card">
                 <h3><i className="ti ti-clock" />Dimensão 1 · risco da jornada</h3>
                 <div className="muted mb">Quedas ≥ 5% (1990–2025)</div>
@@ -192,6 +164,7 @@ export default function Fundo({ fundId, onSelectFund, go }: { fundId: string; on
                 <div className="muted mt" style={{ lineHeight: 1.6 }}>{fund.endpointNote}</div>
               </div>
             </div>
+            <RiskJourney />
           </>
         )
       )}
