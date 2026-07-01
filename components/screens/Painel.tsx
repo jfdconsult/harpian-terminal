@@ -155,7 +155,10 @@ function SortableCard({ id, editing, onRemove, children }: { id: string; editing
 export default function Painel({ go }: { go: (id: ScreenId, param?: string) => void }) {
   const [widgets, setWidgets] = useState<string[]>(DEFAULT_WIDGETS);
   const [editing, setEditing] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+
+  const addWidget = (id: string) => { setWidgets((cur) => (cur.includes(id) ? cur : [...cur, id])); setShowAdd(false); };
 
   function onDragEnd(e: DragEndEvent) {
     const { active, over } = e;
@@ -173,15 +176,27 @@ export default function Painel({ go }: { go: (id: ScreenId, param?: string) => v
         <div className="flex" style={{ gap: 8, alignItems: "center" }}>
           {editing && (
             <>
-              <select className="fsel" style={{ fontSize: 12, padding: "7px 10px" }} value="" onChange={(e) => { if (e.target.value) setWidgets((w) => [...w, e.target.value]); }}>
-                <option value="">+ Adicionar módulo…</option>
-                {available.map((w) => <option key={w.id} value={w.id}>{w.title}</option>)}
-              </select>
+              <div style={{ position: "relative" }}>
+                <button className="btn ghost" style={{ padding: "6px 11px", fontSize: 12 }} onClick={() => setShowAdd((v) => !v)}>
+                  <i className="ti ti-plus" />Adicionar módulo<i className="ti ti-chevron-down" style={{ fontSize: 12 }} />
+                </button>
+                {showAdd && (
+                  <div style={{ position: "absolute", top: "100%", right: 0, marginTop: 4, background: "var(--panel)", border: "1px solid var(--line2)", borderRadius: 10, boxShadow: "0 18px 50px rgba(0,0,0,.55)", padding: 6, minWidth: 230, zIndex: 60, maxHeight: 340, overflowY: "auto" }}>
+                    {available.length === 0
+                      ? <div className="muted" style={{ padding: 10, fontSize: 12 }}>Todos os módulos já estão no painel.</div>
+                      : available.map((w) => (
+                        <div key={w.id} className="dd-item" onClick={() => addWidget(w.id)}>
+                          <i className={`ti ${w.icon}`} />{w.title}
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
               <button className="btn ghost" style={{ padding: "6px 10px", fontSize: 12 }} onClick={() => setWidgets(DEFAULT_WIDGETS)} title="Restaurar padrão"><i className="ti ti-rotate" /></button>
             </>
           )}
           <button
-            onClick={() => setEditing((v) => !v)}
+            onClick={() => { setEditing((v) => !v); setShowAdd(false); }}
             title={editing ? "Concluir" : "Personalizar painel"}
             style={{
               display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer",
