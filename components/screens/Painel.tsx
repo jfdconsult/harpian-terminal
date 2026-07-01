@@ -1,22 +1,19 @@
 "use client";
 import { useState, type ReactNode } from "react";
 import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
+  DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent,
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { ScreenId } from "@/lib/nav";
+import { SR_POSTS } from "@/lib/data";
+import { CLIENTS, brl } from "@/lib/clients";
 
 interface WidgetDef {
   id: string;
   title: string;
   icon: string;
-  render: (go: (id: ScreenId) => void) => ReactNode;
+  render: (go: (id: ScreenId, param?: string) => void) => ReactNode;
 }
 
 const CATALOG: Record<string, WidgetDef> = {
@@ -26,7 +23,7 @@ const CATALOG: Record<string, WidgetDef> = {
       <>
         <div className="flex between mb"><span>HPC22 · Agressivo</span><span className="big g" style={{ fontSize: 24 }}>+2,31%</span></div>
         <div className="flex between"><span>HPC11 · I.G.</span><span className="big g" style={{ fontSize: 24 }}>+1,44%</span></div>
-        <div className="mt"><button className="btn ghost" onClick={() => go("fundo")}><i className="ti ti-arrow-right" />Abrir HPC22</button></div>
+        <div className="mt"><button className="btn ghost" onClick={() => go("fundo", "HPC22")}><i className="ti ti-arrow-right" />Abrir HPC22</button></div>
       </>
     ),
   },
@@ -43,16 +40,14 @@ const CATALOG: Record<string, WidgetDef> = {
   },
   regime: {
     id: "regime", title: "Regime & Defesa", icon: "ti-activity",
-    render: () => (
+    render: (go) => (
       <div style={{ textAlign: "center", padding: "8px 0" }}>
         <div className="big g" style={{ fontSize: 30 }}>RISK-ON</div>
-        <div className="muted mt">exposição de risco · 96%</div>
+        <div className="muted mt">defesa desarmada · exposição plena</div>
         <div style={{ height: 8, borderRadius: 4, background: "#08182c", marginTop: 12, overflow: "hidden" }}>
           <div style={{ width: "96%", height: "100%", background: "linear-gradient(90deg,var(--gold),var(--green))" }} />
         </div>
-        <div className="pills" style={{ justifyContent: "center", marginTop: 12 }}>
-          <span className="pill g"><span className="pd" />defesa armada</span>
-        </div>
+        <div className="mt"><button className="btn ghost" onClick={() => go("regime")}><i className="ti ti-arrow-right" />Ver regime</button></div>
       </div>
     ),
   },
@@ -69,11 +64,12 @@ const CATALOG: Record<string, WidgetDef> = {
   },
   cotacoes: {
     id: "cotacoes", title: "Cotações rápidas", icon: "ti-table",
-    render: () => (
+    render: (go) => (
       <>
         {[["S&P 500", "5.241 +0,82%", "var(--green)"], ["NASDAQ", "18.382 +1,21%", "var(--green)"], ["IBOV", "126.480 −0,54%", "var(--red)"], ["USD/BRL", "5,14 +0,58%", "var(--orange)"]].map(([k, v, c]) => (
           <div className="kv" key={k}><span>{k}</span><span className="v" style={{ color: c }}>{v}</span></div>
         ))}
+        <div className="mt"><button className="btn ghost" onClick={() => go("cotacoes")}><i className="ti ti-arrow-right" />Ver cotações</button></div>
       </>
     ),
   },
@@ -84,6 +80,55 @@ const CATALOG: Record<string, WidgetDef> = {
         <div className="kv"><span>HPC22 · Agressivo</span><span className="v">62%</span></div>
         <div className="kv"><span>HPC11 · I.G.</span><span className="v">28%</span></div>
         <div className="kv"><span>Caixa</span><span className="v">10%</span></div>
+      </>
+    ),
+  },
+  social: {
+    id: "social", title: "Social Radar", icon: "ti-radar-2",
+    render: (go) => (
+      <>
+        {SR_POSTS.slice(0, 3).map((p) => (
+          <div className="kv" key={p.id}><span style={{ fontSize: 12.5, color: "var(--tx2)" }}>{p.account}</span><span className="muted" style={{ fontSize: 10 }}>{p.impact}</span></div>
+        ))}
+        <div className="mt"><button className="btn ghost" onClick={() => go("social-radar")}><i className="ti ti-arrow-right" />Ver Social Radar</button></div>
+      </>
+    ),
+  },
+  clientes: {
+    id: "clientes", title: "Clientes", icon: "ti-users",
+    render: (go) => {
+      const aum = CLIENTS.reduce((s, c) => s + c.current, 0);
+      const fora = CLIENTS.filter((c) => c.riskNumber > c.mandate).length;
+      return (
+        <>
+          <div className="kv"><span>AUM total</span><span className="v">{brl(aum)}</span></div>
+          <div className="kv"><span>Clientes</span><span className="v">{CLIENTS.length}</span></div>
+          <div className="kv"><span>Fora do mandato</span><span className="v" style={{ color: fora ? "var(--red)" : "var(--green)" }}>{fora}</span></div>
+          <div className="mt"><button className="btn ghost" onClick={() => go("clientes")}><i className="ti ti-arrow-right" />Ver clientes</button></div>
+        </>
+      );
+    },
+  },
+  alertas: {
+    id: "alertas", title: "Alertas", icon: "ti-bell",
+    render: (go) => {
+      const fora = CLIENTS.filter((c) => c.riskNumber > c.mandate);
+      return (
+        <>
+          {fora.slice(0, 3).map((c) => (<div className="kv" key={c.id}><span style={{ fontSize: 12.5 }}><span className="tag r">risco</span> {c.name}</span></div>))}
+          <div className="mt"><button className="btn ghost" onClick={() => go("alertas")}><i className="ti ti-arrow-right" />Ver alertas</button></div>
+        </>
+      );
+    },
+  },
+  risco: {
+    id: "risco", title: "Risco · 4 níveis", icon: "ti-scale",
+    render: (go) => (
+      <>
+        <div className="kv"><span>Produto (HPC22)</span><span className="v" style={{ color: "var(--orange)" }}>38</span></div>
+        <div className="kv"><span>Mandato (teto)</span><span className="v">55</span></div>
+        <div className="kv"><span>Cliente (tolera)</span><span className="v">62</span></div>
+        <div className="mt"><button className="btn ghost" onClick={() => go("risco")}><i className="ti ti-arrow-right" />Ver os 4 níveis</button></div>
       </>
     ),
   },
@@ -107,7 +152,7 @@ function SortableCard({ id, editing, onRemove, children }: { id: string; editing
   );
 }
 
-export default function Painel({ go }: { go: (id: ScreenId) => void }) {
+export default function Painel({ go }: { go: (id: ScreenId, param?: string) => void }) {
   const [widgets, setWidgets] = useState<string[]>(DEFAULT_WIDGETS);
   const [editing, setEditing] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
@@ -123,27 +168,32 @@ export default function Painel({ go }: { go: (id: ScreenId) => void }) {
   return (
     <div className={`screen${editing ? " editing" : ""}`}>
       <div className="crumb"><b>Painel</b></div>
-      <div className="h1">Bom dia, João</div>
-      <div className="flex between mb">
-        <div className="sub" style={{ margin: 0 }}>O essencial do dia. Arraste os cartões para reorganizar.</div>
-        <div className="flex" style={{ gap: 8 }}>
-          {editing && <button className="btn ghost" onClick={() => setWidgets(DEFAULT_WIDGETS)}><i className="ti ti-rotate" />Restaurar</button>}
-          <button className="btn" onClick={() => setEditing((v) => !v)}>
-            <i className={`ti ${editing ? "ti-check" : "ti-layout-grid-add"}`} />{editing ? "Concluir" : "Personalizar painel"}
+      <div className="flex between" style={{ alignItems: "flex-start" }}>
+        <div><div className="h1">Bom dia, João</div><div className="sub">O essencial do dia. {editing ? "Arraste para reorganizar, adicione módulos ou remova." : "Tudo o mais está a um clique nos menus do topo."}</div></div>
+        <div className="flex" style={{ gap: 8, alignItems: "center" }}>
+          {editing && (
+            <>
+              <select className="fsel" style={{ fontSize: 12, padding: "7px 10px" }} value="" onChange={(e) => { if (e.target.value) setWidgets((w) => [...w, e.target.value]); }}>
+                <option value="">+ Adicionar módulo…</option>
+                {available.map((w) => <option key={w.id} value={w.id}>{w.title}</option>)}
+              </select>
+              <button className="btn ghost" style={{ padding: "6px 10px", fontSize: 12 }} onClick={() => setWidgets(DEFAULT_WIDGETS)} title="Restaurar padrão"><i className="ti ti-rotate" /></button>
+            </>
+          )}
+          <button
+            onClick={() => setEditing((v) => !v)}
+            title={editing ? "Concluir" : "Personalizar painel"}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer",
+              fontSize: 12, padding: "6px 11px", borderRadius: 7, fontFamily: "var(--sans)",
+              border: `1px solid ${editing ? "var(--gold)" : "var(--line2)"}`,
+              background: editing ? "rgba(201,160,44,.15)" : "transparent",
+              color: editing ? "var(--gold)" : "var(--tx3)",
+            }}>
+            <i className={`ti ${editing ? "ti-check" : "ti-layout-grid-add"}`} />{editing ? "Concluir" : "Personalizar"}
           </button>
         </div>
       </div>
-
-      {editing && available.length > 0 && (
-        <div className="widget-lib">
-          <div className="muted mb">Adicionar ao painel:</div>
-          {available.map((w) => (
-            <span className="wl-item" key={w.id} onClick={() => setWidgets((cur) => [...cur, w.id])}>
-              <i className={`ti ${w.icon}`} />{w.title}
-            </span>
-          ))}
-        </div>
-      )}
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={widgets} strategy={rectSortingStrategy}>
@@ -161,6 +211,10 @@ export default function Painel({ go }: { go: (id: ScreenId) => void }) {
           </div>
         </SortableContext>
       </DndContext>
+
+      {editing && available.length > 0 && (
+        <div className="muted mt" style={{ fontSize: 11 }}>{available.length} módulo(s) disponíveis para adicionar · arraste os cartões para reordenar.</div>
+      )}
     </div>
   );
 }
