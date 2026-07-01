@@ -6,23 +6,38 @@ import Painel from "./screens/Painel";
 import Fundo from "./screens/Fundo";
 import Cotacoes from "./screens/Cotacoes";
 import Acoes from "./screens/Acoes";
+import Regime from "./screens/Regime";
+import Noticias from "./screens/Noticias";
 import Risco from "./screens/Risco";
+import Clientes from "./screens/Clientes";
+import Cliente from "./screens/Cliente";
+import Carteira from "./screens/Carteira";
+import Alertas from "./screens/Alertas";
+import Ordem from "./screens/Ordem";
+import Importar from "./screens/Importar";
+import Integracoes from "./screens/Integracoes";
+import Marca from "./screens/Marca";
+import Config from "./screens/Config";
+import Tutorial from "./screens/Tutorial";
 import SocialRadar from "./screens/SocialRadar";
 import NewsBroadcast from "./screens/NewsBroadcast";
 import InsiderOrders from "./screens/InsiderOrders";
 import Institutional from "./screens/Institutional";
 import CotSentiment from "./screens/CotSentiment";
 import CotLegacy from "./screens/CotLegacy";
-import Placeholder from "./screens/Placeholder";
 import type { ScreenId } from "@/lib/nav";
 
 export default function Terminal() {
   const [screen, setScreen] = useState<ScreenId>("painel");
   const [fundId, setFundId] = useState("HPC22");
+  const [clientId, setClientId] = useState("vera");
+  const [orderArg, setOrderArg] = useState<string | undefined>(undefined);
 
   const go = (id: ScreenId, param?: string) => {
     setScreen(id);
     if (id === "fundo" && param) setFundId(param);
+    if ((id === "cliente" || id === "carteira") && param) setClientId(param);
+    if (id === "ordem") setOrderArg(param);
     if (typeof window !== "undefined") window.scrollTo(0, 0);
   };
 
@@ -30,27 +45,27 @@ export default function Terminal() {
     switch (screen) {
       case "painel": return <Painel go={go} />;
       case "fundo": return <Fundo fundId={fundId} onSelectFund={setFundId} go={go} />;
-      case "social-radar": return <SocialRadar />;
-      case "news-broadcast": return <NewsBroadcast />;
-      case "insider-orders": return <InsiderOrders />;
+      case "cotacoes": return <Cotacoes />;
+      case "acoes": return <Acoes />;
+      case "regime": return <Regime />;
+      case "noticias": return <Noticias go={go} />;
+      case "risco": return <Risco />;
+      case "carteira": return <Carteira clientId={clientId} go={go} />;
+      case "clientes": return <Clientes go={go} />;
+      case "cliente": return <Cliente clientId={clientId} go={go} />;
+      case "ordem": return <Ordem preselect={orderArg} />;
+      case "importar": return <Importar />;
+      case "alertas": return <Alertas go={go} />;
       case "institutional": return <Institutional />;
       case "cot-sentiment": return <CotSentiment />;
       case "cot-legacy": return <CotLegacy />;
-      case "cotacoes": return <Cotacoes />;
-      case "acoes": return <Acoes />;
-      case "noticias": return <Placeholder crumb="Mercado › Notícias" title="Notícias" sub="Curadoria de notícias do mercado." icon="ti-news" />;
-      case "regime": return <Placeholder crumb="Mercado › Regime" title="Sinais & regime" sub="Medidor de regime e defesa." icon="ti-activity" />;
-      case "risco": return <Risco />;
-      case "carteira": return <Placeholder crumb="Risco › Carteira" title="Risco do portfólio" sub="Análise de risco da carteira do cliente." icon="ti-wallet" />;
-      case "clientes": return <Placeholder crumb="Clientes" title="Lista de clientes" sub="Carteiras e mandatos." icon="ti-users" />;
-      case "cliente": return <Placeholder crumb="Clientes" title="Cliente" sub="Detalhe do cliente." icon="ti-user" />;
-      case "ordem": return <Placeholder crumb="Ordens" title="Enviar ordem (Lynk)" sub="Geração semiautomática de ordens." icon="ti-send" />;
-      case "importar": return <Placeholder crumb="Clientes › Importar" title="Importar / conectar" sub="Conecte carteiras e custodiantes." icon="ti-upload" />;
-      case "alertas": return <Placeholder crumb="Clientes › Alertas" title="Alertas" sub="Alertas de risco e mercado." icon="ti-bell" />;
-      case "integracoes": return <Placeholder crumb="Ajustes › Integrações" title="Integrações" sub="APIs e conectores." icon="ti-plug" />;
-      case "marca": return <Placeholder crumb="Ajustes › Marca" title="Marca (white-label)" sub="Personalize cores e logo." icon="ti-palette" />;
-      case "config": return <Placeholder crumb="Ajustes › Configurações" title="Configurações" sub="Conta, usuários e preferências." icon="ti-adjustments" />;
-      case "tutorial": return <Placeholder crumb="Tutorial" title="Como usar o terminal" sub="Leva 2 minutos." icon="ti-help-circle" />;
+      case "social-radar": return <SocialRadar />;
+      case "news-broadcast": return <NewsBroadcast />;
+      case "insider-orders": return <InsiderOrders />;
+      case "integracoes": return <Integracoes />;
+      case "marca": return <Marca />;
+      case "config": return <Config />;
+      case "tutorial": return <Tutorial go={go} />;
       default: return <Painel go={go} />;
     }
   }
