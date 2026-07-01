@@ -14,26 +14,31 @@ const PERIODS = [
   { k: "2000", l: "Desde 2000" },
 ];
 
-interface DDResp { dd: { time: number; value: number }[]; maxDD: number; error?: boolean }
+interface Resp {
+  core: { time: number; value: number }[];
+  spx: { time: number; value: number }[];
+  maxCore: number;
+  maxSpx: number;
+  error?: boolean;
+}
 
-// coreSeries: curva de drawdown do CORE22+ (backtest). Quando ausente, mostra só o S&P.
-export default function RiskJourney({ coreByPeriod }: { coreByPeriod?: Record<string, { time: number; value: number }[]> }) {
+// Underwater curve do backtest CORE22+ vs S&P (mesma série, base 100, 1990–2026).
+export default function RiskJourney() {
   const [period, setPeriod] = useState("5y");
-  const [spx, setSpx] = useState<DDResp | null>(null);
+  const [data, setData] = useState<Resp | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/drawdown?symbol=^GSPC&period=${period}`)
+    fetch(`/api/core-drawdown?period=${period}`)
       .then((r) => r.json())
-      .then((j: DDResp) => { setSpx(j.error ? null : j); setLoading(false); })
+      .then((j: Resp) => { setData(j.error ? null : j); setLoading(false); })
       .catch(() => setLoading(false));
   }, [period]);
 
   const series: DDSeries[] = [];
-  const core = coreByPeriod?.[period];
-  if (core) series.push({ name: "CORE22+", color: "#C9A02C", data: core, fill: true });
-  if (spx?.dd) series.push({ name: "S&P 500", color: "#E74C3C", data: spx.dd, fill: !core });
+  if (data?.core) series.push({ name: "CORE22+", color: "#C9A02C", data: data.core, fill: true });
+  if (data?.spx) series.push({ name: "S&P 500", color: "#E74C3C", data: data.spx, fill: false });
 
   return (
     <div className="card">
@@ -44,21 +49,19 @@ export default function RiskJourney({ coreByPeriod }: { coreByPeriod?: Record<st
         </div>
       </div>
       <div className="muted mb" style={{ lineHeight: 1.6 }}>
-        O drawdown máximo é uma foto, não um filme: mostra o quanto o capital caiu, mas não por quanto tempo ficou abaixo do topo. Passe o mouse para ver o drawdown em cada ponto.
+        O drawdown máximo é uma foto, não um filme: mostra o quanto o capital caiu, mas não por quanto tempo ficou abaixo do topo. Passe o mouse para ver o drawdown do CORE22+ e do S&P 500 em cada ponto.
       </div>
       {loading ? (
-        <div className="muted" style={{ padding: 70, textAlign: "center" }}>Carregando curva do Yahoo…</div>
+        <div className="muted" style={{ padding: 70, textAlign: "center" }}>Carregando curva…</div>
       ) : series.length ? (
         <DrawdownChart series={series} />
       ) : (
         <div className="placeholder"><i className="ti ti-cloud-off" /><b>Curva indisponível</b></div>
       )}
       <div className="legend" style={{ marginTop: 10 }}>
-        {core && <i><b style={{ background: "#C9A02C" }} />CORE22+</i>}
-        <i><b style={{ background: "#E74C3C" }} />S&P 500</i>
-        <span className="muted" style={{ marginLeft: "auto" }}>
-          {spx ? `S&P 500 max DD no período: ${spx.maxDD}%` : ""} · S&P ao vivo (Yahoo){!core ? " · curva CORE22+ em integração" : ""}
-        </span>
+        <i><b style={{ background: "#C9A02C" }} />CORE22+ {data ? `(máx ${data.maxCore}%)` : ""}</i>
+        <i><b style={{ background: "#E74C3C" }} />S&P 500 {data ? `(máx ${data.maxSpx}%)` : ""}</i>
+        <span className="muted" style={{ marginLeft: "auto" }}>Backtest CORE22+ · base 100 · hipotético</span>
       </div>
     </div>
   );
