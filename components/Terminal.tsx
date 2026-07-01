@@ -3,6 +3,7 @@ import { useState } from "react";
 import Ticker from "./Ticker";
 import Topbar from "./Topbar";
 import Painel from "./screens/Painel";
+import Fundo from "./screens/Fundo";
 import SocialRadar from "./screens/SocialRadar";
 import NewsBroadcast from "./screens/NewsBroadcast";
 import InsiderOrders from "./screens/InsiderOrders";
@@ -14,22 +15,24 @@ import type { ScreenId } from "@/lib/nav";
 
 export default function Terminal() {
   const [screen, setScreen] = useState<ScreenId>("painel");
+  const [fundId, setFundId] = useState("HPC22");
 
-  const go = (id: ScreenId) => {
+  const go = (id: ScreenId, param?: string) => {
     setScreen(id);
+    if (id === "fundo" && param) setFundId(param);
     if (typeof window !== "undefined") window.scrollTo(0, 0);
   };
 
   function renderScreen() {
     switch (screen) {
       case "painel": return <Painel go={go} />;
+      case "fundo": return <Fundo fundId={fundId} onSelectFund={setFundId} go={go} />;
       case "social-radar": return <SocialRadar />;
       case "news-broadcast": return <NewsBroadcast />;
       case "insider-orders": return <InsiderOrders />;
       case "institutional": return <Institutional />;
       case "cot-sentiment": return <CotSentiment />;
       case "cot-legacy": return <CotLegacy />;
-      case "fundo": return <Placeholder crumb="Fundos" title="Fundo · HPC22" sub="Visão, performance, composição, defesa e relatório do fundo." icon="ti-coin" />;
       case "cotacoes": return <Placeholder crumb="Mercado › Cotações" title="Cotações (FastTrack)" sub="Snapshot e histórico US EOD dividend-adjusted." icon="ti-table" />;
       case "acoes": return <Placeholder crumb="Mercado › Ações" title="Ações & índices US" sub="Gráficos e fundamentos." icon="ti-chart-candle" />;
       case "noticias": return <Placeholder crumb="Mercado › Notícias" title="Notícias" sub="Curadoria de notícias do mercado." icon="ti-news" />;

@@ -13,7 +13,7 @@ function Clock() {
   return <div className="clock">{t}</div>;
 }
 
-export default function Topbar({ go }: { go: (id: ScreenId) => void }) {
+export default function Topbar({ go }: { go: (id: ScreenId, param?: string) => void }) {
   return (
     <div className="topbar">
       <div className="brand" onClick={() => go("painel")}>
@@ -38,7 +38,7 @@ export default function Topbar({ go }: { go: (id: ScreenId) => void }) {
                 <div className="dd-col" key={ci} style={{ flex: 1 }}>
                   {col.label && <div className="dd-label">{col.label}</div>}
                   {col.items.map((it, ii) => (
-                    <div className="dd-item" key={ii} onClick={() => go(it.id)}>
+                    <div className="dd-item" key={ii} onClick={() => go(it.id, it.param)}>
                       <i className={`ti ${it.icon}`} />{it.label}
                       {it.tag && <span className="tag g" style={{ marginLeft: "auto" }}>{it.tag}</span>}
                     </div>

@@ -1,0 +1,219 @@
+// ============================================================
+// HARPIAN ETP TERMINAL — Dados dos fundos (ETPs)
+// Fonte HPC22: Institutional Factsheet v4 CORE22+ (Junho 2026), oficial.
+// HPC11: estrutura espelhada, aguardando factsheet oficial.
+// ============================================================
+
+export interface PerfRow { metric: string; gross: string; net: string; spx: string; }
+export interface KV { k: string; v: string; }
+export interface JourneyRow { metric: string; core: string; spx: string; }
+export interface EndpointRow { horizon: string; corePos: string; coreWorst: string; spxPos: string; spxWorst: string; }
+export interface CrisisRow { crisis: string; spxDecline: string; spxRec: string; coreDecline: string; coreRec: string; }
+export interface Step { n: number; title: string; desc: string; }
+export interface Highlight { label: string; value: string; sub?: string; tone?: "g" | "r" | "gold" }
+
+export interface Fund {
+  id: string;
+  ticker: string;
+  name: string;
+  strategy: string;
+  assetClass: string;
+  tagline: string;
+  status: "Homologado" | "Laboratório";
+  official: boolean;
+  isin: string;
+  seals: string[];
+  highlights: Highlight[];
+  productData: KV[];
+  performance: PerfRow[];
+  perfNote: string;
+  journeyRisk: JourneyRow[];
+  endpointRisk: EndpointRow[];
+  endpointNote: string;
+  crisisDefense: CrisisRow[];
+  crisisNote: string;
+  economics: KV[];
+  architecture: KV[];
+  purchaseSteps: Step[];
+  purchaseData: KV[];
+  contacts: KV[];
+  disclaimer: string;
+}
+
+const HPC22: Fund = {
+  id: "HPC22",
+  ticker: "HPC22",
+  name: "HPC22 · CORE22+",
+  strategy: "Adaptive Equity Momentum",
+  assetClass: "Listed institutional ETP",
+  tagline: "Risk is measured. Capital is preserved. Return is built through method.",
+  status: "Laboratório",
+  official: true,
+  isin: "XS3386635109",
+  seals: ["Deloitte", "BNY Mellon", "Interactive Brokers", "Bloomberg", "Vienna Stock Exchange", "Lynk Capital Markets"],
+  highlights: [
+    { label: "CAGR 36 anos (net)", value: "28,3%", sub: "S&P 500 TR: 10,75%", tone: "g" },
+    { label: "Max. drawdown (net)", value: "−29,0%", sub: "S&P 500: −55,3%", tone: "gold" },
+    { label: "Sortino (rf 3,5%)", value: "6,73", sub: "S&P 500: 2,83", tone: "g" },
+    { label: "Ulcer Index", value: "6,79", sub: "2,1× menor que o S&P", tone: "gold" },
+  ],
+  productData: [
+    { k: "Produto / Estratégia", v: "HPC22 · CORE22+" },
+    { k: "Classe", v: "Adaptive Equity Momentum" },
+    { k: "Universo", v: "S&P 500 · 2 ações/setor" },
+    { k: "Regime", v: "Binário BULL / BEAR" },
+    { k: "Defesa", v: "ETFs defensivos" },
+    { k: "Rebalanceamento", v: "Mensal, sistemático" },
+    { k: "Mínimo", v: "USD 50k (múltiplos de USD 5k)" },
+    { k: "Elegibilidade", v: "Não residentes fiscais nos EUA" },
+  ],
+  performance: [
+    { metric: "CAGR (36 anos)", gross: "37,3%", net: "28,3%", spx: "10,75%" },
+    { metric: "Max. drawdown", gross: "−26,0%", net: "−29,0%", spx: "−55,3%" },
+    { metric: "Ulcer Index", gross: "6,79", net: "6,79", spx: "13,93" },
+    { metric: "Sharpe (rf 3,5%)", gross: "1,06", net: "0,93", spx: "0,55" },
+    { metric: "Sortino (rf 3,5%)", gross: "12,30", net: "6,73", spx: "2,83" },
+    { metric: "Anos negativos", gross: "1", net: "3", spx: "8" },
+  ],
+  perfNote: "Taxas modeladas: 2,00% a.a. de gestão e 20% de performance sobre hurdle de 5% a.a., com high-water mark. Resultados hipotéticos; índices não incorrem em taxas.",
+  journeyRisk: [
+    { metric: "Nº de eventos (quedas ≥5%)", core: "111", spx: "42" },
+    { metric: "Recuperação — mediana", core: "1,6 meses", spx: "2,7 meses" },
+    { metric: "Recuperação — média", core: "2,6 meses", spx: "6,7 meses" },
+    { metric: "% recuperado em ≤6 meses", core: "89%", spx: "83%" },
+    { metric: "Pior tempo submerso", core: "21,1 meses", spx: "74,8 meses" },
+    { metric: "Pior drawdown", core: "−28,3%", spx: "−55,3%" },
+  ],
+  endpointRisk: [
+    { horizon: "Horizonte 3 anos", corePos: "100%", coreWorst: "+5,1%", spxPos: "76%", spxWorst: "−14,6%" },
+    { horizon: "Horizonte 5 anos", corePos: "100%", coreWorst: "+20,6%", spxPos: "81%", spxWorst: "−2,7%" },
+  ],
+  endpointNote: "No backtest, nenhuma janela de 3 ou 5 anos iniciada no pico anual terminou negativa para o CORE22+. A tese não é eliminar volatilidade, mas reduzir a probabilidade de o investidor abandonar o plano no pior ponto do ciclo.",
+  crisisDefense: [
+    { crisis: "Bolha ponto-com (pico 2000)", spxDecline: "−47,4%", spxRec: "74,8 meses", coreDecline: "−18,6%", coreRec: "21,1 meses" },
+    { crisis: "Crise financeira (pico 2007)", spxDecline: "−55,3%", spxRec: "54,6 meses", coreDecline: "−13,8% / −22,6%", coreRec: "7,5 / 6,9 meses" },
+    { crisis: "COVID (fev. 2020)", spxDecline: "−33,8%", spxRec: "5,8 meses", coreDecline: "−17,2%", coreRec: "2,2 meses" },
+    { crisis: "Bear market 2022", spxDecline: "−24,5%", spxRec: "23,6 meses", coreDecline: "−28,3%", coreRec: "14,2 meses" },
+  ],
+  crisisNote: "Transparência sobre pontos fracos faz parte do método: em 2022 o CORE22+ caiu mais que o S&P, mas recuperou em cerca de 60% do tempo.",
+  economics: [
+    { k: "Taxa de gestão", v: "2,00% a.a." },
+    { k: "Taxa de performance", v: "20%" },
+    { k: "Hurdle", v: "5% a.a." },
+    { k: "High-water mark", v: "Sim" },
+    { k: "Investimento mínimo", v: "USD 50.000" },
+    { k: "Múltiplos", v: "USD 5.000" },
+    { k: "Eficiência fiscal", v: "Sem come-cotas semestral brasileiro" },
+  ],
+  architecture: [
+    { k: "Custódia segregada", v: "BNY Mellon" },
+    { k: "Execução do mandato", v: "Interactive Brokers" },
+    { k: "Auditoria externa", v: "Deloitte" },
+    { k: "NAV diário", v: "Bloomberg" },
+    { k: "Listagem", v: "Vienna Stock Exchange" },
+    { k: "Admin. e liquidação", v: "Lynk Capital Markets" },
+    { k: "Distribuição", v: "Wisen (global, ex-EUA)" },
+  ],
+  purchaseSteps: [
+    { n: 1, title: "Conta Lynk Markets", desc: "O MFO, gestor ou family office deve ter conta ativa na Lynk Markets. Onboarding: lynkmarkets.com." },
+    { n: 2, title: "Definir produto e valor", desc: "Produto: HPC22 · ISIN XS3386635109. Mínimo USD 50k, em múltiplos de USD 5k." },
+    { n: 3, title: "Envio da ordem", desc: "Ordem via LynkPort, e-mail, Bloomberg ou trading desk. COMPRA: valor, moeda, corretora/custodiante; Harpian apoia o roteamento." },
+    { n: 4, title: "Instrução operacional", desc: "Data de liquidação, custodiante, liquidação Lynk." },
+    { n: 5, title: "Confirmação e DvP", desc: "Lynk confirma. Liquidação via DvP Euroclear/Clearstream. Investidor recebe Notes/ETP." },
+  ],
+  purchaseData: [
+    { k: "ISIN", v: "XS3386635109" },
+    { k: "Issuer FI", v: "BNYM · EC 21625" },
+    { k: "Euroclear", v: "21625" },
+    { k: "Agent ID", v: "00093034" },
+    { k: "DTC / MPID", v: "0901 / BKCM" },
+    { k: "BIC", v: "IRTVUS3N" },
+    { k: "Institutional ID", v: "00095441" },
+  ],
+  contacts: [
+    { k: "Operações Lynk", v: "lynk.ops@lynkmarkets.com" },
+    { k: "Trading desk", v: "lynk.trading@lynkmarkets.com" },
+    { k: "Website Lynk", v: "lynkmarkets.com" },
+    { k: "Telefone", v: "+1 929 900 5965" },
+    { k: "Harpian", v: "contato@harpian.com" },
+  ],
+  disclaimer: "Performance hipotética / modelada. Os resultados baseiam-se em backtest da estratégia CORE22+ com dados de 1990–2025 e não representam contas reais de clientes. Resultados hipotéticos têm limitações inerentes: são preparados retrospectivamente, não envolvem risco financeiro real e não refletem decisões sob condições reais de mercado. Rentabilidade passada não garante retornos futuros. Comparações com o S&P 500 Total Return são ilustrativas. Harpian não recebe recursos, não executa ordens e não atua como custodiante. Documento confidencial — não constitui oferta ou recomendação.",
+};
+
+const HPC11: Fund = {
+  id: "HPC11",
+  ticker: "HPC11",
+  name: "HPC11 · HC-US I.G.",
+  strategy: "Investment Grade · perfil conservador",
+  assetClass: "Listed institutional ETP",
+  tagline: "Risk is measured. Capital is preserved. Return is built through method.",
+  status: "Homologado",
+  official: false,
+  isin: "—",
+  seals: ["Deloitte", "BNY Mellon", "Interactive Brokers", "Bloomberg", "Vienna Stock Exchange", "Lynk Capital Markets"],
+  highlights: [
+    { label: "CAGR (net)", value: "—", sub: "aguardando factsheet", tone: "gold" },
+    { label: "Max. drawdown", value: "—", sub: "perfil conservador", tone: "gold" },
+    { label: "Sortino", value: "—", sub: "aguardando factsheet", tone: "gold" },
+    { label: "Classificação", value: "I.G.", sub: "Investment Grade", tone: "g" },
+  ],
+  productData: [
+    { k: "Produto / Estratégia", v: "HPC11 · HC-US I.G." },
+    { k: "Classe", v: "Investment Grade (conservador)" },
+    { k: "Universo", v: "S&P 500 · I.G." },
+    { k: "Regime", v: "Binário BULL / BEAR" },
+    { k: "Defesa", v: "ETFs defensivos + almofada" },
+    { k: "Rebalanceamento", v: "Mensal, sistemático" },
+    { k: "Mínimo", v: "USD 50k (múltiplos de USD 5k)" },
+    { k: "Elegibilidade", v: "Não residentes fiscais nos EUA" },
+  ],
+  performance: [
+    { metric: "CAGR (36 anos)", gross: "—", net: "—", spx: "10,75%" },
+    { metric: "Max. drawdown", gross: "—", net: "—", spx: "−55,3%" },
+    { metric: "Ulcer Index", gross: "—", net: "—", spx: "13,93" },
+    { metric: "Sharpe (rf 3,5%)", gross: "—", net: "—", spx: "0,55" },
+    { metric: "Sortino (rf 3,5%)", gross: "—", net: "—", spx: "2,83" },
+    { metric: "Anos negativos", gross: "—", net: "—", spx: "8" },
+  ],
+  perfNote: "Dados oficiais do HPC11 aguardando factsheet institucional. Estrutura espelhada do HPC22.",
+  journeyRisk: [],
+  endpointRisk: [],
+  endpointNote: "",
+  crisisDefense: [],
+  crisisNote: "",
+  economics: [
+    { k: "Taxa de gestão", v: "2,00% a.a." },
+    { k: "Taxa de performance", v: "20%" },
+    { k: "Hurdle", v: "5% a.a." },
+    { k: "High-water mark", v: "Sim" },
+    { k: "Investimento mínimo", v: "USD 50.000" },
+    { k: "Múltiplos", v: "USD 5.000" },
+  ],
+  architecture: [
+    { k: "Custódia segregada", v: "BNY Mellon" },
+    { k: "Execução do mandato", v: "Interactive Brokers" },
+    { k: "Auditoria externa", v: "Deloitte" },
+    { k: "NAV diário", v: "Bloomberg" },
+    { k: "Listagem", v: "Vienna Stock Exchange" },
+    { k: "Admin. e liquidação", v: "Lynk Capital Markets" },
+  ],
+  purchaseSteps: [
+    { n: 1, title: "Conta Lynk Markets", desc: "Conta ativa na Lynk Markets. Onboarding: lynkmarkets.com." },
+    { n: 2, title: "Definir produto e valor", desc: "Produto: HPC11. Mínimo USD 50k, em múltiplos de USD 5k." },
+    { n: 3, title: "Envio da ordem", desc: "Ordem via LynkPort, e-mail, Bloomberg ou trading desk." },
+    { n: 4, title: "Instrução operacional", desc: "Data de liquidação, custodiante, liquidação Lynk." },
+    { n: 5, title: "Confirmação e DvP", desc: "Lynk confirma. Liquidação via DvP Euroclear/Clearstream." },
+  ],
+  purchaseData: [
+    { k: "ISIN", v: "aguardando" },
+  ],
+  contacts: [
+    { k: "Operações Lynk", v: "lynk.ops@lynkmarkets.com" },
+    { k: "Trading desk", v: "lynk.trading@lynkmarkets.com" },
+    { k: "Harpian", v: "contato@harpian.com" },
+  ],
+  disclaimer: "Performance hipotética / modelada. Dados oficiais do HPC11 aguardando factsheet institucional. Rentabilidade passada não garante retornos futuros. Harpian não recebe recursos, não executa ordens e não atua como custodiante. Documento confidencial — não constitui oferta ou recomendação.",
+};
+
+export const FUNDS: Record<string, Fund> = { HPC22, HPC11 };
+export const FUND_LIST = [HPC22, HPC11];

@@ -31,6 +31,7 @@ export interface MenuItem {
   label: string;
   icon: string;
   tag?: string;
+  param?: string;
 }
 export interface MenuColumn {
   label?: string;
@@ -54,9 +55,9 @@ export const MENUS: Menu[] = [
       {
         label: "Escolha o fundo",
         items: [
-          { id: "fundo", label: "HPC22 · Agressivo", icon: "ti-coin" },
-          { id: "fundo", label: "HPC11 · I.G.", icon: "ti-coin" },
-          { id: "fundo", label: "White-label", icon: "ti-tag" },
+          { id: "fundo", label: "HPC22 · Agressivo", icon: "ti-coin", param: "HPC22" },
+          { id: "fundo", label: "HPC11 · I.G.", icon: "ti-coin", param: "HPC11" },
+          { id: "fundo", label: "White-label", icon: "ti-tag", param: "HPC22" },
         ],
       },
       {
