@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HARPIAN ETP Terminal
 
-## Getting Started
+Terminal do **cliente profissional** do ETP Harpian (MFO / gestor / RIA / assessor) — nunca o
+cliente final. Referência de produto: Bloomberg (mostra dado e análise, não opera). Next.js 16 +
+React 19 + TypeScript, porta padrão `8950`.
 
-First, run the development server:
+**Não confundir com:**
+- `harpian-cockpit-next` — o Cockpit é o produto **interno** do gestor, mostra o método (sinais,
+  CRS, fórmulas). Este Terminal é o produto do **cliente** — nunca expõe o método.
+- `harpian-front` (Jinstronda) — stack diferente, projeto separado do JP.
+
+## 🔒 Regra de confidencialidade (a mais importante do repo)
+
+O Terminal **NUNCA mostra o método**: nada de sinais, gatilhos, CRS, HSA ou fórmulas dos motores.
+Só resultado e postura (regime, performance, composição, risco). O filtro roda nas rotas Next.js
+do próprio Terminal (`app/api/snapshot`, `app/api/fund-benchmarks`, etc.) — elas são a fronteira de
+segurança. Ao portar qualquer coisa do Cockpit (que mostra o "como"), filtre para deixar só o "o quê".
+
+## Rodando local
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev -- -p 8950     # abre http://localhost:8950 (porta padrão usada nesta sessão)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Variáveis de ambiente (`.env.local`):
+- `ANTHROPIC_API_KEY` — necessária para o **JIM** (assistente de IA) responder de verdade.
+  Sem ela, a rota `/api/jim/chat` retorna erro 500 claro (nunca finge resposta).
+- `NEXT_PUBLIC_HQP_API_URL` — URL do backend HQP (default `http://localhost:8080`), usado pelas
+  telas de Notícias/Social Radar (`lib/hqp.ts`).
+- `HARPIAN_SNAPSHOT_DIR` — pasta de saída do overnight Python (default aponta pro caminho local
+  do João), usada por `app/api/snapshot` pra ler regime/composição/defesa reais.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🤖 JIM — assistente de IA screen-aware
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Regra de ouro: o JIM **nunca pergunta "o que você está vendo na tela"** — ele já enxerga os dados
+reais de qualquer tela aberta e responde direto, com números reais. Cada tela publica o que está
+mostrando via `publishScreenData()` (`lib/jim-data.ts`); o JIM lê isso, saúda nomeando o item com
+dado ao vivo, e oferece 3 chips de perguntas prováveis daquele contexto específico.
 
-## Learn More
+Arquitetura completa, decisões de design e o bug original que motivou isso:
+`hqp-platform/docs/architecture/HANDOFF_TERMINAL_JIM_04_05JUL.md`.
 
-To learn more about Next.js, take a look at the following resources:
+**Para adicionar numa tela nova:** uma chamada `publishScreenData(screen, summary, rows, {briefing, suggestions})`
+dentro do `useEffect` que já busca os dados daquela tela. ~10 linhas.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Mapa geral do sistema
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Este Terminal é uma das 3 experiências da plataforma HQP (Cockpit / Terminal / backend). Mapa
+completo, o que é real vs mock, e todas as regras inegociáveis (Air Gap, régua de ouro,
+confidencialidade, Sortino) estão em `hqp-platform/docs/ONBOARDING_DIOGO.md`.
