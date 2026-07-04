@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { CLIENTS } from "@/lib/clients";
 import { allClients } from "@/lib/clientStore";
+import { publishScreenData } from "@/lib/jim-data";
 
 const FUNDS = [
   { id: "HPC22", isin: "XS3386635109", nav: 22.10, rn: 38 },
@@ -48,6 +49,29 @@ export default function Ordem({ preselect }: { preselect?: string }) {
 
   const pendCash = PENDING.reduce((s, o) => s + o.caixa, 0);
   const trdCash = TRADES.reduce((s, o) => s + o.caixa, 0);
+
+  // Publica pro JIM as ordens pendentes e o histórico de trades.
+  useEffect(() => {
+    publishScreenData(
+      "ordem",
+      "Ordens do ETP via Lynk (subscrição/resgate). Ordens pendentes e histórico de trades — cada linha = ref, produto, cliente, tipo, caixa e status.",
+      {
+        pendentes: PENDING.map((o) => ({ ref: o.ref, produto: o.produto, cliente: o.cliente, tipo: o.tipo, caixa: o.caixa, status: o.status })),
+        historico: TRADES.map((o) => ({ ref: o.ref, produto: o.produto, cliente: o.cliente, data: o.data, tipo: o.tipo, caixa: o.caixa, status: o.status })),
+        caixaPendente: pendCash, caixaHistorico: trdCash,
+      },
+      {
+        briefing:
+          `Você tem **${PENDING.length} ordens pendentes** (${usd(pendCash)} em caixa) e ${TRADES.length} trades no histórico. ` +
+          `Mínimo por ordem ${usd(MIN)}, múltiplos de ${usd(MULT)}.`,
+        suggestions: [
+          "Quais ordens estão pendentes?",
+          "Como funciona a liquidação (DvP)?",
+          "Qual o mínimo e os múltiplos de uma ordem?",
+        ],
+      }
+    );
+  }, [pendCash, trdCash]);
 
   function send() {
     // Simulação — não há integração real com a Lynk neste protótipo.

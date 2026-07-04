@@ -1,5 +1,7 @@
 "use client";
+import { useEffect } from "react";
 import { CLIENTS } from "@/lib/clients";
+import { publishScreenData } from "@/lib/jim-data";
 import type { ScreenId } from "@/lib/nav";
 
 interface Alert { level: "crítico" | "observar" | "info"; text: string; when: string; go?: ScreenId; param?: string }
@@ -17,6 +19,27 @@ export default function Alertas({ go }: { go: (id: ScreenId, param?: string) => 
   ];
   const all = [...risco, ...mercado];
   const tag = (l: Alert["level"]) => (l === "crítico" ? "r" : l === "observar" ? "o" : "b");
+
+  // Publica pro JIM os alertas abertos (risco de clientes + mercado).
+  useEffect(() => {
+    const criticos = all.filter((a) => a.level === "crítico").length;
+    publishScreenData(
+      "alertas",
+      "Central de alertas: risco de clientes (portfólio acima do mandato) e eventos de mercado. Cada alerta = nível (crítico/observar/info), texto e quando.",
+      all.map((a) => ({ nivel: a.level, texto: a.text, quando: a.when })),
+      {
+        briefing:
+          `Você tem ${all.length} alertas` + (criticos ? `, **${criticos} crítico(s)**.` : ".") +
+          ` ${risco.length} de risco de clientes e ${mercado.length} de mercado.` +
+          (all[0] ? ` Mais urgente: "${all[0].text}".` : ""),
+        suggestions: [
+          "Qual alerta é o mais urgente?",
+          "O que exige ação minha hoje?",
+          "Resuma os alertas pra mim.",
+        ],
+      }
+    );
+  }, [all.length, risco.length, mercado.length]);
 
   return (
     <div className="screen">

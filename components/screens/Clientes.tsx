@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { CLIENTS, brl, type Client } from "@/lib/clients";
 import { allClients, addClient, questionnaireLink, type NewClientInput } from "@/lib/clientStore";
+import { publishScreenData } from "@/lib/jim-data";
 import type { ScreenId } from "@/lib/nav";
 
 const EMPTY: NewClientInput = { name: "", type: "Family Office", profile: "Moderado", invested: 1_000_000, mandate: 55, email: "" };
@@ -19,6 +20,35 @@ export default function Clientes({ go }: { go: (id: ScreenId, param?: string) =>
   const totalAUM = clients.reduce((s, c) => s + c.current, 0);
   const avgHarpian = clients.length ? Math.round(clients.reduce((s, c) => s + c.harpianPct, 0) / clients.length) : 0;
   const foraMandato = clients.filter((c) => c.riskNumber > c.mandate).length;
+
+  // Publica pro JIM a base de clientes (AUM, alinhamento, quem está fora do mandato).
+  useEffect(() => {
+    const fora = clients.filter((c) => c.riskNumber > c.mandate);
+    publishScreenData(
+      "clientes",
+      "Lista de clientes do MFO: cada linha = nome, tipo, perfil, AUM atual, ganho, Número de Risco, alinhamento ao mandato e alocação Harpian.",
+      {
+        totalClientes: clients.length, aumTotal: totalAUM, alocacaoHarpianMedia: avgHarpian,
+        foraDoMandato: fora.map((c) => ({ nome: c.name, riskNumber: c.riskNumber, mandato: c.mandate, acima: c.riskNumber - c.mandate })),
+        clientes: clients.map((c) => ({
+          nome: c.name, tipo: c.type, perfil: c.profile, aum: c.current,
+          riskNumber: c.riskNumber, mandato: c.mandate, adequado: c.riskNumber <= c.mandate, harpianPct: c.harpianPct,
+        })),
+      },
+      {
+        briefing:
+          `Você está vendo ${clients.length} clientes, AUM total ${brl(totalAUM)}, alocação Harpian média ${avgHarpian}%. ` +
+          (fora.length
+            ? `**${fora.length} fora do mandato**: ${fora.map((c) => `${c.name} (+${c.riskNumber - c.mandate})`).join(", ")}.`
+            : "Todos dentro do mandato."),
+        suggestions: [
+          fora.length ? "Quem está fora do mandato e por quê?" : "Algum cliente exige atenção?",
+          "Quem tem o maior AUM?",
+          "Qual cliente está mais bem posicionado?",
+        ],
+      }
+    );
+  }, [clients, totalAUM, avgHarpian]);
 
   const stats = [
     { v: brl(totalAUM), l: "AUM total sob visão" },
