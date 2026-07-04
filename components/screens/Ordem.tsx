@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CLIENTS } from "@/lib/clients";
+import { allClients } from "@/lib/clientStore";
 
 const FUNDS = [
   { id: "HPC22", isin: "XS3386635109", nav: 22.10, rn: 38 },
@@ -35,6 +36,8 @@ export default function Ordem({ preselect }: { preselect?: string }) {
   const [clientId, setClientId] = useState(presetClient?.id || CLIENTS[0].id);
   const [value, setValue] = useState(250000);
   const [sent, setSent] = useState<null | { ref: string }>(null);
+  const [clients, setClients] = useState(CLIENTS);   // inclui clientes novos (localStorage) no client-side
+  useEffect(() => { setClients(allClients()); }, []);
 
   const fund = FUNDS.find((f) => f.id === fundId)!;
   const notes = fund.nav > 0 ? Math.floor(value / fund.nav) : 0;
@@ -132,7 +135,7 @@ export default function Ordem({ preselect }: { preselect?: string }) {
               </div>
               <label className="muted" style={{ display: "block", fontSize: 11, marginBottom: 4 }}>Cliente</label>
               <select className="wl-input" style={{ width: "100%" }} value={clientId} onChange={(e) => setClientId(e.target.value)}>
-                {CLIENTS.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
               <label className="muted" style={{ display: "block", fontSize: 11, margin: "10px 0 4px" }}>Valor (US$)</label>
               <input className="wl-input" style={{ width: "100%" }} type="number" step={MULT} value={value} onChange={(e) => setValue(+e.target.value)} />
@@ -142,7 +145,7 @@ export default function Ordem({ preselect }: { preselect?: string }) {
 
           <div className="card mt" style={{ borderColor: ok ? "rgba(46,204,113,.25)" : "rgba(231,76,60,.3)" }}>
             {ok ? (
-              <div className="flex" style={{ gap: 8 }}><i className="ti ti-circle-check" style={{ color: "var(--green)" }} /><span style={{ color: "var(--tx2)" }}>Ordem válida: {fund.id} · {side === "sub" ? "Subscrição" : "Resgate"} · {usd(value)} · {CLIENTS.find((c) => c.id === clientId)?.name}</span></div>
+              <div className="flex" style={{ gap: 8 }}><i className="ti ti-circle-check" style={{ color: "var(--green)" }} /><span style={{ color: "var(--tx2)" }}>Ordem válida: {fund.id} · {side === "sub" ? "Subscrição" : "Resgate"} · {usd(value)} · {clients.find((c) => c.id === clientId)?.name}</span></div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {errors.map((e, i) => <div className="flex" key={i} style={{ gap: 8 }}><i className="ti ti-alert-circle" style={{ color: "var(--red)" }} /><span style={{ color: "var(--red)" }}>{e}</span></div>)}

@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
-import { clientById, brl, type Client } from "@/lib/clients";
+import { brl, type Client } from "@/lib/clients";
+import { findClient } from "@/lib/clientStore";
 import type { ScreenId } from "@/lib/nav";
 
 const HPC22_RN = 38; // Número de Risco do produto (motor interno)
@@ -81,7 +82,7 @@ export function ClientDetail({ client, go }: { client: Client; go: (id: ScreenId
 }
 
 export default function Cliente({ clientId, go }: { clientId: string; go: (id: ScreenId, param?: string) => void }) {
-  const client = clientById(clientId);
+  const client = findClient(clientId);
   return (
     <div className="screen">
       <div className="crumb">Clientes › <b>{client.name}</b></div>
