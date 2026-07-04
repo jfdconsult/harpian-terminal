@@ -2,40 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import { allClients, applyImportedPortfolio } from "@/lib/clientStore";
 import { brl, type Client, type ImportedPosition } from "@/lib/clients";
+import { parsePortfolioCsv, downloadPortfolioTemplate } from "@/lib/csv";
 import { publishScreenData } from "@/lib/jim-data";
-
-const TEMPLATE = "ativo,quantidade,preco_medio\nPETR4,1000,32.10\nVALE3,500,68.40\nITUB4,800,29.75\n";
-
-function downloadTemplate() {
-  const blob = new Blob([TEMPLATE], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "modelo-carteira-harpian.csv";
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-// Parser de CSV simples e tolerante: aceita vírgula ou ponto-e-vírgula, cabeçalho
-// opcional, e ignora linhas vazias/mal formadas em vez de travar a importação inteira.
-function parseCsv(text: string): { rows: ImportedPosition[]; skipped: number } {
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  const rows: ImportedPosition[] = [];
-  let skipped = 0;
-  for (const line of lines) {
-    const cols = line.split(/[,;\t]/).map((c) => c.trim());
-    if (cols.length < 3) { skipped++; continue; }
-    const [ticker, qtyRaw, priceRaw] = cols;
-    const qty = Number(qtyRaw.replace(",", "."));
-    const avgPrice = Number(priceRaw.replace(",", "."));
-    if (!ticker || /^ativo$|^ticker$|^papel$/i.test(ticker) || !Number.isFinite(qty) || !Number.isFinite(avgPrice)) {
-      skipped++;
-      continue;
-    }
-    rows.push({ ticker: ticker.toUpperCase(), qty, avgPrice });
-  }
-  return { rows, skipped };
-}
 
 export default function Importar() {
   const [over, setOver] = useState(false);
@@ -62,7 +30,7 @@ export default function Importar() {
       return;
     }
     file.text().then((text) => {
-      const { rows: parsed, skipped: sk } = parseCsv(text);
+      const { rows: parsed, skipped: sk } = parsePortfolioCsv(text);
       if (parsed.length === 0) {
         setError("Não encontrei linhas válidas (esperado: ativo, quantidade, preço médio).");
         setRows([]);
@@ -193,7 +161,7 @@ export default function Importar() {
         <div className="card">
           <h3><i className="ti ti-file-spreadsheet" />Planilha</h3>
           <div className="muted">Modelo padrão de carteira (colunas: ativo, quantidade, preço médio).</div>
-          <div className="mt"><button className="btn ghost" onClick={downloadTemplate}><i className="ti ti-download" />Baixar modelo</button></div>
+          <div className="mt"><button className="btn ghost" onClick={downloadPortfolioTemplate}><i className="ti ti-download" />Baixar modelo</button></div>
         </div>
         <div className="card"><h3><i className="ti ti-folder" />Pasta do MFO</h3><span className="tag o">a configurar</span><div className="muted mt">Leitura automática dos portfólios exportados.</div></div>
         <div className="card"><h3><i className="ti ti-plug" />API gerencial</h3><span className="tag b">fase 2</span><div className="muted mt">Sincronização direta com o sistema do escritório.</div></div>

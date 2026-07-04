@@ -2,7 +2,7 @@
 // Store de clientes com persistência local (localStorage). Junta o seed (lib/clients.ts)
 // com os clientes adicionados pelo gestor — sobrevive ao refresh. Fase 2: trocar por API
 // do sistema gerencial do MFO. Até lá, isto deixa "adicionar cliente" funcional de verdade.
-import { CLIENTS, type Client, type Alloc, type ImportedPosition } from "./clients";
+import { CLIENTS, type Client, type Alloc, type ImportedPosition, type Portfolio } from "./clients";
 
 const KEY = "harpian_clients_added";
 const OVERRIDE_KEY = "harpian_client_overrides";
@@ -57,6 +57,21 @@ export function applyImportedPortfolio(clientId: string, positions: ImportedPosi
   overrides[clientId] = { ...(overrides[clientId] || {}), current: total, importedPositions: positions };
   saveOverrides(overrides);
   return findClient(clientId);
+}
+
+/** Atualiza qualquer campo do cliente (perfil, dados pessoais, contas, portfólios,
+ * integrações de API) — mescla como override. Funciona tanto pra clientes do seed
+ * quanto pros adicionados pelo gestor: mesmo caminho de applyImportedPortfolio. */
+export function updateClient(id: string, patch: Partial<Client>): Client {
+  const overrides = loadOverrides();
+  overrides[id] = { ...(overrides[id] || {}), ...patch };
+  saveOverrides(overrides);
+  return findClient(id);
+}
+
+/** Soma o valor de todos os portfólios do cliente (qtd × preço médio de cada posição). */
+export function portfoliosTotal(portfolios: Portfolio[]): number {
+  return portfolios.reduce((s, p) => s + p.positions.reduce((s2, x) => s2 + x.qty * x.avgPrice, 0), 0);
 }
 
 const RISK_DEFAULT: Record<Client["profile"], number> = { Conservador: 35, Moderado: 55, Agressivo: 70 };

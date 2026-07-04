@@ -1,6 +1,44 @@
 // Clientes do MFO (mock). Carteiras em BRL (investidores brasileiros).
 export interface Alloc { label: string; pct: number; tone?: "g" | "r" | "gold" }
 export interface ImportedPosition { ticker: string; qty: number; avgPrice: number }
+
+// Dados pessoais/cadastrais — separados do perfil de risco (aba própria na edição).
+export interface PersonalData {
+  cpfCnpj?: string;
+  phone?: string;
+  address?: string;
+  responsavel?: string; // pessoa de contato no family office/instituição
+}
+
+// Uma conta em um banco/corretora/custodiante — o cliente pode ter várias.
+export interface Account {
+  id: string;
+  bank: string;                 // nome do banco/corretora
+  type: "Conta corrente" | "Corretora" | "Custódia" | "Outro";
+  agency?: string;
+  accountNumber?: string;
+  custodian?: string;           // custodiante, se diferente do banco
+  notes?: string;
+}
+
+// Um portfólio — o cliente pode ter vários (um por banco/conta, por exemplo).
+export interface Portfolio {
+  id: string;
+  name: string;                 // ex.: "Carteira XP", "Carteira Itaú Private"
+  accountId?: string;           // referência a Account.id
+  positions: ImportedPosition[];
+}
+
+// Conexão com o sistema de gestão do próprio MFO (fase 2: sincronização real).
+export interface ApiIntegration {
+  id: string;
+  system: string;                // nome do sistema (ex.: Comdinheiro, sistema interno)
+  baseUrl?: string;
+  apiKey?: string;                // mascarado na UI
+  status: "conectado" | "a configurar" | "erro";
+  lastSync?: string;
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -14,7 +52,12 @@ export interface Client {
   harpianPct: number;   // % alocado em HPC
   alloc: Alloc[];
   note?: string;
-  importedPositions?: ImportedPosition[]; // planilha importada (Importar/conectar)
+  email?: string;
+  importedPositions?: ImportedPosition[]; // planilha importada (Importar/conectar) — legado, 1 portfólio só
+  personalData?: PersonalData;
+  accounts?: Account[];
+  portfolios?: Portfolio[];
+  integrations?: ApiIntegration[];
 }
 
 export const CLIENTS: Client[] = [

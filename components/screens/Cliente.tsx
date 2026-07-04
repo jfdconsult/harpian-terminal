@@ -3,12 +3,17 @@ import { useMemo, useState, useEffect } from "react";
 import { brl, type Client } from "@/lib/clients";
 import { findClient } from "@/lib/clientStore";
 import { publishScreenData } from "@/lib/jim-data";
+import ClienteEditModal from "./ClienteEditModal";
 import type { ScreenId } from "@/lib/nav";
 
 const HPC22_RN = 38; // Número de Risco do produto (motor interno)
 const ALLOC_COLORS = ["#4A90D9", "#C9A02C", "#2ECC71", "#F39C12", "#7d96b3"];
 
-export function ClientDetail({ client, go, screen = "cliente" }: { client: Client; go: (id: ScreenId, param?: string) => void; screen?: ScreenId }) {
+export function ClientDetail({ client: clientProp, go, screen = "cliente" }: { client: Client; go: (id: ScreenId, param?: string) => void; screen?: ScreenId }) {
+  const [client, setClient] = useState(clientProp);
+  const [editing, setEditing] = useState(false);
+  useEffect(() => setClient(clientProp), [clientProp]);
+
   const [migrate, setMigrate] = useState(0); // % migrado p/ HPC22
   const ganhoPct = (client.current / client.invested - 1) * 100;
   const aligned = client.riskNumber <= client.mandate;
@@ -32,6 +37,10 @@ export function ClientDetail({ client, go, screen = "cliente" }: { client: Clien
         adequado: aligned, gapAcimaDoMandato: aligned ? 0 : client.riskNumber - client.mandate,
         alocacaoHarpianPct: client.harpianPct,
         alocacao: client.alloc.map((a) => ({ classe: a.label, pct: a.pct })),
+        email: client.email || null, dadosPessoais: client.personalData || null,
+        contas: (client.accounts || []).map((a) => ({ banco: a.bank, tipo: a.type, numero: a.accountNumber })),
+        portfolios: (client.portfolios || []).map((p) => ({ nome: p.name, posicoes: p.positions.length, valor: p.positions.reduce((s, x) => s + x.qty * x.avgPrice, 0) })),
+        integracoes: (client.integrations || []).map((i) => ({ sistema: i.system, status: i.status })),
       },
       {
         briefing:
@@ -58,10 +67,19 @@ export function ClientDetail({ client, go, screen = "cliente" }: { client: Clien
         <div className="fhstat"><div className="l">AUM atual</div><div className="v">{brl(client.current)}</div></div>
         <div className="fhstat"><div className="l">Ganho</div><div className="v g">+{ganhoPct.toFixed(1).replace(".", ",")}%</div></div>
         <div className="fhstat"><div className="l">Desde</div><div className="v" style={{ fontSize: 14 }}>{client.since}</div></div>
-        <div style={{ marginLeft: "auto" }}>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+          <button className="btn ghost" onClick={() => setEditing(true)}><i className="ti ti-pencil" />Editar cliente</button>
           <button className="btn" onClick={() => go("ordem", client.id)}><i className="ti ti-send" />Enviar ordem</button>
         </div>
       </div>
+
+      {editing && (
+        <ClienteEditModal
+          client={client}
+          onClose={() => setEditing(false)}
+          onSaved={(updated) => { setClient(updated); setEditing(false); }}
+        />
+      )}
 
       <div className="grid g2">
         <div className="card">
@@ -107,6 +125,58 @@ export function ClientDetail({ client, go, screen = "cliente" }: { client: Clien
           <div className="kv"><span className="muted">Alocação Harpian</span><span className="v" style={{ color: "var(--gold)" }}>{client.harpianPct}%</span></div>
         </div>
       </div>
+
+      <div className="grid g3 mt">
+        <div className="card">
+          <h3><i className="ti ti-id" />Dados pessoais</h3>
+          {client.email || client.personalData?.phone || client.personalData?.cpfCnpj ? (
+            <>
+              {client.email && <div className="kv"><span className="muted">E-mail</span><span className="v" style={{ fontSize: 12 }}>{client.email}</span></div>}
+              {client.personalData?.phone && <div className="kv"><span className="muted">Telefone</span><span className="v">{client.personalData.phone}</span></div>}
+              {client.personalData?.cpfCnpj && <div className="kv"><span className="muted">CPF/CNPJ</span><span className="v">{client.personalData.cpfCnpj}</span></div>}
+              {client.personalData?.responsavel && <div className="kv"><span className="muted">Responsável</span><span className="v">{client.personalData.responsavel}</span></div>}
+            </>
+          ) : <div className="muted">Nenhum dado cadastrado — clique em Editar cliente.</div>}
+        </div>
+
+        <div className="card">
+          <h3><i className="ti ti-building-bank" />Contas & bancos</h3>
+          {(client.accounts?.length || 0) === 0 ? <div className="muted">Nenhuma conta cadastrada.</div> : (
+            client.accounts!.map((a) => (
+              <div className="kv" key={a.id}><span>{a.bank || "(sem nome)"} <span className="muted">{a.type}</span></span><span className="v" style={{ fontSize: 11 }}>{a.accountNumber || "—"}</span></div>
+            ))
+          )}
+        </div>
+
+        <div className="card">
+          <h3><i className="ti ti-plug" />Integrações (API)</h3>
+          {(client.integrations?.length || 0) === 0 ? <div className="muted">Nenhuma integração cadastrada.</div> : (
+            client.integrations!.map((i) => (
+              <div className="kv" key={i.id}><span>{i.system || "(sem nome)"}</span><span className={`tag ${i.status === "conectado" ? "g" : i.status === "erro" ? "r" : "o"}`}>{i.status}</span></div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {(client.portfolios?.length || 0) > 0 && (
+        <div className="card mt">
+          <h3><i className="ti ti-briefcase" />Portfólios ({client.portfolios!.length})</h3>
+          <div className="grid g3">
+            {client.portfolios!.map((p) => {
+              const total = p.positions.reduce((s, x) => s + x.qty * x.avgPrice, 0);
+              const acc = client.accounts?.find((a) => a.id === p.accountId);
+              return (
+                <div key={p.id} style={{ background: "var(--panel2)", border: "1px solid var(--line2)", borderRadius: 8, padding: 12 }}>
+                  <div style={{ fontWeight: 600, color: "var(--tx)" }}>{p.name}</div>
+                  <div className="muted" style={{ fontSize: 11, marginTop: 2 }}>{acc ? acc.bank : "sem conta vinculada"}</div>
+                  <div style={{ fontSize: 15, color: "var(--gold)", fontWeight: 600, marginTop: 6 }}>{brl(total)}</div>
+                  <div className="muted" style={{ fontSize: 11 }}>{p.positions.length} posições</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </>
   );
 }
