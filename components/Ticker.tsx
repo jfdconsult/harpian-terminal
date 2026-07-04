@@ -1,10 +1,11 @@
-import { TICKER_GROUPS } from "@/lib/data";
+"use client";
+import { useEffect, useState } from "react";
+import { TICKER_GROUPS, type TickerGroup } from "@/lib/data";
 
-// Conteúdo duplicado para loop infinito sem emenda (translateX -50%)
-function TickerContent() {
+function TickerContent({ groups }: { groups: TickerGroup[] }) {
   return (
     <>
-      {TICKER_GROUPS.map((g, gi) => (
+      {groups.map((g, gi) => (
         <span key={gi} style={{ display: "contents" }}>
           <div className="tkr-div">{g.div}</div>
           {g.items.map((it, ii) => (
@@ -20,11 +21,24 @@ function TickerContent() {
 }
 
 export default function Ticker() {
+  const [groups, setGroups] = useState<TickerGroup[]>(TICKER_GROUPS);
+
+  useEffect(() => {
+    fetch("/api/ticker")
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.data && Array.isArray(j.data) && j.data.length > 0) {
+          setGroups(j.data);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="tkr-wrap">
       <div className="tkr-track">
-        <TickerContent />
-        <TickerContent />
+        <TickerContent groups={groups} />
+        <TickerContent groups={groups} />
       </div>
     </div>
   );

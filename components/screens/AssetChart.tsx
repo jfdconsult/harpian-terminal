@@ -1,11 +1,11 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { createChart, ColorType, LineStyle, type IChartApi } from "lightweight-charts";
-import { emaEuler, demaCascade, temaCascade, sma, bollinger, rsiSeries, demaReturns, toLine } from "@/lib/indicators";
+import { emaEuler, bollinger, rsiSeries, demaReturns, toLine } from "@/lib/indicators";
 
 type Candle = { time: number; open: number; high: number; low: number; close: number };
 type Vol = { time: number; value: number; up: boolean };
-export interface Studies { ema: boolean; dema: boolean; tema: boolean; sma: boolean; bb: boolean; vol: boolean; rsi: boolean; mom: boolean }
+export interface Studies { ema: boolean; bb: boolean; vol: boolean; rsi: boolean; momD: boolean; momJ: boolean }
 
 export default function AssetChart({ candles, volume, studies, compareLine }: { candles: Candle[]; volume: Vol[]; studies: Studies; compareLine?: { time: number; value: number }[] | null }) {
   const mainRef = useRef<HTMLDivElement>(null);
@@ -45,9 +45,6 @@ export default function AssetChart({ candles, volume, studies, compareLine }: { 
       s.setData(toLine(times, vals) as never);
     };
     if (studies.ema) addLine(emaEuler(closes, 13), "#4A90D9", 2);
-    if (studies.dema) addLine(demaCascade(closes, 13), "#C9A02C", 2);
-    if (studies.tema) addLine(temaCascade(closes, 13), "#2ECC71", 2);
-    if (studies.sma) addLine(sma(closes, 50), "#7d96b3", 1);
     if (studies.bb) { const bb = bollinger(closes, 20, 2); addLine(bb.upper, "#7FA8C9", 1, true); addLine(bb.lower, "#7FA8C9", 1, true); }
 
     // Linha de comparação (benchmark rebaseado ao nível do ativo)
@@ -62,12 +59,17 @@ export default function AssetChart({ candles, volume, studies, compareLine }: { 
       rs.setData(toLine(times, rsiSeries(closes, 14)) as never);
       [70, 30].forEach((lvl) => { const g = rc.addLineSeries({ color: "rgba(255,255,255,0.15)", lineWidth: 1, lineStyle: LineStyle.Dashed, priceLineVisible: false, lastValueVisible: false }); g.setData(times.map((t) => ({ time: t, value: lvl })) as never); });
     }
-    if (studies.mom && momRef.current) {
-      const mc = mk(momRef.current, 110); charts.push(mc);
-      const d13 = mc.addLineSeries({ color: "#C9A02C", lineWidth: 2, priceLineVisible: false, lastValueVisible: false });
-      d13.setData(toLine(times, demaReturns(closes, 13)) as never);
-      const j37 = mc.addLineSeries({ color: "#4A90D9", lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
-      j37.setData(toLine(times, demaReturns(closes, 37)) as never);
+    const showMom = (studies.momD || studies.momJ) && momRef.current;
+    if (showMom) {
+      const mc = mk(momRef.current!, 110); charts.push(mc);
+      if (studies.momD) {
+        const dLine = mc.addLineSeries({ color: "#C9A02C", lineWidth: 2, priceLineVisible: false, lastValueVisible: false });
+        dLine.setData(toLine(times, demaReturns(closes, 13)) as never);
+      }
+      if (studies.momJ) {
+        const jLine = mc.addLineSeries({ color: "#4A90D9", lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
+        jLine.setData(toLine(times, demaReturns(closes, 37)) as never);
+      }
       const z = mc.addLineSeries({ color: "rgba(255,255,255,0.15)", lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
       z.setData(times.map((t) => ({ time: t, value: 0 })) as never);
     }
@@ -90,8 +92,8 @@ export default function AssetChart({ candles, volume, studies, compareLine }: { 
       <div ref={mainRef} style={{ width: "100%" }} />
       {studies.rsi && <div style={{ fontSize: 9, color: "var(--tx3)", fontFamily: "var(--mono)", margin: "6px 0 0", letterSpacing: ".08em" }}>RSI (14)</div>}
       <div ref={rsiRef} style={{ width: "100%", display: studies.rsi ? "block" : "none" }} />
-      {studies.mom && <div style={{ fontSize: 9, color: "var(--tx3)", fontFamily: "var(--mono)", margin: "6px 0 0", letterSpacing: ".08em" }}>MOMENTO DEMA · D13 (ouro) / J37 (azul)</div>}
-      <div ref={momRef} style={{ width: "100%", display: studies.mom ? "block" : "none" }} />
+      {(studies.momD || studies.momJ) && <div style={{ fontSize: 9, color: "var(--tx3)", fontFamily: "var(--mono)", margin: "6px 0 0", letterSpacing: ".08em" }}>MOMENTO{studies.momD && studies.momJ ? " · D (ouro) / J (azul)" : studies.momD ? " D" : " J"}</div>}
+      <div ref={momRef} style={{ width: "100%", display: (studies.momD || studies.momJ) ? "block" : "none" }} />
     </div>
   );
 }
