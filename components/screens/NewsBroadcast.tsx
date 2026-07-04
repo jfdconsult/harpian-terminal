@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { fetchNews, IMPACT_COLOR, type NewsHeadline } from "@/lib/feeds";
+import { publishScreenData } from "@/lib/jim-data";
 
 export default function NewsBroadcast() {
   const [all, setAll] = useState<NewsHeadline[]>([]);
@@ -30,6 +31,18 @@ export default function NewsBroadcast() {
     if (impact !== "all" && h.impact !== impact) return false;
     return true;
   }), [all, source, impact]);
+
+  // Publica pro JIM as manchetes visíveis no broadcast.
+  useEffect(() => {
+    if (conn !== "ok") return;
+    publishScreenData(
+      "news-broadcast",
+      "News Broadcast (RSS financeiro ao vivo: CNBC, MarketWatch, Yahoo). Cada manchete = título, fonte, impacto (Market Moving/High/Normal) e horário.",
+      items.slice(0, 40).map((h) => ({
+        titulo: h.headline, fonte: h.source_label || h.source, impacto: h.impact, quando: h.ts,
+      }))
+    );
+  }, [items, conn]);
 
   return (
     <div className="screen">

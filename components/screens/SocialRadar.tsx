@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { fetchSocialTrending, IMPACT_COLOR, SENTIMENT_COLOR, type SocialPost } from "@/lib/feeds";
+import { publishScreenData } from "@/lib/jim-data";
 
 export default function SocialRadar() {
   const [all, setAll] = useState<SocialPost[]>([]);
@@ -29,6 +30,19 @@ export default function SocialRadar() {
   }), [all, impact, sentiment]);
 
   const active = activeId != null ? all.find((p) => p.id === activeId) ?? null : null;
+
+  // Publica pro JIM os posts visíveis no radar social.
+  useEffect(() => {
+    if (conn !== "ok") return;
+    publishScreenData(
+      "social-radar",
+      "Social Radar (StockTwits ao vivo): cashtags mais comentadas. Cada post = autor, sentimento declarado (Bullish/Bearish/Neutral), alcance (seguidores), tickers citados e o texto.",
+      posts.slice(0, 40).map((p) => ({
+        autor: p.author, handle: p.handle, sentimento: p.sentiment, alcance: p.impact,
+        seguidores: p.followers, tickers: p.symbols, texto: p.body, quando: p.ts,
+      }))
+    );
+  }, [posts, conn]);
 
   return (
     <div className="screen" style={{ display: "flex", flexDirection: "column" }}>

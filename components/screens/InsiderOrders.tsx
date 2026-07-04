@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { IO_DATA, fmtN, fmtUSD } from "@/lib/data";
+import { publishScreenData } from "@/lib/jim-data";
 
 export default function InsiderOrders() {
   const [type, setType] = useState("all");
@@ -11,6 +12,18 @@ export default function InsiderOrders() {
     if (role !== "all" && x.role !== role) return false;
     return true;
   });
+
+  // Publica pro JIM exatamente as transações visíveis na tela.
+  useEffect(() => {
+    publishScreenData(
+      "insider-orders",
+      "Insider & Executive Orders (SEC Form 4): compras e vendas de insiders (CEO/CFO/Diretor/10%+). Cada linha = data, insider, cargo, empresa, ticker, tipo (Purchase/Sale), nº de ações e valor em USD.",
+      items.map((x) => ({
+        date: x.date, insider: x.insider, role: x.role, company: x.company,
+        ticker: x.ticker, type: x.type, shares: x.shares, valueUSD: x.value,
+      }))
+    );
+  }, [items]);
 
   return (
     <div className="screen">

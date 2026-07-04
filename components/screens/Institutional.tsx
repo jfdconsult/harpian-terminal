@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { GOV_API, fmtN, fmtUSD } from "@/lib/data";
+import { publishScreenData } from "@/lib/jim-data";
 
 interface Fund { short: string; name: string; style: string; cik?: string; }
 interface Holding { issuer: string; title_of_class: string; cusip: string; value_x1000_usd: number; shares: number; put_call?: string; share_type?: string; }
@@ -30,6 +31,22 @@ export default function Institutional() {
   const holdings = data?.all_holdings || [];
   const totalVal = holdings.reduce((s, x) => s + (x.value_x1000_usd || 0), 0) * 1000;
   const fund = funds.find((f) => f.short === selected);
+
+  // Publica pro JIM o fundo selecionado e suas posições 13F visíveis.
+  useEffect(() => {
+    if (!fund) return;
+    publishScreenData(
+      "institutional",
+      `13F Holdings do fundo "${fund.name}" (${fund.style}). Filing ${data?.filing_date || "—"}, período ${data?.period || "—"}. AUM 13F total US$ ${totalVal}. Cada linha = emissor (issuer), classe, CUSIP, valor em USD (value_x1000_usd × 1000), nº de ações e Put/Call.`,
+      {
+        fundo: fund.name, estilo: fund.style, filing_date: data?.filing_date, period: data?.period,
+        holdings: holdings.slice(0, 40).map((x) => ({
+          issuer: x.issuer, classe: x.title_of_class, valueUSD: x.value_x1000_usd * 1000,
+          shares: x.shares, putCall: x.put_call || null,
+        })),
+      }
+    );
+  }, [fund, data, holdings, totalVal]);
   const stats = [
     { v: fmtUSD(totalVal), l: "Total AUM (13F)" },
     { v: fmtN(data?.num_holdings || holdings.length), l: "Holdings" },

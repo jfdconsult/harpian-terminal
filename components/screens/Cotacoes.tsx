@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { MARKET_GROUPS } from "@/lib/market";
 import { getFavorites, toggleFavorite } from "@/lib/favorites";
 import { pctText, pctClass, numShort, num } from "@/lib/format";
+import { publishScreenData } from "@/lib/jim-data";
 import type { ScreenId } from "@/lib/nav";
 
 interface Quote {
@@ -43,6 +44,19 @@ export default function Cotacoes({ go }: { go?: (id: ScreenId, param?: string) =
     e.stopPropagation();
     setFavs(toggleFavorite(sym));
   }
+
+  // Publica pro JIM as cotações da aba/classe que está aberta.
+  useEffect(() => {
+    if (loading || err || rows.length === 0) return;
+    publishScreenData(
+      "cotacoes",
+      `Cotações (Yahoo, fechamento EOD) da classe "${tab === FAV ? "Favoritos" : tab}". Cada linha = ticker, nome, último preço, variação do Dia, 1 mês, YTD, 1 ano e Sharpe (1 ano, rf 3,5%).`,
+      rows.filter((q) => !q.error).map((q) => ({
+        ticker: q.symbol, nome: NAME_OF[q.symbol] || q.symbol, ultimo: q.price,
+        diaPct: q.dayPct, mesPct: q.mPct, ytdPct: q.ytdPct, anoPct: q.yPct, sharpe: q.sharpe,
+      }))
+    );
+  }, [rows, tab, loading, err]);
 
   return (
     <div className="screen">
