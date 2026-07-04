@@ -8,7 +8,7 @@ export default function Carteira({ clientId = "vera", go }: { clientId?: string;
   return (
     <div className="screen">
       <div className="crumb">Clientes › <b>Carteira · {client.name}</b></div>
-      <ClientDetail client={client} go={go} />
+      <ClientDetail client={client} go={go} screen="carteira" />
     </div>
   );
 }

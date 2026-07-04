@@ -1,13 +1,14 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { brl, type Client } from "@/lib/clients";
 import { findClient } from "@/lib/clientStore";
+import { publishScreenData } from "@/lib/jim-data";
 import type { ScreenId } from "@/lib/nav";
 
 const HPC22_RN = 38; // Número de Risco do produto (motor interno)
 const ALLOC_COLORS = ["#4A90D9", "#C9A02C", "#2ECC71", "#F39C12", "#7d96b3"];
 
-export function ClientDetail({ client, go }: { client: Client; go: (id: ScreenId, param?: string) => void }) {
+export function ClientDetail({ client, go, screen = "cliente" }: { client: Client; go: (id: ScreenId, param?: string) => void; screen?: ScreenId }) {
   const [migrate, setMigrate] = useState(0); // % migrado p/ HPC22
   const ganhoPct = (client.current / client.invested - 1) * 100;
   const aligned = client.riskNumber <= client.mandate;
@@ -17,6 +18,35 @@ export function ClientDetail({ client, go }: { client: Client; go: (id: ScreenId
     [migrate, client.riskNumber]
   );
   const gap = blendedRN - client.mandate;
+
+  // Publica pro JIM o cliente/carteira aberto (adequação, risco, alocação).
+  useEffect(() => {
+    const foco = screen === "carteira" ? "a carteira de" : "o cliente";
+    publishScreenData(
+      screen,
+      `Ficha do cliente ${client.name} (${client.type}, perfil ${client.profile}). AUM, ganho, Número de Risco vs mandato, alocação atual e adequação ao perfil.`,
+      {
+        cliente: client.name, tipo: client.type, perfil: client.profile,
+        aumAtual: client.current, investido: client.invested, ganhoPct: +ganhoPct.toFixed(1),
+        riskNumber: client.riskNumber, mandato: client.mandate,
+        adequado: aligned, gapAcimaDoMandato: aligned ? 0 : client.riskNumber - client.mandate,
+        alocacaoHarpianPct: client.harpianPct,
+        alocacao: client.alloc.map((a) => ({ classe: a.label, pct: a.pct })),
+      },
+      {
+        briefing:
+          `Você está vendo ${foco} **${client.name}** (${client.type}, perfil ${client.profile}). ` +
+          `AUM ${brl(client.current)}, ganho +${ganhoPct.toFixed(1).replace(".", ",")}%. ` +
+          `Número de Risco **${client.riskNumber}** vs mandato **${client.mandate}** — ` +
+          (aligned ? "dentro do mandato." : `**${client.riskNumber - client.mandate} acima do teto**.`),
+        suggestions: [
+          aligned ? "Esse cliente está bem posicionado?" : "Por que esse cliente está fora do mandato?",
+          "Qual posição pesa mais no risco dele?",
+          "Migrar pro HPC22 resolve o enquadramento?",
+        ],
+      }
+    );
+  }, [client, screen, aligned, ganhoPct]);
 
   return (
     <>
