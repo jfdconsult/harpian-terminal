@@ -1,12 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { yahooChart, dayPct } from "@/lib/yahoo";
 import { cacheGet, cacheSet } from "@/lib/cache";
+import { hqpGet } from "@/lib/hqp";
 
 export const dynamic = "force-dynamic";
 
 const TTL = 8 * 60 * 60 * 1000; // 8 hours → ~3 refreshes/day
 
-interface TickerItem { lbl: string; v: string; dir: "up" | "dn" | "nu" | "wa" | "go" }
+interface TickerItem { lbl: string; v: string; dir: "up" | "dn" | "nu" | "wa" | "go"; symbol?: string; href?: string }
 interface TickerGroup { div: string; items: TickerItem[] }
 
 const SYMBOLS: { div: string; items: { lbl: string; sym: string; prefix?: string; suffix?: string; isYield?: boolean }[] }[] = [
@@ -26,6 +27,22 @@ const SYMBOLS: { div: string; items: { lbl: string; sym: string; prefix?: string
     ],
   },
   {
+    div: "CÂMBIO",
+    items: [
+      { lbl: "USD/BRL", sym: "BRL=X" },
+      { lbl: "EUR/USD", sym: "EURUSD=X" },
+      { lbl: "EUR/BRL", sym: "EURBRL=X" },
+    ],
+  },
+  {
+    div: "CRIPTO",
+    items: [
+      { lbl: "BTC", sym: "BTC-USD", prefix: "$" },
+      { lbl: "ETH", sym: "ETH-USD", prefix: "$" },
+      { lbl: "SOL", sym: "SOL-USD", prefix: "$" },
+    ],
+  },
+  {
     div: "COMMODITIES",
     items: [
       { lbl: "GOLD", sym: "GC=F", prefix: "$" },
@@ -34,13 +51,10 @@ const SYMBOLS: { div: string; items: { lbl: string; sym: string; prefix?: string
       { lbl: "BRENT", sym: "BZ=F", prefix: "$" },
       { lbl: "NAT GAS", sym: "NG=F", prefix: "$" },
       { lbl: "COPPER", sym: "HG=F", prefix: "$" },
-      { lbl: "USD/BRL", sym: "BRL=X" },
-      { lbl: "EUR/USD", sym: "EURUSD=X" },
-      { lbl: "BTC", sym: "BTC-USD", prefix: "$" },
     ],
   },
   {
-    div: "STOCKS",
+    div: "AÇÕES US",
     items: [
       { lbl: "NVDA", sym: "NVDA", prefix: "$" },
       { lbl: "MSFT", sym: "MSFT", prefix: "$" },
@@ -58,6 +72,32 @@ const SYMBOLS: { div: string; items: { lbl: string; sym: string; prefix?: string
       { lbl: "IWM", sym: "IWM", prefix: "$" },
     ],
   },
+  {
+    // 20 maiores/mais líquidas do Ibovespa.
+    div: "AÇÕES BRASIL",
+    items: [
+      { lbl: "PETR4", sym: "PETR4.SA" },
+      { lbl: "VALE3", sym: "VALE3.SA" },
+      { lbl: "ITUB4", sym: "ITUB4.SA" },
+      { lbl: "BBDC4", sym: "BBDC4.SA" },
+      { lbl: "BBAS3", sym: "BBAS3.SA" },
+      { lbl: "ABEV3", sym: "ABEV3.SA" },
+      { lbl: "B3SA3", sym: "B3SA3.SA" },
+      { lbl: "WEGE3", sym: "WEGE3.SA" },
+      { lbl: "RENT3", sym: "RENT3.SA" },
+      { lbl: "SUZB3", sym: "SUZB3.SA" },
+      { lbl: "JBSS3", sym: "JBSS3.SA" },
+      { lbl: "ITSA4", sym: "ITSA4.SA" },
+      { lbl: "EQTL3", sym: "EQTL3.SA" },
+      { lbl: "RADL3", sym: "RADL3.SA" },
+      { lbl: "PRIO3", sym: "PRIO3.SA" },
+      { lbl: "GGBR4", sym: "GGBR4.SA" },
+      { lbl: "VIVT3", sym: "VIVT3.SA" },
+      { lbl: "RAIL3", sym: "RAIL3.SA" },
+      { lbl: "ELET3", sym: "ELET3.SA" },
+      { lbl: "CSAN3", sym: "CSAN3.SA" },
+    ],
+  },
 ];
 
 function fmtPrice(v: number, prefix?: string, suffix?: string): string {
@@ -73,32 +113,45 @@ function dir(pct: number | null, isYield?: boolean): "up" | "dn" | "wa" {
   return pct >= 0 ? "up" : "dn";
 }
 
-async function fetchAll(): Promise<TickerGroup[]> {
+async function quoteItem(it: { lbl: string; sym: string; prefix?: string; suffix?: string; isYield?: boolean }): Promise<TickerItem> {
+  const { series } = await yahooChart(it.sym, "5d", "1d");
+  const c = series.close;
+  const price = c[c.length - 1];
+  const pct = dayPct(c);
+  const pctStr = pct != null ? (pct >= 0 ? "+" : "") + pct.toFixed(2) + "%" : "";
+  return {
+    lbl: it.lbl,
+    v: `${fmtPrice(price, it.prefix, it.suffix)} ${pctStr}`,
+    dir: dir(pct, it.isYield),
+    symbol: it.sym,
+  };
+}
+
+async function fetchAll(origin: string): Promise<TickerGroup[]> {
   const groups: TickerGroup[] = [];
 
   for (const g of SYMBOLS) {
+    const results = await Promise.allSettled(g.items.map(quoteItem));
     const items: TickerItem[] = [];
-    const results = await Promise.allSettled(
-      g.items.map(async (it) => {
-        const { series } = await yahooChart(it.sym, "5d", "1d");
-        const c = series.close;
-        const price = c[c.length - 1];
-        const pct = dayPct(c);
-        const pctStr = pct != null ? (pct >= 0 ? "+" : "") + pct.toFixed(2) + "%" : "";
-        const d = dir(pct, it.isYield);
-        return {
-          lbl: it.lbl,
-          v: `${fmtPrice(price, it.prefix, it.suffix)} ${pctStr}`,
-          dir: d,
-        } as TickerItem;
-      })
-    );
-
-    for (const r of results) {
-      if (r.status === "fulfilled") items.push(r.value);
-    }
+    for (const r of results) if (r.status === "fulfilled") items.push(r.value);
     if (items.length) groups.push({ div: g.div, items });
   }
+
+  // Suas posições — top holdings reais do fundo (leitura cliente-safe do overnight,
+  // nunca o motor/sinal). Cotação ao vivo do Yahoo por cima.
+  try {
+    const snap = await fetch(`${origin}/api/snapshot`, { cache: "no-store" }).then((r) => r.json());
+    const profile = snap?.profiles?.ADVANCE || snap?.profiles?.BALANCE || snap?.profiles?.CONSERVATIVE;
+    const holdings: { ticker: string }[] = (profile?.top_holdings || []).slice(0, 8);
+    if (holdings.length) {
+      const results = await Promise.allSettled(
+        holdings.map((h) => quoteItem({ lbl: h.ticker, sym: h.ticker, prefix: "$" }))
+      );
+      const items: TickerItem[] = [];
+      for (const r of results) if (r.status === "fulfilled") items.push(r.value);
+      if (items.length) groups.push({ div: "SUAS POSIÇÕES", items });
+    }
+  } catch { /* overnight offline — segue sem essa faixa */ }
 
   // Harpian funds (static for now)
   groups.push({
@@ -109,18 +162,30 @@ async function fetchAll(): Promise<TickerGroup[]> {
     ],
   });
 
+  // Notícias reais (RSS financeiro via backend HQP) — cada item linca a matéria original.
+  try {
+    const news = await hqpGet<{ headlines: { headline: string; source_label: string; url: string }[] }>("/v1/news");
+    const items: TickerItem[] = (news.headlines || []).slice(0, 8).map((h) => ({
+      lbl: h.headline.length > 64 ? h.headline.slice(0, 61) + "…" : h.headline,
+      v: h.source_label,
+      dir: "go",
+      href: h.url,
+    }));
+    if (items.length) groups.push({ div: "NOTÍCIAS", items });
+  } catch { /* backend de notícias offline — segue sem essa faixa */ }
+
   return groups;
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const cached = cacheGet<TickerGroup[]>("ticker", TTL);
   if (cached) {
-    const age = Math.round((Date.now() - (Date.now() - TTL + 1)) / 60000);
     return NextResponse.json({ data: cached, cached: true });
   }
 
   try {
-    const data = await fetchAll();
+    const origin = new URL(req.url).origin;
+    const data = await fetchAll(origin);
     cacheSet("ticker", data);
     return NextResponse.json({ data, cached: false });
   } catch (e) {

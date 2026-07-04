@@ -18,6 +18,8 @@ export interface TickerItem {
   lbl: string;
   v: string;
   dir: "up" | "dn" | "nu" | "wa" | "go";
+  symbol?: string; // símbolo Yahoo — clique abre o gráfico do ativo
+  href?: string;   // link externo (ex.: matéria de notícia) — abre em nova aba
 }
 export interface TickerGroup {
   div: string;

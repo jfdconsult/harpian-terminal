@@ -78,7 +78,7 @@ export default function Terminal() {
 
   return (
     <div className="app">
-      <Ticker />
+      <Ticker go={go} />
       <Topbar go={go} jimOpen={jimOpen} onJimToggle={() => setJimOpen((v) => !v)} />
       <div className="main">{renderScreen()}</div>
       <JimDrawer open={jimOpen} onClose={() => setJimOpen(false)} screen={screen} />

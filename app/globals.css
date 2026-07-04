@@ -10,13 +10,19 @@
   --r-sm:6px; --r-md:8px; --r-lg:12px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{max-width:100%;overflow-x:hidden}
-body{background:radial-gradient(1100px 520px at 50% -8%,#102a4a 0%,var(--bg) 58%) fixed;color:var(--tx);font-family:var(--sans);font-size:13.5px;-webkit-font-smoothing:antialiased;min-height:100vh}
+/* overflow-x só no body: se html E body tivessem overflow-x:hidden com overflow-y
+   omitido, a regra do CSS promove overflow-y pra "auto" nos DOIS elementos — cria
+   dois contêineres de rolagem concorrentes e quebra todo position:sticky da página
+   (Ticker/Topbar). Com overflow-x só no body, apenas ele vira o scroller efetivo. */
+html{max-width:100%}
+body{max-width:100%;overflow-x:hidden;background:radial-gradient(1100px 520px at 50% -8%,#102a4a 0%,var(--bg) 58%) fixed;color:var(--tx);font-family:var(--sans);font-size:13.5px;-webkit-font-smoothing:antialiased;min-height:100vh}
 a{color:inherit;text-decoration:none}
 .app{display:flex;flex-direction:column;min-height:100vh}
 
 /* ===== TICKER TAPE ===== */
-.tkr-wrap{height:34px;background:rgba(4,9,16,0.98);border-bottom:1px solid var(--line);overflow:hidden;display:flex;align-items:center;flex-shrink:0;position:relative;z-index:51}
+/* sticky no topo — antes só o Topbar grudava; o ticker rolava pra fora de vista
+   assim que a página tinha scroll (telas com tabelas longas, ex. Cotações). */
+.tkr-wrap{height:34px;background:rgba(4,9,16,0.98);border-bottom:1px solid var(--line);overflow:hidden;display:flex;align-items:center;flex-shrink:0;position:sticky;top:0;z-index:52}
 .tkr-track{display:flex;align-items:center;animation:tkrScroll 80s linear infinite;white-space:nowrap;will-change:transform}
 .tkr-track:hover{animation-play-state:paused}
 @keyframes tkrScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
@@ -25,9 +31,14 @@ a{color:inherit;text-decoration:none}
 .tkr-v{font-weight:500;font-size:11px}
 .tkr-v.up{color:var(--green)} .tkr-v.dn{color:var(--red)} .tkr-v.nu{color:var(--tx2)} .tkr-v.wa{color:var(--orange)} .tkr-v.go{color:var(--gold)}
 .tkr-div{padding:0 18px;font-family:var(--mono);font-size:9px;color:var(--tx3);letter-spacing:.20em;text-transform:uppercase;border-right:1px solid rgba(255,255,255,0.04)}
+a.tkr-item, div.tkr-item.tkr-link{cursor:pointer;color:inherit;text-decoration:none}
+.tkr-link:hover{background:rgba(201,160,44,.08)}
+.tkr-link:hover .tkr-lbl{color:var(--gold)}
 
 /* ===== OFFICE TOP BAR ===== */
-.topbar{display:flex;align-items:center;gap:2px;background:var(--bg2);border-bottom:1px solid var(--line2);padding:0 14px;height:52px;position:sticky;top:0;z-index:50}
+/* gruda logo abaixo do ticker (34px), não em cima dele — antes os dois competiam
+   pelo mesmo top:0 e o ticker desaparecia por trás do Topbar ao rolar a página. */
+.topbar{display:flex;align-items:center;gap:2px;background:var(--bg2);border-bottom:1px solid var(--line2);padding:0 14px;height:52px;position:sticky;top:34px;z-index:50}
 .brand{display:flex;align-items:center;gap:9px;font-weight:600;letter-spacing:.4px;margin-right:14px;cursor:pointer}
 .brand .lg{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--gold2),#b08010);color:#1a1205;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px}
 .brand .sub{font-weight:400;color:var(--tx3);font-size:11px;letter-spacing:1px}
