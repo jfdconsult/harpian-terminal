@@ -44,6 +44,22 @@ export const MARKET_GROUPS: Record<string, SymbolDef[]> = {
     { symbol: "NG=F", name: "Gás natural" },
     { symbol: "HG=F", name: "Cobre" },
   ],
+  "Cripto": [
+    { symbol: "BTC-USD", name: "Bitcoin" },
+    { symbol: "ETH-USD", name: "Ethereum" },
+    { symbol: "SOL-USD", name: "Solana" },
+    { symbol: "XRP-USD", name: "XRP" },
+    { symbol: "BNB-USD", name: "BNB" },
+    { symbol: "DOGE-USD", name: "Dogecoin" },
+  ],
+  "Forex": [
+    { symbol: "EURUSD=X", name: "EUR / USD" },
+    { symbol: "USDJPY=X", name: "USD / JPY" },
+    { symbol: "GBPUSD=X", name: "GBP / USD" },
+    { symbol: "USDBRL=X", name: "USD / BRL" },
+    { symbol: "USDCHF=X", name: "USD / CHF" },
+    { symbol: "AUDUSD=X", name: "AUD / USD" },
+  ],
 };
 
 // Seletor da tela "Ações, ETFs & Commodities" — agrupado (optgroup)
@@ -60,8 +76,10 @@ export const ASSET_LIST: SymbolDef[] = ASSET_GROUPS.flatMap((g) => g.items);
 const TV_MAP: Record<string, string> = {
   "^GSPC": "SP:SPX", "^NDX": "NASDAQ:NDX", "^DJI": "DJ:DJI", "^RUT": "TVC:RUT2K", "^SOX": "NASDAQ:SOX", "^VIX": "TVC:VIX",
   "GC=F": "COMEX:GC1!", "SI=F": "COMEX:SI1!", "CL=F": "NYMEX:CL1!", "BZ=F": "NYMEX:BZ1!", "NG=F": "NYMEX:NG1!", "HG=F": "COMEX:HG1!",
+  "BTC-USD": "COINBASE:BTCUSD", "ETH-USD": "COINBASE:ETHUSD", "SOL-USD": "COINBASE:SOLUSD", "XRP-USD": "COINBASE:XRPUSD", "BNB-USD": "BINANCE:BNBUSD", "DOGE-USD": "COINBASE:DOGEUSD",
+  "EURUSD=X": "FX:EURUSD", "USDJPY=X": "FX:USDJPY", "GBPUSD=X": "FX:GBPUSD", "USDBRL=X": "FX_IDC:USDBRL", "USDCHF=X": "FX:USDCHF", "AUDUSD=X": "FX:AUDUSD",
 };
-export const tvSymbol = (s: string) => TV_MAP[s] || s.replace("^", "").replace("=F", "");
+export const tvSymbol = (s: string) => TV_MAP[s] || s.replace("^", "").replace("=F", "").replace("-USD", "USD").replace("=X", "");
 
 
 // Carteira exemplo do cliente (agressiva) — o Risco de portfólio sai daqui, ao vivo do Yahoo.
