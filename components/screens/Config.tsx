@@ -1,4 +1,6 @@
 "use client";
+import { useEffect } from "react";
+import { publishScreenData } from "@/lib/jim-data";
 
 const USERS = [
   { name: "João Daniel", role: "Diretor", tag: "admin" },
@@ -7,6 +9,22 @@ const USERS = [
 ];
 
 export default function Config() {
+  useEffect(() => {
+    publishScreenData(
+      "config",
+      "Configurações do terminal: conta (organização, plano), preferências (moeda, idioma, tema, fuso) e usuários/permissões.",
+      { usuarios: USERS, moeda: "USD", idioma: "Português (BR)", tema: "Institucional (navy/ouro)", plano: "Institucional" },
+      {
+        briefing: `Você está nas configurações: plano Institucional, ${USERS.length} usuários cadastrados, exibição em USD.`,
+        suggestions: [
+          "Quem tem acesso de admin?",
+          "Como mudo o fuso ou o idioma?",
+          "Permissões finas já existem?",
+        ],
+      }
+    );
+  }, []);
+
   return (
     <div className="screen">
       <div className="crumb">Ajustes › <b>Configurações</b></div>

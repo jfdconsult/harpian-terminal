@@ -1,4 +1,6 @@
 "use client";
+import { useEffect } from "react";
+import { publishScreenData } from "@/lib/jim-data";
 
 const INTEGRATIONS = [
   { name: "Yahoo Finance", icon: "ti-chart-line", status: "conectado", note: "Cotações e histórico US · fonte atual" },
@@ -11,6 +13,25 @@ const INTEGRATIONS = [
 const tag = (s: string) => (s === "conectado" ? "g" : s === "planejado" ? "b" : "o");
 
 export default function Integracoes() {
+  useEffect(() => {
+    const pend = INTEGRATIONS.filter((i) => i.status !== "conectado");
+    publishScreenData(
+      "integracoes",
+      "Integrações do Terminal: conexões de dados e sistemas (Yahoo Finance, FastTrack, SEC EDGAR, CFTC, Lynk, TradingView) com status.",
+      INTEGRATIONS,
+      {
+        briefing:
+          `Você está vendo ${INTEGRATIONS.length} integrações: ${INTEGRATIONS.length - pend.length} conectadas` +
+          (pend.length ? `, ${pend.length} pendente(s): ${pend.map((i) => i.name).join(", ")}.` : "."),
+        suggestions: [
+          "O que muda quando a FastTrack entrar?",
+          "Alguma integração está com problema?",
+          "Como conecto o TradingView?",
+        ],
+      }
+    );
+  }, []);
+
   return (
     <div className="screen">
       <div className="crumb">Ajustes › <b>Integrações</b></div>

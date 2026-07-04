@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { publishScreenData } from "@/lib/jim-data";
 import type { DDSeries } from "./DrawdownChart";
 
 const DrawdownChart = dynamic(() => import("./DrawdownChart"), { ssr: false });
@@ -39,6 +40,26 @@ export default function RiskJourney() {
   const series: DDSeries[] = [];
   if (data?.core) series.push({ name: "CORE22+", color: "#C9A02C", data: data.core, fill: true });
   if (data?.spx) series.push({ name: "S&P 500", color: "#E74C3C", data: data.spx, fill: false });
+
+  // Publica pro JIM a curva de drawdown (jornada de risco) do período selecionado.
+  useEffect(() => {
+    if (!data || data.error) return;
+    const periodLabel = PERIODS.find((p) => p.k === period)?.l || period;
+    publishScreenData(
+      "fundo",
+      "Aba Risco & Jornada do fundo: curva submersa (drawdown vs. topo anterior) do CORE22+ vs S&P 500, backtest hipotético, base 100.",
+      { periodo: periodLabel, drawdownMaximoCore: data.maxCore, drawdownMaximoSpx: data.maxSpx },
+      {
+        briefing:
+          `Você está vendo a curva de drawdown (${periodLabel}): CORE22+ com máximo de ${data.maxCore}% vs S&P 500 com ${data.maxSpx}%.`,
+        suggestions: [
+          "O que essa curva de drawdown significa?",
+          "Quanto tempo leva pra recuperar uma queda dessas?",
+          "Como isso se compara a outros períodos?",
+        ],
+      }
+    );
+  }, [data, period]);
 
   return (
     <div className="card">

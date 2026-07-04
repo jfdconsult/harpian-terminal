@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { publishScreenData } from "@/lib/jim-data";
 
 const COLORS = [
   { name: "Ouro Harpian", v: "#C9A02C" },
@@ -9,15 +10,58 @@ const COLORS = [
   { name: "Bordô", v: "#A23B4E" },
 ];
 
+const KEY = "harpian_marca_whitelabel";
+interface Saved { advisor: string; color: string }
+
+function load(): Saved {
+  if (typeof window === "undefined") return { advisor: "HARPIAN Capital", color: COLORS[0].v };
+  try {
+    const raw = JSON.parse(localStorage.getItem(KEY) || "{}");
+    return { advisor: raw.advisor || "HARPIAN Capital", color: raw.color || COLORS[0].v };
+  } catch {
+    return { advisor: "HARPIAN Capital", color: COLORS[0].v };
+  }
+}
+
 export default function Marca() {
-  const [advisor, setAdvisor] = useState("HARPIAN Capital");
-  const [color, setColor] = useState(COLORS[0].v);
+  // Inicializa já com o que foi salvo (lazy initializer — roda na 1ª renderização,
+  // antes de qualquer effect). Evita a corrida "salvar" vs "carregar" no mount.
+  const [advisor, setAdvisor] = useState(() => load().advisor);
+  const [color, setColor] = useState(() => load().color);
+  const [saved, setSaved] = useState(false);
+
+  // Persiste a cada mudança — sem botão "salvar" separado, sempre em dia.
+  useEffect(() => {
+    localStorage.setItem(KEY, JSON.stringify({ advisor, color }));
+    setSaved(true);
+    const t = setTimeout(() => setSaved(false), 1400);
+    return () => clearTimeout(t);
+  }, [advisor, color]);
+
+  useEffect(() => {
+    const colorName = COLORS.find((c) => c.v === color)?.name || color;
+    publishScreenData(
+      "marca",
+      "Marca (white-label): identidade do assessor nos relatórios pro cliente final — nome e cor primária. Aparece no preview do PDF.",
+      { nomeAssessor: advisor, corPrimaria: colorName },
+      {
+        briefing: `Sua marca hoje: **${advisor}**, cor ${colorName}. Aparece no cabeçalho dos relatórios do cliente.`,
+        suggestions: [
+          "Onde essa marca aparece pro cliente?",
+          "Como funciona o upload de logo?",
+          "Posso ter uma marca por cliente?",
+        ],
+      }
+    );
+  }, [advisor, color]);
 
   return (
     <div className="screen">
       <div className="crumb">Ajustes › <b>Marca</b></div>
-      <div className="h1">Marca (white-label)</div>
-      <div className="sub">A identidade do assessor nos relatórios gerados para o cliente final.</div>
+      <div className="flex between wrap" style={{ alignItems: "flex-start" }}>
+        <div><div className="h1">Marca (white-label)</div><div className="sub" style={{ margin: 0 }}>A identidade do assessor nos relatórios gerados para o cliente final.</div></div>
+        {saved && <span className="muted" style={{ fontSize: 11, color: "var(--green)", display: "flex", alignItems: "center", gap: 4 }}><i className="ti ti-circle-check" />salvo</span>}
+      </div>
 
       <div className="grid g2">
         <div className="card">

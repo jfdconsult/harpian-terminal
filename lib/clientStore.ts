@@ -2,9 +2,10 @@
 // Store de clientes com persistência local (localStorage). Junta o seed (lib/clients.ts)
 // com os clientes adicionados pelo gestor — sobrevive ao refresh. Fase 2: trocar por API
 // do sistema gerencial do MFO. Até lá, isto deixa "adicionar cliente" funcional de verdade.
-import { CLIENTS, type Client, type Alloc } from "./clients";
+import { CLIENTS, type Client, type Alloc, type ImportedPosition } from "./clients";
 
 const KEY = "harpian_clients_added";
+const OVERRIDE_KEY = "harpian_client_overrides";
 
 function loadAdded(): Client[] {
   if (typeof window === "undefined") return [];
@@ -20,14 +21,42 @@ function saveAdded(list: Client[]) {
   if (typeof window !== "undefined") localStorage.setItem(KEY, JSON.stringify(list));
 }
 
-/** Todos os clientes: seed + adicionados. */
-export function allClients(): Client[] {
-  return [...CLIENTS, ...loadAdded()];
+// Overrides parciais por cliente (ex.: carteira importada via planilha) — aplicados
+// por cima do seed/adicionados, sem precisar reescrever o cliente inteiro.
+function loadOverrides(): Record<string, Partial<Client>> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = JSON.parse(localStorage.getItem(OVERRIDE_KEY) || "{}");
+    return raw && typeof raw === "object" ? raw : {};
+  } catch {
+    return {};
+  }
 }
 
-/** Acha por id em toda a base (seed + adicionados). */
+function saveOverrides(o: Record<string, Partial<Client>>) {
+  if (typeof window !== "undefined") localStorage.setItem(OVERRIDE_KEY, JSON.stringify(o));
+}
+
+/** Todos os clientes: seed + adicionados, com overrides (ex.: importação) aplicados. */
+export function allClients(): Client[] {
+  const overrides = loadOverrides();
+  return [...CLIENTS, ...loadAdded()].map((c) => (overrides[c.id] ? { ...c, ...overrides[c.id] } : c));
+}
+
+/** Acha por id em toda a base (seed + adicionados + overrides). */
 export function findClient(id: string): Client {
   return allClients().find((c) => c.id === id) || CLIENTS[0];
+}
+
+/** Aplica uma planilha importada (posições) ao cliente: recalcula o valor atual
+ * pela soma qtd×preço médio e guarda as posições brutas. Persiste como override —
+ * sobrevive ao refresh sem duplicar o cliente. */
+export function applyImportedPortfolio(clientId: string, positions: ImportedPosition[]): Client {
+  const total = positions.reduce((s, p) => s + p.qty * p.avgPrice, 0);
+  const overrides = loadOverrides();
+  overrides[clientId] = { ...(overrides[clientId] || {}), current: total, importedPositions: positions };
+  saveOverrides(overrides);
+  return findClient(clientId);
 }
 
 const RISK_DEFAULT: Record<Client["profile"], number> = { Conservador: 35, Moderado: 55, Agressivo: 70 };

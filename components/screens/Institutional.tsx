@@ -49,7 +49,7 @@ export default function Institutional() {
       {
         briefing:
           `Você está vendo as posições 13F de **${fund.name}** (${fund.style}): ${holdings.length} holdings, ` +
-          `AUM US$ ${fmtUSD(totalVal)}` + (top ? `. Maior posição: **${top.issuer}**.` : ".") +
+          `AUM ${fmtUSD(totalVal)}` + (top ? `. Maior posição: **${top.issuer}**.` : ".") +
           ` Lembre: 13F tem defasagem de até 45 dias.`,
         suggestions: [
           `Qual a maior aposta de ${fund.short}?`,

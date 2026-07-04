@@ -1,5 +1,6 @@
 // Clientes do MFO (mock). Carteiras em BRL (investidores brasileiros).
 export interface Alloc { label: string; pct: number; tone?: "g" | "r" | "gold" }
+export interface ImportedPosition { ticker: string; qty: number; avgPrice: number }
 export interface Client {
   id: string;
   name: string;
@@ -13,6 +14,7 @@ export interface Client {
   harpianPct: number;   // % alocado em HPC
   alloc: Alloc[];
   note?: string;
+  importedPositions?: ImportedPosition[]; // planilha importada (Importar/conectar)
 }
 
 export const CLIENTS: Client[] = [
