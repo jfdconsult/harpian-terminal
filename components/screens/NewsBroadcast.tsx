@@ -35,12 +35,25 @@ export default function NewsBroadcast() {
   // Publica pro JIM as manchetes visíveis no broadcast.
   useEffect(() => {
     if (conn !== "ok") return;
+    const moving = items.filter((h) => h.impact === "Market Moving").length;
+    const top = items.find((h) => h.impact === "Market Moving") || items[0];
     publishScreenData(
       "news-broadcast",
       "News Broadcast (RSS financeiro ao vivo: CNBC, MarketWatch, Yahoo). Cada manchete = título, fonte, impacto (Market Moving/High/Normal) e horário.",
       items.slice(0, 40).map((h) => ({
         titulo: h.headline, fonte: h.source_label || h.source, impacto: h.impact, quando: h.ts,
-      }))
+      })),
+      {
+        briefing:
+          `Você está vendo ${items.length} manchetes ao vivo` +
+          (moving ? `, ${moving} classificadas como **Market Moving**.` : ".") +
+          (top ? ` Destaque: "${top.headline.slice(0, 90)}".` : ""),
+        suggestions: [
+          "Qual notícia move o mercado hoje?",
+          "Algo aqui afeta os fundos da Harpian?",
+          "Resuma as manchetes do dia pra mim.",
+        ],
+      }
     );
   }, [items, conn]);
 

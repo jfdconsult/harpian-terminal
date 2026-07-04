@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { ASSET_GROUPS, tvSymbol } from "@/lib/market";
 import { pctText, pctClass, num, numShort } from "@/lib/format";
+import { publishScreenData } from "@/lib/jim-data";
 import type { Studies } from "./AssetChart";
 
 const AssetChart = dynamic(() => import("./AssetChart"), { ssr: false });
@@ -53,6 +54,34 @@ export default function Acoes({ symbol: initial }: { symbol?: string }) {
   const toggle = (k: keyof Studies) => setStudies((s) => ({ ...s, [k]: !s[k] }));
   const name = asset?.name || cd?.name || symbol;
   const tvSym = tvSymbol(symbol);
+  const tick = symbol.replace("^", "");
+
+  // Publica pro JIM o ativo que está no gráfico, com momento/risco reais.
+  useEffect(() => {
+    if (!asset) return;
+    const briefing =
+      `Você está vendo **${name} (${tick})**, a ${numShort(asset.price)} (${pctText(asset.dayPct)} hoje). ` +
+      `No ano: ${pctText(asset.ytdPct)}; em 12 meses: ${pctText(asset.yPct)}. ` +
+      `Risco: drawdown máximo ${pctText(asset.maxDD)}, Sharpe ${num(asset.sharpe, 2)}` +
+      (asset.rsi != null ? `, RSI ${num(asset.rsi, 0)}` : "") + ".";
+    publishScreenData(
+      "acoes",
+      `Gráfico do ativo ${name} (${tick}) — dados Yahoo Finance. Métricas do ativo: preço, variação do dia/YTD/1 ano, Sharpe, drawdown máximo, RSI e faixa de 52 semanas.`,
+      {
+        ativo: name, ticker: tick, preco: asset.price, diaPct: asset.dayPct,
+        ytdPct: asset.ytdPct, anoPct: asset.yPct, sharpe: asset.sharpe,
+        maxDrawdownPct: asset.maxDD, rsi: asset.rsi, faixa52sem: asset.w52,
+      },
+      {
+        briefing,
+        suggestions: [
+          `Como está o momento de ${tick}?`,
+          `Qual o risco de ${tick} agora?`,
+          `${tick} está cara ou barata pelo histórico?`,
+        ],
+      }
+    );
+  }, [asset, name, tick]);
 
   return (
     <div className="screen">

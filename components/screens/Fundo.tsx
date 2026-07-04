@@ -1,12 +1,15 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FUNDS, FUND_LIST, type Fund, type KV } from "@/lib/funds";
+import { publishScreenData } from "@/lib/jim-data";
 import type { ScreenId } from "@/lib/nav";
 import RiskJourney from "./RiskJourney";
+import ComposicaoAoVivo from "./ComposicaoAoVivo";
 
-type Tab = "visao" | "perf" | "risco" | "defesa" | "econ" | "comprar";
+type Tab = "visao" | "comp" | "perf" | "risco" | "defesa" | "econ" | "comprar";
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "visao", label: "Visão", icon: "ti-eye" },
+  { id: "comp", label: "Composição ao vivo", icon: "ti-layout-grid" },
   { id: "perf", label: "Performance", icon: "ti-chart-line" },
   { id: "risco", label: "Risco & Jornada", icon: "ti-activity" },
   { id: "defesa", label: "Defesa em crises", icon: "ti-shield" },
@@ -34,6 +37,31 @@ function Empty({ label }: { label: string }) {
 export default function Fundo({ fundId, onSelectFund, go }: { fundId: string; onSelectFund: (id: string) => void; go: (id: ScreenId) => void }) {
   const [tab, setTab] = useState<Tab>("visao");
   const fund: Fund = FUNDS[fundId] || FUNDS.HPC22;
+
+  // Publica pro JIM o fundo aberto (resultado e postura — NUNCA o método).
+  useEffect(() => {
+    const destaques = fund.highlights.map((h) => `${h.label}: ${h.value}`).join("; ");
+    publishScreenData(
+      "fundo",
+      `Ficha do fundo ${fund.ticker} — ${fund.name}. Estratégia: ${fund.strategy}. Status: ${fund.status}. ` +
+        `Mostra performance (bruto/líquido vs S&P), risco/jornada, defesa em crises e economia. ` +
+        `IMPORTANTE: é a visão do CLIENTE — só resultado e postura, nunca sinais/fórmulas/método.`,
+      {
+        ticker: fund.ticker, nome: fund.name, estrategia: fund.strategy, status: fund.status,
+        destaques: fund.highlights.map((h) => ({ label: h.label, valor: h.value, sub: h.sub })),
+        performance: fund.performance.map((p) => ({ metrica: p.metric, bruto: p.gross, liquido: p.net, spx: p.spx })),
+      },
+      {
+        briefing:
+          `Você está no fundo **${fund.ticker} — ${fund.name}** (${fund.strategy}, ${fund.status}). ${destaques}.`,
+        suggestions: [
+          `Como está a performance do ${fund.ticker}?`,
+          `Como o ${fund.ticker} se defende em crises?`,
+          `Pra quem esse fundo faz sentido?`,
+        ],
+      }
+    );
+  }, [fund]);
 
   return (
     <div className="screen">
@@ -111,6 +139,9 @@ export default function Fundo({ fundId, onSelectFund, go }: { fundId: string; on
           </div>
         </>
       )}
+
+      {/* ===== COMPOSIÇÃO AO VIVO ===== */}
+      {tab === "comp" && <ComposicaoAoVivo />}
 
       {/* ===== PERFORMANCE ===== */}
       {tab === "perf" && (

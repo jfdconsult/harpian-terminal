@@ -24,9 +24,9 @@ const SCREEN_MAP: Record<ScreenId, Omit<ScreenContext, "id">> = {
     dataAvailable: ["preço atual", "variação diária", "variação mensal", "YTD", "variação anual", "Sharpe", "Risk Number"],
   },
   acoes: {
-    title: "Ações & Índices US",
-    description: "Gráfico de candlestick com dados Yahoo Finance. Permite visualizar ações individuais e índices americanos com períodos de 3 meses a 5 anos.",
-    dataAvailable: ["gráfico OHLC", "volume", "indicadores técnicos"],
+    title: "Gráfico do ativo",
+    description: "Gráfico de candlestick (Yahoo Finance) de uma ação, ETF, índice ou commodity, com métricas do ativo (preço, YTD, 1 ano, Sharpe, drawdown, RSI) e indicadores próprios.",
+    dataAvailable: ["preço e variações", "Sharpe", "drawdown máximo", "RSI", "faixa 52 semanas", "gráfico OHLC"],
   },
   regime: {
     title: "Regime de Mercado",
@@ -133,6 +133,40 @@ const SCREEN_MAP: Record<ScreenId, Omit<ScreenContext, "id">> = {
 export function getScreenContext(id: ScreenId): ScreenContext {
   const ctx = SCREEN_MAP[id] || SCREEN_MAP.painel;
   return { id, ...ctx };
+}
+
+// Perguntas mais prováveis por tela — fallback estático quando a tela não
+// publica sugestões dinâmicas (data-aware) via publishScreenData. Viram os
+// chips clicáveis na barra do JIM. Máx. 3.
+const SCREEN_SUGGESTIONS: Record<ScreenId, string[]> = {
+  painel: ["Como estão os fundos hoje?", "Qual o regime de mercado agora?", "A defesa está ligada?"],
+  fundo: ["Como está a performance desse fundo?", "Qual o risco e o drawdown atual?", "O que mudou na composição?"],
+  cotacoes: ["Quais os maiores altas e baixas de hoje?", "Qual ativo está com melhor momento?", "Algum ativo em nível de risco?"],
+  acoes: ["Como está o momento dessa ação?", "Qual o risco dessa posição?", "Tem notícia recente sobre ela?"],
+  regime: ["Por que o regime está assim?", "O que isso muda na postura do portfólio?", "Devo me preocupar com a defesa?"],
+  noticias: ["Qual a notícia mais relevante agora?", "Algo aqui afeta meu portfólio?", "Resuma o dia pra mim."],
+  risco: ["Qual nível combina com meu cliente?", "Compare Moderado e Agressivo pra mim.", "O que significa esse Risk Number?"],
+  clientes: ["Qual cliente está desenquadrado?", "Quem tem o maior AUM?", "Resuma a carteira de clientes."],
+  cliente: ["Esse cliente está adequado ao perfil?", "Qual o Risk Number dele?", "O que sugerir pra ele agora?"],
+  carteira: ["Essa carteira está adequada?", "Qual posição pesa mais no risco?", "Precisa rebalancear?"],
+  ordem: ["O que essas ordens fazem?", "Por que essas mudanças hoje?", "Qual o impacto no portfólio?"],
+  importar: ["Como importo uma carteira?", "Quais formatos são aceitos?", "Posso conectar a custódia?"],
+  alertas: ["Qual alerta é mais urgente?", "O que exige ação minha hoje?", "Resuma os alertas."],
+  institutional: ["O que esse fundo comprou de novo?", "Qual a maior posição dele?", "Há concentração setorial?"],
+  "insider-orders": ["Quais foram as compras de insiders?", "Compra de insider é sinal de alta?", "Algum executivo vendendo em peso?"],
+  "cot-sentiment": ["Qual mercado está em extremo?", "Onde o smart money está posicionado?", "Algum sinal contrário agora?"],
+  "cot-legacy": ["O que esses dados COT dizem?", "Qual mercado mudou mais na semana?", "Como leio o open interest?"],
+  "social-radar": ["Qual ativo está em alta nas redes?", "O sentimento está bullish ou bearish?", "Isso importa pro mercado?"],
+  "news-broadcast": ["Qual manchete move o mercado hoje?", "Algo aqui afeta meu portfólio?", "Resuma as notícias."],
+  integracoes: ["Quais integrações estão ativas?", "Alguma conexão caiu?", "Como conecto a corretora?"],
+  marca: ["Como personalizo o terminal?", "Posso usar meu logo e cores?", "Como fica o white-label?"],
+  config: ["O que posso configurar aqui?", "Como ajusto as notificações?", "Como mudo o tema?"],
+  api: ["Como uso a API do ETP?", "Quais endpoints existem?", "Como autentico?"],
+  tutorial: ["Como navego no terminal?", "Por onde começo?", "Mostre os principais recursos."],
+};
+
+export function getScreenSuggestions(id: ScreenId): string[] {
+  return SCREEN_SUGGESTIONS[id] || SCREEN_SUGGESTIONS.painel;
 }
 
 export const BOOK_CATEGORIES = [

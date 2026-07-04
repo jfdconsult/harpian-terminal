@@ -48,13 +48,28 @@ export default function Cotacoes({ go }: { go?: (id: ScreenId, param?: string) =
   // Publica pro JIM as cotações da aba/classe que está aberta.
   useEffect(() => {
     if (loading || err || rows.length === 0) return;
+    const valid = rows.filter((q) => !q.error && q.dayPct != null);
+    const sorted = [...valid].sort((a, b) => (b.dayPct || 0) - (a.dayPct || 0));
+    const up = sorted[0], down = sorted[sorted.length - 1];
+    const cls = tab === FAV ? "Favoritos" : tab;
     publishScreenData(
       "cotacoes",
-      `Cotações (Yahoo, fechamento EOD) da classe "${tab === FAV ? "Favoritos" : tab}". Cada linha = ticker, nome, último preço, variação do Dia, 1 mês, YTD, 1 ano e Sharpe (1 ano, rf 3,5%).`,
+      `Cotações (Yahoo, fechamento EOD) da classe "${cls}". Cada linha = ticker, nome, último preço, variação do Dia, 1 mês, YTD, 1 ano e Sharpe (1 ano, rf 3,5%).`,
       rows.filter((q) => !q.error).map((q) => ({
         ticker: q.symbol, nome: NAME_OF[q.symbol] || q.symbol, ultimo: q.price,
         diaPct: q.dayPct, mesPct: q.mPct, ytdPct: q.ytdPct, anoPct: q.yPct, sharpe: q.sharpe,
-      }))
+      })),
+      {
+        briefing:
+          `Você está vendo ${valid.length} ativos da classe **${cls}** (ao vivo, Yahoo).` +
+          (up ? ` Maior alta hoje: **${up.symbol.replace("^", "")}** (${pctText(up.dayPct)}).` : "") +
+          (down && down !== up ? ` Maior baixa: **${down.symbol.replace("^", "")}** (${pctText(down.dayPct)}).` : ""),
+        suggestions: [
+          "Quais os destaques de alta e baixa hoje?",
+          "Qual ativo tem o melhor momento aqui?",
+          "Algum ativo desta lista está arriscado?",
+        ],
+      }
     );
   }, [rows, tab, loading, err]);
 

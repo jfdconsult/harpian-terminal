@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { EXAMPLE_PORTFOLIO } from "@/lib/market";
+import { publishScreenData } from "@/lib/jim-data";
 
 // Valores de perfil/contrato/motor interno (NÃO são dados de mercado).
 const PROD_HPC22 = 38; // risk_number.py (motor interno)
@@ -37,6 +38,32 @@ export default function Risco() {
   }, [portRN, x]);
 
   const gap = blended != null ? blended - MANDATO : null;
+
+  // Publica pro JIM os 4 níveis de risco na mesma régua.
+  useEffect(() => {
+    publishScreenData(
+      "risco",
+      "Comparação de risco na régua do Número de Risco (0–100, S&P 500 ≈ 27). Quatro níveis: produto (fundo), cliente (tolerância do perfil), mandato (teto contratual) e portfólio (carteira ao vivo).",
+      {
+        riscoProduto_HPC22: PROD_HPC22, riscoProduto_HPC11: PROD_HPC11,
+        riscoCliente: CLIENTE, riscoMandato: MANDATO,
+        riscoPortfolioHoje: blended, acimaDoMandato: gap,
+        cliente: "Vera Hollanda",
+      },
+      {
+        briefing:
+          `Você está vendo os 4 níveis de risco da Vera Hollanda na mesma régua (0–100): ` +
+          `produto HPC22 **${PROD_HPC22}**, cliente **${CLIENTE}**, mandato **${MANDATO}**, ` +
+          `portfólio hoje **${blended ?? "…"}**` +
+          (gap != null ? (gap > 0 ? ` (▲ ${gap} acima do mandato)` : ` (dentro do mandato)`) : "") + ".",
+        suggestions: [
+          "O portfólio está dentro do mandato?",
+          "O que significa o Número de Risco 62 do cliente?",
+          "Migrar pro HPC22 reduz quanto o risco?",
+        ],
+      }
+    );
+  }, [blended, gap]);
 
   // Marcadores ordenados por valor; rótulos alternam 2 alturas p/ nunca colidirem.
   const markers = [

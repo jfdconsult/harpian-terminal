@@ -15,13 +15,26 @@ export default function InsiderOrders() {
 
   // Publica pro JIM exatamente as transações visíveis na tela.
   useEffect(() => {
+    const buys = items.filter((x) => x.type === "Purchase").length;
+    const sells = items.length - buys;
+    const topBuy = items.find((x) => x.type === "Purchase");
     publishScreenData(
       "insider-orders",
       "Insider & Executive Orders (SEC Form 4): compras e vendas de insiders (CEO/CFO/Diretor/10%+). Cada linha = data, insider, cargo, empresa, ticker, tipo (Purchase/Sale), nº de ações e valor em USD.",
       items.map((x) => ({
         date: x.date, insider: x.insider, role: x.role, company: x.company,
         ticker: x.ticker, type: x.type, shares: x.shares, valueUSD: x.value,
-      }))
+      })),
+      {
+        briefing:
+          `Você está vendo ${items.length} filings de insiders (SEC Form 4): **${buys} compras** e **${sells} vendas**. ` +
+          `Compras de insider são historicamente sinal de alta; vendas costumam ser rebalanceamento pessoal.`,
+        suggestions: [
+          "Quais foram as compras de insiders?",
+          topBuy ? `O que a compra em ${topBuy.ticker} sinaliza?` : "Compra de insider é sinal de alta?",
+          "Algum executivo vendendo em peso?",
+        ],
+      }
     );
   }, [items]);
 

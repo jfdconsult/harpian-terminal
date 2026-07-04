@@ -35,6 +35,7 @@ export default function Institutional() {
   // Publica pro JIM o fundo selecionado e suas posições 13F visíveis.
   useEffect(() => {
     if (!fund) return;
+    const top = holdings[0];
     publishScreenData(
       "institutional",
       `13F Holdings do fundo "${fund.name}" (${fund.style}). Filing ${data?.filing_date || "—"}, período ${data?.period || "—"}. AUM 13F total US$ ${totalVal}. Cada linha = emissor (issuer), classe, CUSIP, valor em USD (value_x1000_usd × 1000), nº de ações e Put/Call.`,
@@ -44,6 +45,17 @@ export default function Institutional() {
           issuer: x.issuer, classe: x.title_of_class, valueUSD: x.value_x1000_usd * 1000,
           shares: x.shares, putCall: x.put_call || null,
         })),
+      },
+      {
+        briefing:
+          `Você está vendo as posições 13F de **${fund.name}** (${fund.style}): ${holdings.length} holdings, ` +
+          `AUM US$ ${fmtUSD(totalVal)}` + (top ? `. Maior posição: **${top.issuer}**.` : ".") +
+          ` Lembre: 13F tem defasagem de até 45 dias.`,
+        suggestions: [
+          `Qual a maior aposta de ${fund.short}?`,
+          "O que esse fundo tem de novo no trimestre?",
+          "Há concentração setorial preocupante?",
+        ],
       }
     );
   }, [fund, data, holdings, totalVal]);

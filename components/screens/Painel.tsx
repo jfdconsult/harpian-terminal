@@ -1,5 +1,5 @@
 "use client";
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent,
 } from "@dnd-kit/core";
@@ -8,6 +8,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { ScreenId } from "@/lib/nav";
 import { SR_POSTS } from "@/lib/data";
 import { CLIENTS, brl } from "@/lib/clients";
+import { publishScreenData } from "@/lib/jim-data";
 
 interface WidgetDef {
   id: string;
@@ -157,6 +158,31 @@ export default function Painel({ go }: { go: (id: ScreenId, param?: string) => v
   const [editing, setEditing] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+
+  // Publica pro JIM o resumo do dia (o essencial do painel).
+  useEffect(() => {
+    const aum = CLIENTS.reduce((s, c) => s + c.current, 0);
+    const fora = CLIENTS.filter((c) => c.riskNumber > c.mandate).length;
+    publishScreenData(
+      "painel",
+      "Painel do gestor: fundos do dia (HPC22 Agressivo, HPC11 I.G.), regime de mercado, defesa, e resumo de clientes (AUM, fora do mandato).",
+      {
+        HPC22_hoje: "+2,31%", HPC11_hoje: "+1,44%",
+        regime: "RISK-ON", defesa: "desarmada · exposição plena",
+        clientes: CLIENTS.length, aumTotal: aum, foraDoMandato: fora,
+      },
+      {
+        briefing:
+          `Bom dia! Resumo de hoje: **HPC22 +2,31%**, **HPC11 +1,44%**. Regime **RISK-ON** (defesa desarmada). ` +
+          `${CLIENTS.length} clientes, AUM ${brl(aum)}` + (fora ? `, **${fora} fora do mandato**.` : ", todos dentro do mandato."),
+        suggestions: [
+          "Como estão os fundos hoje?",
+          fora ? "Quais clientes estão fora do mandato?" : "Algum cliente exige atenção?",
+          "Por que o regime está RISK-ON?",
+        ],
+      }
+    );
+  }, []);
 
   const addWidget = (id: string) => { setWidgets((cur) => (cur.includes(id) ? cur : [...cur, id])); setShowAdd(false); };
 

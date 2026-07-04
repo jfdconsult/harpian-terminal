@@ -34,13 +34,29 @@ export default function SocialRadar() {
   // Publica pro JIM os posts visíveis no radar social.
   useEffect(() => {
     if (conn !== "ok") return;
+    const bull = posts.filter((p) => p.sentiment === "Bullish").length;
+    const bear = posts.filter((p) => p.sentiment === "Bearish").length;
+    const cash: Record<string, number> = {};
+    posts.forEach((p) => p.symbols.forEach((t) => { cash[t] = (cash[t] || 0) + 1; }));
+    const hot = Object.entries(cash).sort((a, b) => b[1] - a[1])[0]?.[0];
     publishScreenData(
       "social-radar",
       "Social Radar (StockTwits ao vivo): cashtags mais comentadas. Cada post = autor, sentimento declarado (Bullish/Bearish/Neutral), alcance (seguidores), tickers citados e o texto.",
       posts.slice(0, 40).map((p) => ({
         autor: p.author, handle: p.handle, sentimento: p.sentiment, alcance: p.impact,
         seguidores: p.followers, tickers: p.symbols, texto: p.body, quando: p.ts,
-      }))
+      })),
+      {
+        briefing:
+          `Você está vendo ${posts.length} posts do StockTwits: **${bull} bullish** vs **${bear} bearish**.` +
+          (hot ? ` Ativo mais comentado agora: **$${hot}**.` : "") +
+          ` Lembre: sentimento de rede é o que o varejo declara, não recomendação.`,
+        suggestions: [
+          hot ? `Por que tanta gente fala de $${hot}?` : "Qual ativo está bombando nas redes?",
+          "O sentimento geral está bullish ou bearish?",
+          "Isso aqui importa pra decisão de investimento?",
+        ],
+      }
     );
   }, [posts, conn]);
 
