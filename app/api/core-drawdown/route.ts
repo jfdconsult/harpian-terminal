@@ -1,35 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readFileSync } from "fs";
-import path from "path";
+import { loadCore22Nav, alignedNasdaq } from "@/lib/core22";
 
 export const dynamic = "force-dynamic";
 
-// Série de NAV do backtest CORE22+ (Portfolio) e S&P (SPX_buyhold), base 100, 1990–2026.
-let CACHE: { t: number[]; core: number[]; spx: number[] } | null = null;
-function load() {
-  if (CACHE) return CACHE;
-  const raw = readFileSync(path.join(process.cwd(), "data", "core22_nav.csv"), "utf-8");
-  const lines = raw.trim().split(/\r?\n/);
-  lines.shift(); // header: Date,Portfolio,SPX_buyhold
-  const t: number[] = [], core: number[] = [], spx: number[] = [];
-  for (const ln of lines) {
-    const [d, p, s] = ln.split(",");
-    if (!d || !p) continue;
-    t.push(Math.floor(new Date(d + "T00:00:00Z").getTime() / 1000));
-    core.push(parseFloat(p));
-    spx.push(parseFloat(s));
-  }
-  CACHE = { t, core, spx };
-  return CACHE;
-}
-
 const SINCE_YEAR: Record<string, number> = { "2016": 2016, "2006": 2006, "2000": 2000 };
 
-// GET /api/core-drawdown?period=5y → underwater do CORE22+ e do S&P (backtest)
+// GET /api/core-drawdown?period=5y → underwater do CORE22+, S&P e Nasdaq (backtest + Yahoo real)
 export async function GET(req: NextRequest) {
   const period = req.nextUrl.searchParams.get("period") || "5y";
   try {
-    const { t, core, spx } = load();
+    const { t, core, spx } = loadCore22Nav();
+    const nasdaqFull = await alignedNasdaq(t); // null se Yahoo indisponível — segue só com core/spx
+
     const lastTs = t[t.length - 1];
     let startIdx = 0;
     if (period === "ytd") {
@@ -56,9 +38,16 @@ export async function GET(req: NextRequest) {
     };
     const coreDD = underwater(core);
     const spxDD = underwater(spx);
+    const nasdaqDD = nasdaqFull ? underwater(nasdaqFull) : null;
     const maxCore = coreDD.length ? Math.min(...coreDD.map((d) => d.value)) : 0;
     const maxSpx = spxDD.length ? Math.min(...spxDD.map((d) => d.value)) : 0;
-    return NextResponse.json({ period, core: coreDD, spx: spxDD, maxCore: +maxCore.toFixed(1), maxSpx: +maxSpx.toFixed(1) });
+    const maxNasdaq = nasdaqDD && nasdaqDD.length ? Math.min(...nasdaqDD.map((d) => d.value)) : null;
+
+    return NextResponse.json({
+      period, core: coreDD, spx: spxDD, nasdaq: nasdaqDD,
+      maxCore: +maxCore.toFixed(1), maxSpx: +maxSpx.toFixed(1),
+      maxNasdaq: maxNasdaq != null ? +maxNasdaq.toFixed(1) : null,
+    });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }

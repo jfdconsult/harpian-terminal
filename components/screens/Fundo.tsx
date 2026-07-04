@@ -34,34 +34,135 @@ function Empty({ label }: { label: string }) {
   return <div className="placeholder"><i className="ti ti-file-dots" /><b>{label}</b><div className="muted mt">Estrutura pronta — será preenchida com o factsheet oficial.</div></div>;
 }
 
+interface Metrics { cagrPct: number | null; maxDrawdownPct: number | null; ulcerIndex: number | null; sharpe: number | null; sortino: number | null; negativeYears: number }
+interface CrisisResult { declinePct: number | null; recoveryMonths: number | null }
+interface CrisisRow2 { key: string; label: string; core: CrisisResult; spx: CrisisResult; nasdaq: CrisisResult | null }
+interface Benchmarks {
+  ok: boolean; asOf: string; years: number;
+  full: { core: Metrics; spx: Metrics; nasdaq: Metrics | null };
+  crises: CrisisRow2[];
+  nasdaqAvailable: boolean;
+  note: string;
+}
+
+const pct = (v: number | null) => v == null ? "—" : (v >= 0 ? "+" : "") + v.toFixed(1).replace(".", ",") + "%";
+const num2 = (v: number | null) => v == null ? "—" : v.toFixed(2).replace(".", ",");
+const mo = (v: number | null) => v == null ? "—" : v.toFixed(1).replace(".", ",") + " m";
+
+// Sempre comparativo: CORE22+ é o backtest oficial (factsheet); S&P idem. O Nasdaq
+// é calculado por nós ao vivo (Yahoo, mesma metodologia) — nunca fabricado, e nunca
+// misturado nas colunas oficiais: vem sempre num bloco à parte, rotulado.
+function BenchmarkPerf({ b }: { b: Benchmarks }) {
+  const rows: { label: string; core: string; spx: string; nasdaq: string }[] = [
+    { label: "CAGR", core: pct(b.full.core.cagrPct), spx: pct(b.full.spx.cagrPct), nasdaq: pct(b.full.nasdaq?.cagrPct ?? null) },
+    { label: "Max. drawdown", core: pct(b.full.core.maxDrawdownPct), spx: pct(b.full.spx.maxDrawdownPct), nasdaq: pct(b.full.nasdaq?.maxDrawdownPct ?? null) },
+    { label: "Ulcer Index", core: num2(b.full.core.ulcerIndex), spx: num2(b.full.spx.ulcerIndex), nasdaq: num2(b.full.nasdaq?.ulcerIndex ?? null) },
+    { label: "Sharpe (rf 3,5%)", core: num2(b.full.core.sharpe), spx: num2(b.full.spx.sharpe), nasdaq: num2(b.full.nasdaq?.sharpe ?? null) },
+    { label: "Sortino (rf 3,5%)", core: num2(b.full.core.sortino), spx: num2(b.full.spx.sortino), nasdaq: num2(b.full.nasdaq?.sortino ?? null) },
+    { label: "Anos negativos", core: String(b.full.core.negativeYears), spx: String(b.full.spx.negativeYears), nasdaq: b.full.nasdaq ? String(b.full.nasdaq.negativeYears) : "—" },
+  ];
+  return (
+    <div className="card mt">
+      <h3><i className="ti ti-chart-bar" />Comparativo — CORE22+ vs S&amp;P 500 vs Nasdaq</h3>
+      <table>
+        <thead><tr><th>Métrica</th><th className="num">CORE22+</th><th className="num">S&amp;P 500</th><th className="num">Nasdaq</th></tr></thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={i}>
+              <td style={{ color: "var(--tx)" }}>{r.label}</td>
+              <td className="num" style={{ color: "var(--gold)", fontWeight: 600 }}>{r.core}</td>
+              <td className="num" style={{ color: "var(--tx3)" }}>{r.spx}</td>
+              <td className="num" style={{ color: "#9b8cf0" }}>{r.nasdaq}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="muted mt" style={{ lineHeight: 1.6 }}>
+        Janela: {b.years} anos (até {b.asOf}). CORE22+ e S&amp;P: backtest oficial do factsheet. Nasdaq (^IXIC): calculado por nós com dado real do Yahoo, mesma metodologia — comparativo, não factsheet auditado.
+      </div>
+    </div>
+  );
+}
+
+function BenchmarkCrises({ b }: { b: Benchmarks }) {
+  return (
+    <div className="card mt">
+      <h3><i className="ti ti-shield-half" />Comparativo em crises — CORE22+ vs S&amp;P 500 vs Nasdaq</h3>
+      <div style={{ overflowX: "auto" }}>
+        <table>
+          <thead><tr>
+            <th>Crise</th>
+            <th className="num">CORE queda</th><th className="num">CORE recup.</th>
+            <th className="num">S&amp;P queda</th><th className="num">S&amp;P recup.</th>
+            <th className="num">Nasdaq queda</th><th className="num">Nasdaq recup.</th>
+          </tr></thead>
+          <tbody>
+            {b.crises.map((c) => (
+              <tr key={c.key}>
+                <td style={{ color: "var(--tx)" }}>{c.label}</td>
+                <td className="num" style={{ color: "var(--gold)", fontWeight: 600 }}>{pct(c.core.declinePct)}</td>
+                <td className="num" style={{ color: "var(--tx2)" }}>{mo(c.core.recoveryMonths)}</td>
+                <td className="num neg">{pct(c.spx.declinePct)}</td>
+                <td className="num" style={{ color: "var(--tx3)" }}>{mo(c.spx.recoveryMonths)}</td>
+                <td className="num" style={{ color: "#E74C3C" }}>{pct(c.nasdaq?.declinePct ?? null)}</td>
+                <td className="num" style={{ color: "#9b8cf0" }}>{mo(c.nasdaq?.recoveryMonths ?? null)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="muted mt" style={{ lineHeight: 1.6 }}>
+        Queda/recuperação ancoradas no pico do S&amp;P 500 (data em que o mercado topou) — mede como cada série se comportou a partir do MESMO ponto de partida. CORE22+/S&amp;P do backtest oficial; Nasdaq calculado por nós (Yahoo, dado real).
+      </div>
+    </div>
+  );
+}
+
 export default function Fundo({ fundId, onSelectFund, go }: { fundId: string; onSelectFund: (id: string) => void; go: (id: ScreenId) => void }) {
   const [tab, setTab] = useState<Tab>("visao");
   const fund: Fund = FUNDS[fundId] || FUNDS.HPC22;
+  const [bench, setBench] = useState<Benchmarks | null>(null);
+
+  // Comparativo sempre-3-vias (CAGR/drawdown/Sortino/crises vs S&P e Nasdaq) — só faz
+  // sentido pro fundo que tem o backtest real por trás (CORE22+ = HPC22).
+  useEffect(() => {
+    if (fund.journeyRisk.length === 0) { setBench(null); return; }
+    fetch("/api/fund-benchmarks").then((r) => r.json()).then((j) => { if (j.ok) setBench(j); }).catch(() => {});
+  }, [fund]);
 
   // Publica pro JIM o fundo aberto (resultado e postura — NUNCA o método).
+  // Roda de novo a cada troca de aba, exceto "comp"/"risco" — essas têm sub-componente
+  // próprio (ComposicaoAoVivo/RiskJourney) que já publica o contexto mais específico
+  // daquela aba; se este effect rodasse ali também, sobrescreveria o snapshot mais rico.
   useEffect(() => {
+    if (tab === "comp" || tab === "risco") return;
     const destaques = fund.highlights.map((h) => `${h.label}: ${h.value}`).join("; ");
+    const nasdaqLine = bench?.full.nasdaq
+      ? ` Comparativo com Nasdaq (calculado, dado real): CAGR ${pct(bench.full.nasdaq.cagrPct)}, max drawdown ${pct(bench.full.nasdaq.maxDrawdownPct)}, Sortino ${num2(bench.full.nasdaq.sortino)}.`
+      : "";
     publishScreenData(
       "fundo",
       `Ficha do fundo ${fund.ticker} — ${fund.name}. Estratégia: ${fund.strategy}. Status: ${fund.status}. ` +
-        `Mostra performance (bruto/líquido vs S&P), risco/jornada, defesa em crises e economia. ` +
+        `Mostra performance (bruto/líquido vs S&P e vs Nasdaq), risco/jornada, defesa em crises e economia. ` +
         `IMPORTANTE: é a visão do CLIENTE — só resultado e postura, nunca sinais/fórmulas/método.`,
       {
         ticker: fund.ticker, nome: fund.name, estrategia: fund.strategy, status: fund.status,
         destaques: fund.highlights.map((h) => ({ label: h.label, valor: h.value, sub: h.sub })),
         performance: fund.performance.map((p) => ({ metrica: p.metric, bruto: p.gross, liquido: p.net, spx: p.spx })),
+        comparativoNasdaq: bench?.full.nasdaq || null,
+        crisesComparativo: bench?.crises || null,
       },
       {
         briefing:
-          `Você está no fundo **${fund.ticker} — ${fund.name}** (${fund.strategy}, ${fund.status}). ${destaques}.`,
+          `Você está no fundo **${fund.ticker} — ${fund.name}** (${fund.strategy}, ${fund.status}). ${destaques}.${nasdaqLine}`,
         suggestions: [
-          `Como está a performance do ${fund.ticker}?`,
+          `Como o ${fund.ticker} se compara ao Nasdaq?`,
           `Como o ${fund.ticker} se defende em crises?`,
           `Pra quem esse fundo faz sentido?`,
         ],
       }
     );
-  }, [fund]);
+  }, [fund, bench, tab]);
 
   return (
     <div className="screen">
@@ -115,13 +216,24 @@ export default function Fundo({ fundId, onSelectFund, go }: { fundId: string; on
           </div>
 
           <div className="grid g4 mb">
-            {fund.highlights.map((hi, i) => (
-              <div className="card" key={i} style={{ textAlign: "center", padding: 18 }}>
-                <div className="big" style={{ fontSize: 30, color: hi.tone === "g" ? "var(--green)" : hi.tone === "r" ? "var(--red)" : "var(--gold)" }}>{hi.value}</div>
-                <div style={{ fontSize: 11, color: "var(--tx2)", marginTop: 6, fontWeight: 600 }}>{hi.label}</div>
-                {hi.sub && <div className="muted" style={{ fontSize: 10.5, marginTop: 3 }}>{hi.sub}</div>}
-              </div>
-            ))}
+            {fund.highlights.map((hi, i) => {
+              // Anexa o Nasdaq (calculado, real) ao lado do S&P que já vem do factsheet —
+              // "sempre comparativo": nunca um número sozinho, sempre com os 2 benchmarks.
+              let nasdaqSub: string | null = null;
+              if (bench?.full.nasdaq) {
+                if (hi.label.startsWith("CAGR")) nasdaqSub = `Nasdaq: ${pct(bench.full.nasdaq.cagrPct)}`;
+                else if (hi.label.startsWith("Max. drawdown")) nasdaqSub = `Nasdaq: ${pct(bench.full.nasdaq.maxDrawdownPct)}`;
+                else if (hi.label.startsWith("Sortino")) nasdaqSub = `Nasdaq: ${num2(bench.full.nasdaq.sortino)}`;
+              }
+              return (
+                <div className="card" key={i} style={{ textAlign: "center", padding: 18 }}>
+                  <div className="big" style={{ fontSize: 30, color: hi.tone === "g" ? "var(--green)" : hi.tone === "r" ? "var(--red)" : "var(--gold)" }}>{hi.value}</div>
+                  <div style={{ fontSize: 11, color: "var(--tx2)", marginTop: 6, fontWeight: 600 }}>{hi.label}</div>
+                  {hi.sub && <div className="muted" style={{ fontSize: 10.5, marginTop: 3 }}>{hi.sub}</div>}
+                  {nasdaqSub && <div className="muted" style={{ fontSize: 10.5, color: "#9b8cf0" }}>{nasdaqSub}</div>}
+                </div>
+              );
+            })}
           </div>
 
           <div className="grid g2">
@@ -161,6 +273,7 @@ export default function Fundo({ fundId, onSelectFund, go }: { fundId: string; on
             </tbody>
           </table>
           <div className="muted mt" style={{ lineHeight: 1.6 }}>{fund.perfNote}</div>
+          {bench && <BenchmarkPerf b={bench} />}
         </div>
       )}
 
@@ -220,6 +333,7 @@ export default function Fundo({ fundId, onSelectFund, go }: { fundId: string; on
               </tbody>
             </table>
             <div className="muted mt" style={{ lineHeight: 1.6 }}>{fund.crisisNote}</div>
+            {bench && <BenchmarkCrises b={bench} />}
           </div>
         )
       )}

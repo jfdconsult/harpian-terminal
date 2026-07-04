@@ -18,8 +18,10 @@ const PERIODS = [
 interface Resp {
   core: { time: number; value: number }[];
   spx: { time: number; value: number }[];
+  nasdaq: { time: number; value: number }[] | null;
   maxCore: number;
   maxSpx: number;
+  maxNasdaq: number | null;
   error?: boolean;
 }
 
@@ -40,6 +42,7 @@ export default function RiskJourney() {
   const series: DDSeries[] = [];
   if (data?.core) series.push({ name: "CORE22+", color: "#C9A02C", data: data.core, fill: true });
   if (data?.spx) series.push({ name: "S&P 500", color: "#E74C3C", data: data.spx, fill: false });
+  if (data?.nasdaq) series.push({ name: "Nasdaq", color: "#7B68EE", data: data.nasdaq, fill: false });
 
   // Publica pro JIM a curva de drawdown (jornada de risco) do período selecionado.
   useEffect(() => {
@@ -47,15 +50,16 @@ export default function RiskJourney() {
     const periodLabel = PERIODS.find((p) => p.k === period)?.l || period;
     publishScreenData(
       "fundo",
-      "Aba Risco & Jornada do fundo: curva submersa (drawdown vs. topo anterior) do CORE22+ vs S&P 500, backtest hipotético, base 100.",
-      { periodo: periodLabel, drawdownMaximoCore: data.maxCore, drawdownMaximoSpx: data.maxSpx },
+      "Aba Risco & Jornada do fundo: curva submersa (drawdown vs. topo anterior) do CORE22+ vs S&P 500 vs Nasdaq, backtest + dado real, base 100.",
+      { periodo: periodLabel, drawdownMaximoCore: data.maxCore, drawdownMaximoSpx: data.maxSpx, drawdownMaximoNasdaq: data.maxNasdaq },
       {
         briefing:
-          `Você está vendo a curva de drawdown (${periodLabel}): CORE22+ com máximo de ${data.maxCore}% vs S&P 500 com ${data.maxSpx}%.`,
+          `Você está vendo a curva de drawdown (${periodLabel}): CORE22+ com máximo de ${data.maxCore}% vs S&P 500 ${data.maxSpx}%` +
+          (data.maxNasdaq != null ? ` vs Nasdaq ${data.maxNasdaq}%.` : "."),
         suggestions: [
           "O que essa curva de drawdown significa?",
           "Quanto tempo leva pra recuperar uma queda dessas?",
-          "Como isso se compara a outros períodos?",
+          "Por que o Nasdaq cai mais que o S&P?",
         ],
       }
     );
@@ -70,7 +74,7 @@ export default function RiskJourney() {
         </div>
       </div>
       <div className="muted mb" style={{ lineHeight: 1.6 }}>
-        O drawdown máximo é uma foto, não um filme: mostra o quanto o capital caiu, mas não por quanto tempo ficou abaixo do topo. Passe o mouse para ver o drawdown do CORE22+ e do S&P 500 em cada ponto.
+        O drawdown máximo é uma foto, não um filme: mostra o quanto o capital caiu, mas não por quanto tempo ficou abaixo do topo. Passe o mouse para ver o drawdown do CORE22+, do S&amp;P 500 e do Nasdaq em cada ponto.
       </div>
       {loading ? (
         <div className="muted" style={{ padding: 70, textAlign: "center" }}>Carregando curva…</div>
@@ -82,7 +86,8 @@ export default function RiskJourney() {
       <div className="legend" style={{ marginTop: 10 }}>
         <i><b style={{ background: "#C9A02C" }} />CORE22+ {data ? `(máx ${data.maxCore}%)` : ""}</i>
         <i><b style={{ background: "#E74C3C" }} />S&P 500 {data ? `(máx ${data.maxSpx}%)` : ""}</i>
-        <span className="muted" style={{ marginLeft: "auto" }}>Backtest CORE22+ · base 100 · hipotético</span>
+        {data?.maxNasdaq != null && <i><b style={{ background: "#7B68EE" }} />Nasdaq (máx {data.maxNasdaq}%)</i>}
+        <span className="muted" style={{ marginLeft: "auto" }}>CORE22+/S&amp;P: backtest oficial · Nasdaq: comparativo nosso (Yahoo, dado real) · base 100</span>
       </div>
     </div>
   );

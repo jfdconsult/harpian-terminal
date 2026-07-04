@@ -97,6 +97,44 @@ export function maxDrawdownPct(close: number[]): number | null {
   for (const p of close) { if (p > peak) peak = p; const dd = p / peak - 1; if (dd < mdd) mdd = dd; }
   return mdd * 100;
 }
+// Sortino: como Sharpe, mas penaliza só a volatilidade de queda (downside deviation).
+export function sortino(close: number[], rf = 0.035): number | null {
+  const r = dailyReturns(close);
+  if (!r.length) return null;
+  const downside = r.filter((x) => x < 0);
+  if (!downside.length) return null;
+  const dd = Math.sqrt(downside.reduce((s, x) => s + x * x, 0) / r.length) * Math.sqrt(252);
+  if (dd === 0) return null;
+  return (mean(r) * 252 - rf) / dd;
+}
+// Ulcer Index: raiz quadrada média dos quadrados do drawdown — penaliza profundidade E duração da queda.
+export function ulcerIndex(close: number[]): number | null {
+  if (!close.length) return null;
+  let peak = close[0];
+  let sumSq = 0;
+  for (const p of close) { if (p > peak) peak = p; const dd = (p / peak - 1) * 100; sumSq += dd * dd; }
+  return Math.sqrt(sumSq / close.length);
+}
+// CAGR anualizado a partir de uma série base-100 (ou qualquer NAV) e nº de anos corridos.
+export function cagrPct(close: number[], years: number): number | null {
+  if (close.length < 2 || years <= 0) return null;
+  const total = last(close) / close[0];
+  if (total <= 0) return null;
+  return (Math.pow(total, 1 / years) - 1) * 100;
+}
+// Nº de anos-calendário com retorno negativo, dado t (timestamps) e close alinhados.
+export function negativeYears(t: number[], close: number[]): number {
+  const byYear = new Map<number, { first: number; last: number }>();
+  for (let i = 0; i < t.length; i++) {
+    const y = new Date(t[i] * 1000).getUTCFullYear();
+    const cur = byYear.get(y);
+    if (!cur) byYear.set(y, { first: close[i], last: close[i] });
+    else cur.last = close[i];
+  }
+  let n = 0;
+  for (const { first, last: l } of byYear.values()) if (l < first) n++;
+  return n;
+}
 export function rsi(close: number[], period = 14): number | null {
   if (close.length <= period) return null;
   let gain = 0, loss = 0;
