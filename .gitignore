@@ -39,6 +39,9 @@ yarn-error.log*
 # data cache (Yahoo Finance)
 /.cache
 
+# local dev tooling (preview server launch config — máquina-específico)
+/.claude
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
