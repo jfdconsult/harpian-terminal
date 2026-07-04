@@ -15,9 +15,8 @@ interface AssetResp { name: string; price: number; dayPct: number | null; ytdPct
 const RANGES = [{ k: "3mo", l: "3M" }, { k: "6mo", l: "6M" }, { k: "1y", l: "1A" }, { k: "2y", l: "2A" }, { k: "5y", l: "5A" }];
 const INTERVALS = [{ k: "1d", l: "Diário" }, { k: "1wk", l: "Semanal" }];
 const INDS: { key: keyof Studies; label: string }[] = [
-  { key: "ema", label: "EMA" }, { key: "dema", label: "DEMA" }, { key: "tema", label: "TEMA" },
-  { key: "sma", label: "SMA 50" }, { key: "bb", label: "Bollinger" }, { key: "vol", label: "Volume" },
-  { key: "rsi", label: "RSI" }, { key: "mom", label: "Momento" },
+  { key: "ema", label: "EMA" }, { key: "bb", label: "Bollinger" }, { key: "vol", label: "Volume" },
+  { key: "rsi", label: "RSI" }, { key: "momD", label: "Momento D" }, { key: "momJ", label: "Momento J" },
 ];
 const COMPARE = [
   { k: "", l: "— sem comparação" },
@@ -27,13 +26,13 @@ const COMPARE = [
   { k: "BITO", l: "Cripto (Bitcoin)" },
 ];
 
-export default function Acoes() {
-  const [symbol, setSymbol] = useState("NVDA");
+export default function Acoes({ symbol: initial }: { symbol?: string }) {
+  const [symbol, setSymbol] = useState(initial || "NVDA");
   const [range, setRange] = useState("1y");
   const [interval, setInterval] = useState("1d");
   const [mode, setMode] = useState<"harpian" | "tv">("harpian");
   const [compare, setCompare] = useState("");
-  const [studies, setStudies] = useState<Studies>({ ema: true, dema: true, tema: false, sma: false, bb: false, vol: true, rsi: false, mom: true });
+  const [studies, setStudies] = useState<Studies>({ ema: true, bb: false, vol: true, rsi: false, momD: true, momJ: true });
   const [cd, setCd] = useState<CandlesResp | null>(null);
   const [asset, setAsset] = useState<AssetResp | null>(null);
   const [loading, setLoading] = useState(true);
@@ -135,10 +134,8 @@ export default function Acoes() {
           {mode === "harpian" ? (
             <>
               <i><b style={{ background: "#4A90D9" }} />EMA</i>
-              <i><b style={{ background: "#C9A02C" }} />DEMA</i>
-              <i><b style={{ background: "#2ECC71" }} />TEMA</i>
               {cd?.compareName && <i><b style={{ background: "#C77DFF" }} />vs {cd.compareName}</i>}
-              <span className="muted" style={{ marginLeft: "auto" }}>Candles · Yahoo Finance · indicadores DSPT locais</span>
+              <span className="muted" style={{ marginLeft: "auto" }}>Candles · Yahoo Finance · indicadores proprietários</span>
             </>
           ) : (
             <span className="muted" style={{ marginLeft: "auto" }}>TradingView · estudos nativos (RSI/MACD) · DSPT completo no deep-link</span>

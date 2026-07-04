@@ -90,14 +90,12 @@ export const MENUS: Menu[] = [
   },
   {
     label: "Mercado",
-    icon: "ti-radar",
+    icon: "ti-chart-candle",
     columns: [
       {
         items: [
+          { id: "cotacoes", label: "Cotações", icon: "ti-table" },
           { id: "regime", label: "Regime de mercado", icon: "ti-activity" },
-          { id: "cotacoes", label: "Cotações (FastTrack)", icon: "ti-table", tag: "novo" },
-          { id: "acoes", label: "Ações & índices US", icon: "ti-chart-candle" },
-          { id: "noticias", label: "Notícias", icon: "ti-news" },
         ],
       },
     ],
@@ -112,8 +110,8 @@ export const MENUS: Menu[] = [
           { id: "news-broadcast", label: "News Broadcast", icon: "ti-broadcast", tag: "novo" },
           { id: "insider-orders", label: "Insider Orders", icon: "ti-gavel", tag: "novo" },
           { id: "institutional", label: "13F Holdings", icon: "ti-report-money", tag: "SEC" },
-          { id: "cot-sentiment", label: "COT Sentiment", icon: "ti-flame", tag: "CFTC" },
-          { id: "cot-legacy", label: "COT Legacy", icon: "ti-chart-bar" },
+          { id: "cot-sentiment", label: "COT Intelligence", icon: "ti-flame", tag: "CFTC" },
+          { id: "cot-legacy", label: "COT Data Explorer", icon: "ti-chart-bar" },
         ],
       },
     ],

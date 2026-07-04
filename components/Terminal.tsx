@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Ticker from "./Ticker";
 import Topbar from "./Topbar";
+import JimDrawer from "./JimDrawer";
 import Painel from "./screens/Painel";
 import Fundo from "./screens/Fundo";
 import Cotacoes from "./screens/Cotacoes";
@@ -33,12 +34,15 @@ export default function Terminal() {
   const [fundId, setFundId] = useState("HPC22");
   const [clientId, setClientId] = useState("vera");
   const [orderArg, setOrderArg] = useState<string | undefined>(undefined);
+  const [chartArg, setChartArg] = useState<string | undefined>(undefined);
+  const [jimOpen, setJimOpen] = useState(false);
 
   const go = (id: ScreenId, param?: string) => {
     setScreen(id);
     if (id === "fundo" && param) setFundId(param);
     if ((id === "cliente" || id === "carteira") && param) setClientId(param);
     if (id === "ordem") setOrderArg(param);
+    if (id === "acoes" && param) setChartArg(param);
     if (typeof window !== "undefined") window.scrollTo(0, 0);
   };
 
@@ -46,8 +50,8 @@ export default function Terminal() {
     switch (screen) {
       case "painel": return <Painel go={go} />;
       case "fundo": return <Fundo fundId={fundId} onSelectFund={setFundId} go={go} />;
-      case "cotacoes": return <Cotacoes />;
-      case "acoes": return <Acoes />;
+      case "cotacoes": return <Cotacoes go={go} />;
+      case "acoes": return <Acoes symbol={chartArg} />;
       case "regime": return <Regime />;
       case "noticias": return <Noticias go={go} />;
       case "risco": return <Risco />;
@@ -75,8 +79,9 @@ export default function Terminal() {
   return (
     <div className="app">
       <Ticker />
-      <Topbar go={go} />
+      <Topbar go={go} jimOpen={jimOpen} onJimToggle={() => setJimOpen((v) => !v)} />
       <div className="main">{renderScreen()}</div>
+      <JimDrawer open={jimOpen} onClose={() => setJimOpen(false)} screen={screen} />
     </div>
   );
 }
