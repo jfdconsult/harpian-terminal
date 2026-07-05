@@ -8,13 +8,111 @@ import { CSS } from "@dnd-kit/utilities";
 import type { ScreenId } from "@/lib/nav";
 import { SR_POSTS } from "@/lib/data";
 import { CLIENTS, brl } from "@/lib/clients";
+import { allClients, findClient } from "@/lib/clientStore";
+import { MARKET_GROUPS } from "@/lib/market";
+import { pctText, pctClass, numShort } from "@/lib/format";
 import { publishScreenData } from "@/lib/jim-data";
 
+// Uma instância de módulo no painel — o mesmo módulo do catálogo (ex.: "cotacoes")
+// pode aparecer VÁRIAS vezes, cada instância com sua própria config (classe de
+// ativo, ou o cliente de quem mostrar a carteira). Isso é o que permite montar
+// "um módulo de Índices, outro de Ações, outro da carteira da Vera" lado a lado.
+interface WidgetInstance { instanceId: string; catalogId: string; config?: Record<string, string> }
+
+interface ConfigField { key: string; label: string; options: { value: string; label: string }[] }
 interface WidgetDef {
   id: string;
   title: string;
   icon: string;
-  render: (go: (id: ScreenId, param?: string) => void) => ReactNode;
+  allowMultiple?: boolean;
+  configFields?: ConfigField[];
+  titleFor?: (config?: Record<string, string>) => string;
+  render?: (go: (id: ScreenId, param?: string) => void) => ReactNode;
+  Component?: React.ComponentType<{ go: (id: ScreenId, param?: string) => void; config?: Record<string, string> }>;
+}
+
+interface Quote { symbol: string; price?: number; dayPct?: number | null; error?: boolean }
+
+// ---- Cotações (configurável por classe: Índices, Ações, Commodities, Cripto, Forex...) ----
+const QUOTE_CLASSES = Object.keys(MARKET_GROUPS);
+
+function CotacoesWidgetBody({ go, config }: { go: (id: ScreenId, param?: string) => void; config?: Record<string, string> }) {
+  const classe = config?.classe && MARKET_GROUPS[config.classe] ? config.classe : QUOTE_CLASSES[0];
+  const symbols = (MARKET_GROUPS[classe] || []).slice(0, 5);
+  const [rows, setRows] = useState<Quote[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!symbols.length) { setRows([]); setLoading(false); return; }
+    setLoading(true);
+    fetch(`/api/quotes?symbols=${encodeURIComponent(symbols.map((s) => s.symbol).join(","))}`)
+      .then((r) => r.json())
+      .then((d: Quote[]) => { setRows(d); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [classe]);
+
+  const nameOf: Record<string, string> = symbols.reduce((m, s) => { m[s.symbol] = s.name; return m; }, {} as Record<string, string>);
+
+  return (
+    <>
+      {loading ? (
+        <div className="muted" style={{ padding: "10px 0" }}>Carregando {classe.toLowerCase()}…</div>
+      ) : (
+        rows.map((q) => (
+          <div className="kv" key={q.symbol}>
+            <span>{nameOf[q.symbol] || q.symbol}</span>
+            <span className={`v ${pctClass(q.dayPct)}`}>{q.error ? "—" : `${numShort(q.price)} ${pctText(q.dayPct)}`}</span>
+          </div>
+        ))
+      )}
+      <div className="mt"><button className="btn ghost" onClick={() => go("cotacoes")}><i className="ti ti-arrow-right" />Ver todas as cotações</button></div>
+    </>
+  );
+}
+
+// ---- Carteira do cliente (configurável por cliente) — o detalhamento real: o que ele tem e o que está ganhando ----
+function CarteiraWidgetBody({ go, config }: { go: (id: ScreenId, param?: string) => void; config?: Record<string, string> }) {
+  const [clients, setClients] = useState(CLIENTS);
+  useEffect(() => setClients(allClients()), []);
+  const client = (config?.clientId && findClient(config.clientId)) || clients[0];
+  const portfolio = client?.portfolios?.find((p) => p.positions.length > 0);
+  const [live, setLive] = useState<Record<string, Quote>>({});
+
+  useEffect(() => {
+    if (!portfolio) { setLive({}); return; }
+    const syms = portfolio.positions.map((p) => p.ticker).join(",");
+    if (!syms) return;
+    fetch(`/api/quotes?symbols=${encodeURIComponent(syms)}`)
+      .then((r) => r.json())
+      .then((d: Quote[]) => setLive(d.reduce((m, q) => { m[q.symbol] = q; return m; }, {} as Record<string, Quote>)))
+      .catch(() => {});
+  }, [portfolio]);
+
+  if (!client) return <div className="muted">Nenhum cliente cadastrado.</div>;
+  const ganhoPct = (client.current / client.invested - 1) * 100;
+
+  return (
+    <>
+      <div className="flex between mb"><span style={{ fontWeight: 600, color: "var(--tx)" }}>{client.name}</span><span className={`v ${pctClass(ganhoPct)}`}>{pctText(ganhoPct)}</span></div>
+      {portfolio ? (
+        portfolio.positions.slice(0, 4).map((pos) => {
+          const q = live[pos.ticker];
+          const gainPct = q?.price ? ((q.price - pos.avgPrice) / pos.avgPrice) * 100 : null;
+          return (
+            <div className="kv" key={pos.ticker}>
+              <span>{pos.ticker} <span className="muted">{pos.qty.toLocaleString("pt-BR")} un.</span></span>
+              <span className={`v ${pctClass(gainPct)}`}>{gainPct != null ? pctText(gainPct) : "…"}</span>
+            </div>
+          );
+        })
+      ) : (
+        client.alloc.slice(0, 4).map((a) => (
+          <div className="kv" key={a.label}><span>{a.label}</span><span className="v">{a.pct}%</span></div>
+        ))
+      )}
+      <div className="mt"><button className="btn ghost" onClick={() => go("cliente", client.id)}><i className="ti ti-arrow-right" />Abrir carteira completa</button></div>
+    </>
+  );
 }
 
 const CATALOG: Record<string, WidgetDef> = {
@@ -64,15 +162,21 @@ const CATALOG: Record<string, WidgetDef> = {
     ),
   },
   cotacoes: {
-    id: "cotacoes", title: "Cotações rápidas", icon: "ti-table",
-    render: (go) => (
-      <>
-        {[["S&P 500", "5.241 +0,82%", "var(--green)"], ["NASDAQ", "18.382 +1,21%", "var(--green)"], ["IBOV", "126.480 −0,54%", "var(--red)"], ["USD/BRL", "5,14 +0,58%", "var(--orange)"]].map(([k, v, c]) => (
-          <div className="kv" key={k}><span>{k}</span><span className="v" style={{ color: c }}>{v}</span></div>
-        ))}
-        <div className="mt"><button className="btn ghost" onClick={() => go("cotacoes")}><i className="ti ti-arrow-right" />Ver cotações</button></div>
-      </>
-    ),
+    id: "cotacoes", title: "Cotações", icon: "ti-table",
+    allowMultiple: true,
+    configFields: [{ key: "classe", label: "Classe", options: QUOTE_CLASSES.map((c) => ({ value: c, label: c })) }],
+    titleFor: (config) => `Cotações · ${config?.classe || QUOTE_CLASSES[0]}`,
+    Component: CotacoesWidgetBody,
+  },
+  carteira: {
+    id: "carteira", title: "Carteira do cliente", icon: "ti-briefcase",
+    allowMultiple: true,
+    configFields: [{ key: "clientId", label: "Cliente", options: CLIENTS.map((c) => ({ value: c.id, label: c.name })) }],
+    titleFor: (config) => {
+      const c = config?.clientId ? CLIENTS.find((x) => x.id === config.clientId) : null;
+      return `Carteira · ${c?.name || CLIENTS[0].name}`;
+    },
+    Component: CarteiraWidgetBody,
   },
   alocacao: {
     id: "alocacao", title: "Alocação por fundo", icon: "ti-chart-donut",
@@ -135,18 +239,67 @@ const CATALOG: Record<string, WidgetDef> = {
   },
 };
 
-const DEFAULT_WIDGETS = ["fundos", "etp", "regime"];
+const uid = () => Math.random().toString(36).slice(2, 9);
+const DEFAULT_INSTANCES: WidgetInstance[] = [
+  { instanceId: "fundos", catalogId: "fundos" },
+  { instanceId: "etp", catalogId: "etp" },
+  { instanceId: "regime", catalogId: "regime" },
+];
 
-function SortableCard({ id, editing, onRemove, children }: { id: string; editing: boolean; onRemove: () => void; children: ReactNode }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled: !editing });
+const WIDGETS_KEY = "harpian_painel_widgets";
+function loadWidgets(): WidgetInstance[] {
+  if (typeof window === "undefined") return DEFAULT_INSTANCES;
+  try {
+    const raw = JSON.parse(localStorage.getItem(WIDGETS_KEY) || "null");
+    return Array.isArray(raw) && raw.length ? raw : DEFAULT_INSTANCES;
+  } catch {
+    return DEFAULT_INSTANCES;
+  }
+}
+function saveWidgets(w: WidgetInstance[]) {
+  if (typeof window !== "undefined") localStorage.setItem(WIDGETS_KEY, JSON.stringify(w));
+}
+
+function SortableCard({
+  instance, def, editing, onRemove, onConfigChange, children,
+}: {
+  instance: WidgetInstance; def: WidgetDef; editing: boolean;
+  onRemove: () => void; onConfigChange: (config: Record<string, string>) => void; children: ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: instance.instanceId, disabled: !editing });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1, zIndex: isDragging ? 10 : undefined };
+  const [configuring, setConfiguring] = useState(false);
+  const title = def.titleFor ? def.titleFor(instance.config) : def.title;
+
   return (
     <div ref={setNodeRef} style={style} className="card calm">
       {editing && (
         <>
           <div className="drag-handle" {...attributes} {...listeners}><i className="ti ti-grip-vertical" /></div>
           <div className="rm-btn" onClick={onRemove}><i className="ti ti-x" /></div>
+          {def.configFields && (
+            <div className="rm-btn" style={{ right: 34 }} onClick={() => setConfiguring((v) => !v)} title="Configurar módulo">
+              <i className="ti ti-settings" />
+            </div>
+          )}
         </>
+      )}
+      <h3><i className={`ti ${def.icon}`} />{title}</h3>
+      {configuring && def.configFields && (
+        <div style={{ background: "var(--panel2)", border: "1px solid var(--line2)", borderRadius: 8, padding: 10, marginBottom: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+          {def.configFields.map((f) => (
+            <label key={f.key} style={{ fontSize: 11 }}>
+              {f.label}
+              <select
+                className="input" style={{ width: "100%", marginTop: 3 }}
+                value={instance.config?.[f.key] || f.options[0]?.value}
+                onChange={(e) => onConfigChange({ ...instance.config, [f.key]: e.target.value })}
+              >
+                {f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </label>
+          ))}
+        </div>
       )}
       {children}
     </div>
@@ -154,10 +307,15 @@ function SortableCard({ id, editing, onRemove, children }: { id: string; editing
 }
 
 export default function Painel({ go }: { go: (id: ScreenId, param?: string) => void }) {
-  const [widgets, setWidgets] = useState<string[]>(DEFAULT_WIDGETS);
+  const [widgets, setWidgets] = useState<WidgetInstance[]>(DEFAULT_INSTANCES);
   const [editing, setEditing] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+
+  // Carrega o layout salvo (módulos + configs) assim que monta no cliente.
+  useEffect(() => setWidgets(loadWidgets()), []);
+  // Persiste a cada mudança — personalização sobrevive ao refresh.
+  useEffect(() => { saveWidgets(widgets); }, [widgets]);
 
   // Publica pro JIM o resumo do dia (o essencial do painel).
   useEffect(() => {
@@ -165,7 +323,7 @@ export default function Painel({ go }: { go: (id: ScreenId, param?: string) => v
     const fora = CLIENTS.filter((c) => c.riskNumber > c.mandate).length;
     publishScreenData(
       "painel",
-      "Painel do gestor: fundos do dia (HPC22 Agressivo, HPC11 I.G.), regime de mercado, defesa, e resumo de clientes (AUM, fora do mandato).",
+      "Painel do gestor: fundos do dia (HPC22 Agressivo, HPC11 I.G.), regime de mercado, defesa, e resumo de clientes (AUM, fora do mandato). Painel é personalizável: módulos de Cotações (por classe de ativo) e Carteira do cliente podem ser adicionados várias vezes, cada um configurado diferente.",
       {
         HPC22_hoje: "+2,31%", HPC11_hoje: "+1,44%",
         regime: "RISK-ON", defesa: "desarmada · exposição plena",
@@ -184,21 +342,41 @@ export default function Painel({ go }: { go: (id: ScreenId, param?: string) => v
     );
   }, []);
 
-  const addWidget = (id: string) => { setWidgets((cur) => (cur.includes(id) ? cur : [...cur, id])); setShowAdd(false); };
+  function addWidget(catalogId: string) {
+    const def = CATALOG[catalogId];
+    if (!def) return;
+    if (!def.allowMultiple && widgets.some((w) => w.catalogId === catalogId)) { setShowAdd(false); return; }
+    const config = def.configFields ? Object.fromEntries(def.configFields.map((f) => [f.key, f.options[0]?.value])) : undefined;
+    setWidgets((cur) => [...cur, { instanceId: uid(), catalogId, config }]);
+    setShowAdd(false);
+  }
+  function removeWidget(instanceId: string) {
+    setWidgets((cur) => cur.filter((w) => w.instanceId !== instanceId));
+  }
+  function updateConfig(instanceId: string, config: Record<string, string>) {
+    setWidgets((cur) => cur.map((w) => (w.instanceId === instanceId ? { ...w, config } : w)));
+  }
 
   function onDragEnd(e: DragEndEvent) {
     const { active, over } = e;
     if (over && active.id !== over.id) {
-      setWidgets((w) => arrayMove(w, w.indexOf(active.id as string), w.indexOf(over.id as string)));
+      setWidgets((w) => {
+        const from = w.findIndex((x) => x.instanceId === active.id);
+        const to = w.findIndex((x) => x.instanceId === over.id);
+        return arrayMove(w, from, to);
+      });
     }
   }
-  const available = Object.values(CATALOG).filter((w) => !widgets.includes(w.id));
+  // Módulos únicos (allowMultiple=false) já adicionados somem do menu; os
+  // configuráveis (Cotações, Carteira) ficam sempre disponíveis — dá pra
+  // adicionar quantos quiser, cada um numa classe/cliente diferente.
+  const available = Object.values(CATALOG).filter((w) => w.allowMultiple || !widgets.some((inst) => inst.catalogId === w.id));
 
   return (
     <div className={`screen${editing ? " editing" : ""}`}>
       <div className="crumb"><b>Painel</b></div>
       <div className="flex between" style={{ alignItems: "flex-start" }}>
-        <div><div className="h1">Bom dia, João</div><div className="sub">O essencial do dia. {editing ? "Arraste para reorganizar, adicione módulos ou remova." : "Tudo o mais está a um clique nos menus do topo."}</div></div>
+        <div><div className="h1">Bom dia, João</div><div className="sub">O essencial do dia. {editing ? "Arraste para reorganizar, adicione módulos (Cotações e Carteira podem repetir, cada um com sua própria configuração — clique na engrenagem) ou remova." : "Tudo o mais está a um clique nos menus do topo."}</div></div>
         <div className="flex" style={{ gap: 8, alignItems: "center" }}>
           {editing && (
             <>
@@ -212,13 +390,13 @@ export default function Painel({ go }: { go: (id: ScreenId, param?: string) => v
                       ? <div className="muted" style={{ padding: 10, fontSize: 12 }}>Todos os módulos já estão no painel.</div>
                       : available.map((w) => (
                         <div key={w.id} className="dd-item" onClick={() => addWidget(w.id)}>
-                          <i className={`ti ${w.icon}`} />{w.title}
+                          <i className={`ti ${w.icon}`} />{w.title}{w.allowMultiple && <span className="muted" style={{ marginLeft: "auto", fontSize: 10 }}>+ adicionar outro</span>}
                         </div>
                       ))}
                   </div>
                 )}
               </div>
-              <button className="btn ghost" style={{ padding: "6px 10px", fontSize: 12 }} onClick={() => setWidgets(DEFAULT_WIDGETS)} title="Restaurar padrão"><i className="ti ti-rotate" /></button>
+              <button className="btn ghost" style={{ padding: "6px 10px", fontSize: 12 }} onClick={() => setWidgets(DEFAULT_INSTANCES)} title="Restaurar padrão"><i className="ti ti-rotate" /></button>
             </>
           )}
           <button
@@ -237,15 +415,18 @@ export default function Painel({ go }: { go: (id: ScreenId, param?: string) => v
       </div>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-        <SortableContext items={widgets} strategy={rectSortingStrategy}>
+        <SortableContext items={widgets.map((w) => w.instanceId)} strategy={rectSortingStrategy}>
           <div className="grid g3">
-            {widgets.map((id) => {
-              const w = CATALOG[id];
-              if (!w) return null;
+            {widgets.map((instance) => {
+              const def = CATALOG[instance.catalogId];
+              if (!def) return null;
               return (
-                <SortableCard key={id} id={id} editing={editing} onRemove={() => setWidgets((cur) => cur.filter((x) => x !== id))}>
-                  <h3><i className={`ti ${w.icon}`} />{w.title}</h3>
-                  {w.render(go)}
+                <SortableCard
+                  key={instance.instanceId} instance={instance} def={def} editing={editing}
+                  onRemove={() => removeWidget(instance.instanceId)}
+                  onConfigChange={(config) => updateConfig(instance.instanceId, config)}
+                >
+                  {def.Component ? <def.Component go={go} config={instance.config} /> : def.render?.(go)}
                 </SortableCard>
               );
             })}
@@ -254,7 +435,7 @@ export default function Painel({ go }: { go: (id: ScreenId, param?: string) => v
       </DndContext>
 
       {editing && available.length > 0 && (
-        <div className="muted mt" style={{ fontSize: 11 }}>{available.length} módulo(s) disponíveis para adicionar · arraste os cartões para reordenar.</div>
+        <div className="muted mt" style={{ fontSize: 11 }}>{available.length} módulo(s) disponíveis para adicionar · Cotações e Carteira do cliente podem ser adicionados várias vezes, cada um com sua própria configuração.</div>
       )}
     </div>
   );
