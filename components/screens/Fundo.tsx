@@ -1,10 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
 import { FUNDS, FUND_LIST, type Fund, type KV } from "@/lib/funds";
+import { CLIENTS } from "@/lib/clients";
+import { allClients } from "@/lib/clientStore";
 import { publishScreenData } from "@/lib/jim-data";
 import type { ScreenId } from "@/lib/nav";
 import RiskJourney from "./RiskJourney";
 import ComposicaoAoVivo from "./ComposicaoAoVivo";
+import GrowthChart, { type GrowthSeries } from "./GrowthChart";
 
 type Tab = "visao" | "comp" | "perf" | "risco" | "defesa" | "econ" | "comprar";
 const TABS: { id: Tab; label: string; icon: string }[] = [
@@ -113,6 +116,94 @@ function BenchmarkCrises({ b }: { b: Benchmarks }) {
       </div>
       <div className="muted mt" style={{ lineHeight: 1.6 }}>
         Queda/recuperação ancoradas no pico do S&amp;P 500 (data em que o mercado topou) — mede como cada série se comportou a partir do MESMO ponto de partida. CORE22+/S&amp;P do backtest oficial; Nasdaq calculado por nós (Yahoo, dado real).
+      </div>
+    </div>
+  );
+}
+
+const GROWTH_PERIODS = [{ k: "5y", l: "5A" }, { k: "2016", l: "10A" }, { k: "2006", l: "20A" }, { k: "2000", l: "Completo" }];
+
+interface GrowthResp {
+  ok: boolean; years: number;
+  spx: { time: number; value: number }[]; core: { time: number; value: number }[]; client: { time: number; value: number }[] | null;
+  meta: { spxReturn: number; coreReturn: number; clientReturn: number | null; spxMaxDD: number; coreMaxDD: number; clientMaxDD: number | null; clientAnnualReturnEst: number | null };
+}
+
+// "A Consequência" do Terminal — acompanha em dólar o portfólio do cliente escolhido vs
+// S&P 500 vs o ETP (CORE22+), igual a peça final da apresentação, mas com dado real ao
+// vivo (nosso backtest + Yahoo) em vez dos arrays fixos da apresentação.
+function PortfolioGrowthCard() {
+  const [clients, setClients] = useState(CLIENTS);
+  useEffect(() => setClients(allClients()), []);
+  const withPortfolio = clients.filter((c) => c.portfolios?.some((p) => (p.items?.length || 0) > 0));
+  const [clientId, setClientId] = useState(withPortfolio[0]?.id || "");
+  const [period, setPeriod] = useState("2016");
+  const [data, setData] = useState<GrowthResp | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    const qs = clientId ? `&clientId=${encodeURIComponent(clientId)}` : "";
+    fetch(`/api/portfolio-growth?period=${period}${qs}`)
+      .then((r) => r.json())
+      .then((j: GrowthResp) => { setData(j.ok ? j : null); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [clientId, period]);
+
+  const client = clients.find((c) => c.id === clientId);
+  const series: GrowthSeries[] = [];
+  if (data?.client) series.push({ name: client?.name || "Cliente", color: "#8FA0BD", data: data.client, dashed: true });
+  if (data?.spx) series.push({ name: "S&P 500", color: "#E74C3C", data: data.spx });
+  if (data?.core) series.push({ name: "CORE22+ (ETP)", color: "#C9A02C", data: data.core });
+
+  return (
+    <div className="card mt">
+      <div className="flex between wrap mb" style={{ gap: 10 }}>
+        <h3 style={{ margin: 0 }}><i className="ti ti-chart-histogram" />A consequência — seu dólar vs S&amp;P 500 vs CORE22+</h3>
+        <div className="flex wrap" style={{ gap: 10, alignItems: "center" }}>
+          <select className="fsel" style={{ fontSize: 12, padding: "6px 10px", minWidth: 180 }} value={clientId} onChange={(e) => setClientId(e.target.value)}>
+            {withPortfolio.length === 0 && <option value="">nenhum cliente com portfólio</option>}
+            {withPortfolio.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <div className="seg" style={{ margin: 0 }}>{GROWTH_PERIODS.map((p) => <span key={p.k} className={period === p.k ? "on" : ""} onClick={() => setPeriod(p.k)}>{p.l}</span>)}</div>
+        </div>
+      </div>
+      <div className="muted mb" style={{ lineHeight: 1.6 }}>
+        $10.000 aplicados no início do período. A linha do cliente combina o retorno médio real do portfólio dele (dos produtos cadastrados) com o caminho real do S&amp;P — preserva as quedas/crises verdadeiras, calibrado pro retorno médio dele.
+      </div>
+
+      {data?.meta && (
+        <div className="grid g3 mb">
+          <div className="card" style={{ padding: 12 }}>
+            <div className="muted" style={{ fontSize: 10 }}>{client?.name || "Cliente"} (dólar)</div>
+            <div className={`big ${(data.meta.clientReturn ?? 0) >= 0 ? "g" : "r"}`} style={{ fontSize: 19 }}>{data.client ? pct(data.meta.clientReturn) : "—"}</div>
+            <div className="muted" style={{ fontSize: 10 }}>MaxDD {data.client ? pct(data.meta.clientMaxDD) : "—"}</div>
+          </div>
+          <div className="card" style={{ padding: 12 }}>
+            <div className="muted" style={{ fontSize: 10 }}>S&amp;P 500</div>
+            <div className={`big ${data.meta.spxReturn >= 0 ? "g" : "r"}`} style={{ fontSize: 19 }}>{pct(data.meta.spxReturn)}</div>
+            <div className="muted" style={{ fontSize: 10 }}>MaxDD {pct(data.meta.spxMaxDD)}</div>
+          </div>
+          <div className="card" style={{ padding: 12, borderColor: "rgba(201,160,44,.3)" }}>
+            <div className="muted" style={{ fontSize: 10 }}>CORE22+ (ETP)</div>
+            <div className={`big ${data.meta.coreReturn >= 0 ? "g" : "r"}`} style={{ fontSize: 19, color: "var(--gold)" }}>{pct(data.meta.coreReturn)}</div>
+            <div className="muted" style={{ fontSize: 10 }}>MaxDD {pct(data.meta.coreMaxDD)}</div>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="muted" style={{ padding: 70, textAlign: "center" }}>Carregando…</div>
+      ) : series.length ? (
+        <GrowthChart series={series} />
+      ) : (
+        <div className="placeholder"><i className="ti ti-cloud-off" /><b>Sem dado suficiente</b></div>
+      )}
+      <div className="legend" style={{ marginTop: 10 }}>
+        <i><b style={{ background: "#8FA0BD" }} />{client?.name || "Cliente"} (estimado)</i>
+        <i><b style={{ background: "#E74C3C" }} />S&amp;P 500 (real)</i>
+        <i><b style={{ background: "#C9A02C" }} />CORE22+ (backtest oficial)</i>
+        <span className="muted" style={{ marginLeft: "auto" }}>Escala logarítmica · base $10.000</span>
       </div>
     </div>
   );
@@ -274,6 +365,7 @@ export default function Fundo({ fundId, onSelectFund, go }: { fundId: string; on
           </table>
           <div className="muted mt" style={{ lineHeight: 1.6 }}>{fund.perfNote}</div>
           {bench && <BenchmarkPerf b={bench} />}
+          {bench && <PortfolioGrowthCard />}
         </div>
       )}
 
