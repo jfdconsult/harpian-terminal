@@ -1,4 +1,7 @@
 // Clientes do MFO (mock). Carteiras em BRL (investidores brasileiros).
+import type { PortfolioItemDetail } from "./portfolioModels";
+import { MODELS } from "./portfolioModels";
+export type { PortfolioItemDetail };
 export interface Alloc { label: string; pct: number; tone?: "g" | "r" | "gold" }
 export interface ImportedPosition { ticker: string; qty: number; avgPrice: number }
 
@@ -26,7 +29,10 @@ export interface Portfolio {
   id: string;
   name: string;                 // ex.: "Carteira XP", "Carteira Itaú Private"
   accountId?: string;           // referência a Account.id
-  positions: ImportedPosition[];
+  positions: ImportedPosition[]; // subconjunto líquido (Yahoo-quotável) — alimenta o "ganho ao vivo"
+  items?: PortfolioItemDetail[]; // detalhamento COMPLETO produto-a-produto (Excel) — pra tela do portfólio
+  modelLabel?: string;           // rótulo do modelo de referência de origem (ex.: "P1 — Conservador Brasil")
+  baseValueUsd?: number;         // valor-base do modelo (normalmente USD 100.000)
 }
 
 // Conexão com o sistema de gestão do próprio MFO (fase 2: sincronização real).
@@ -80,6 +86,7 @@ export const CLIENTS: Client[] = [
     portfolios: [
       {
         id: "vera-p1", name: "Carteira Itaú · Brasil", accountId: "vera-itau",
+        modelLabel: MODELS.P1.label, baseValueUsd: 100000, items: MODELS.P1.items,
         positions: [
           { ticker: "PETR4.SA", qty: 20000, avgPrice: 30 },
           { ticker: "VALE3.SA", qty: 15000, avgPrice: 65 },
@@ -88,11 +95,12 @@ export const CLIENTS: Client[] = [
         ],
       },
       {
-        id: "vera-p2", name: "Carteira XP · Exterior (All Weather)", accountId: "vera-xp",
+        id: "vera-p2", name: "Carteira XP · Exterior", accountId: "vera-xp",
+        modelLabel: MODELS.P3.label, baseValueUsd: 100000, items: MODELS.P3.items,
         positions: [
           { ticker: "SPY", qty: 3000, avgPrice: 500 },
           { ticker: "TLT", qty: 5000, avgPrice: 85 },
-          { ticker: "GLD", qty: 2000, avgPrice: 370 },
+          { ticker: "AGG", qty: 4000, avgPrice: 98 },
         ],
       },
     ],
@@ -118,15 +126,16 @@ export const CLIENTS: Client[] = [
     portfolios: [
       {
         id: "silv-p1", name: "Carteira Itaú (Brasil + Exterior)", accountId: "silv-itau",
+        modelLabel: MODELS.P2.label, baseValueUsd: 100000, items: MODELS.P2.items,
         positions: [
-          { ticker: "PETR4.SA", qty: 10000, avgPrice: 30 },
-          { ticker: "VALE3.SA", qty: 8000, avgPrice: 65 },
+          { ticker: "BOVA11.SA", qty: 8000, avgPrice: 130 },
           { ticker: "SPY", qty: 2000, avgPrice: 500 },
           { ticker: "QQQ", qty: 1000, avgPrice: 480 },
         ],
       },
       {
-        id: "silv-p2", name: "Carteira Santander (Cripto)", accountId: "silv-santander",
+        id: "silv-p2", name: "Carteira Santander (Cripto + Multimercado)", accountId: "silv-santander",
+        modelLabel: MODELS.P4.label, baseValueUsd: 100000, items: MODELS.P4.items,
         positions: [
           { ticker: "BTC-USD", qty: 5, avgPrice: 45000 },
           { ticker: "ETH-USD", qty: 50, avgPrice: 2000 },
@@ -135,6 +144,7 @@ export const CLIENTS: Client[] = [
       },
       {
         id: "silv-p3", name: "Carteira Bank of America (US)", accountId: "silv-boa",
+        modelLabel: MODELS.P5.label, baseValueUsd: 100000, items: MODELS.P5.items,
         positions: [
           { ticker: "AAPL", qty: 2000, avgPrice: 200 },
           { ticker: "MSFT", qty: 1000, avgPrice: 380 },
@@ -153,16 +163,16 @@ export const CLIENTS: Client[] = [
       { label: "Ações BR", pct: 12 },
     ],
     note: "Bem dentro do mandato. Perfil de preservação com a camada de defesa da Harpian.",
-    // Estilo "Endowment (Yale)" da apresentação: diversificação ampla, foco em preservação.
+    // Modelo P2 (Conservador-Moderado Global) — diversificação ampla BR/EUA/Europa, foco em preservação.
     accounts: [{ id: "maz-bny", bank: "BNY Mellon", type: "Custódia", accountNumber: "BNYM-EC21625" }],
     portfolios: [
       {
-        id: "maz-p1", name: "Endowment · estilo Yale", accountId: "maz-bny",
+        id: "maz-p1", name: "Endowment · Conservador-Moderado Global", accountId: "maz-bny",
+        modelLabel: MODELS.P2.label, baseValueUsd: 100000, items: MODELS.P2.items,
         positions: [
           { ticker: "AGG", qty: 20000, avgPrice: 98 },
-          { ticker: "TLT", qty: 10000, avgPrice: 85 },
-          { ticker: "GLD", qty: 3000, avgPrice: 370 },
-          { ticker: "VTI", qty: 5000, avgPrice: 280 },
+          { ticker: "IEV", qty: 3000, avgPrice: 55 },
+          { ticker: "BOVA11.SA", qty: 4000, avgPrice: 130 },
         ],
       },
     ],
@@ -177,17 +187,16 @@ export const CLIENTS: Client[] = [
       { label: "Multimercado", pct: 20 },
     ],
     note: "Alinhado ao mandato. Bom candidato a aumentar a alocação no HPC.",
-    // Estilo "All Weather (Bridgewater)" da apresentação: risk parity — equity, treasuries, ouro, commodities.
+    // Modelo P4 (Balanceado Moderado Global) — 50% Brasil/40% EUA/10% Europa, inclui cripto (HASH11).
     accounts: [{ id: "ric-btg", bank: "BTG Pactual", type: "Corretora", accountNumber: "BTG-551029" }],
     portfolios: [
       {
-        id: "ric-p1", name: "Carteira BTG · All Weather (Bridgewater)", accountId: "ric-btg",
+        id: "ric-p1", name: "Carteira BTG · Balanceado Moderado Global", accountId: "ric-btg",
+        modelLabel: MODELS.P4.label, baseValueUsd: 100000, items: MODELS.P4.items,
         positions: [
           { ticker: "SPY", qty: 2000, avgPrice: 500 },
-          { ticker: "TLT", qty: 8000, avgPrice: 85 },
-          { ticker: "IEF", qty: 12000, avgPrice: 95 },
-          { ticker: "GLD", qty: 2000, avgPrice: 370 },
-          { ticker: "DBC", qty: 12000, avgPrice: 22 },
+          { ticker: "BOVA11.SA", qty: 5000, avgPrice: 130 },
+          { ticker: "AGG", qty: 2000, avgPrice: 98 },
         ],
       },
     ],
@@ -202,17 +211,17 @@ export const CLIENTS: Client[] = [
       { label: "Renda fixa", pct: 15 },
     ],
     note: "Maior alocação Harpian da base. Dentro do mandato com retorno forte.",
-    // Estilo "Equity-Heavy Growth / Só Exterior" da apresentação — 100% ações US, alta concentração tech.
+    // Modelo P5 (Moderado EUA) — 100% USD, ações diretas (AAPL/MSFT/GOOGL/JPM...) + ETFs + 2% cripto (IBIT).
     accounts: [{ id: "aur-ibkr", bank: "Interactive Brokers", type: "Corretora", accountNumber: "IBKR-U15982774" }],
     portfolios: [
       {
-        id: "aur-p1", name: "Carteira IBKR · Só Exterior (Growth)", accountId: "aur-ibkr",
+        id: "aur-p1", name: "Carteira IBKR · Só Exterior (Moderado EUA)", accountId: "aur-ibkr",
+        modelLabel: MODELS.P5.label, baseValueUsd: 100000, items: MODELS.P5.items,
         positions: [
-          { ticker: "NVDA", qty: 8000, avgPrice: 150 },
           { ticker: "AAPL", qty: 10000, avgPrice: 200 },
           { ticker: "MSFT", qty: 8000, avgPrice: 380 },
           { ticker: "GOOGL", qty: 6000, avgPrice: 300 },
-          { ticker: "AMZN", qty: 6000, avgPrice: 180 },
+          { ticker: "SPY", qty: 3000, avgPrice: 500 },
         ],
       },
     ],
@@ -227,12 +236,12 @@ export const CLIENTS: Client[] = [
       { label: "HPC11 (Harpian)", pct: 5, tone: "g" },
     ],
     note: "Levemente acima do mandato conservador. Migrar parte para HPC11 reduz o risco.",
-    // Estilo "Family Office BR padrão / Investimento Brasil" — mesmos tickers reais do
-    // modelo P1 Conservador Brasil (80% Brasil / 20% EUA) usado na Análise USD.
+    // Modelo P1 (Conservador Brasil) — 80% Brasil / 20% EUA, tickers reais da Análise USD.
     accounts: [{ id: "hel-itau", bank: "Itaú", type: "Conta corrente", accountNumber: "IT-22841" }],
     portfolios: [
       {
         id: "hel-p1", name: "Conservador · Brasil (modelo P1)", accountId: "hel-itau",
+        modelLabel: MODELS.P1.label, baseValueUsd: 100000, items: MODELS.P1.items,
         positions: [
           { ticker: "BOVA11.SA", qty: 3000, avgPrice: 130 },
           { ticker: "ITUB4.SA", qty: 8000, avgPrice: 30 },

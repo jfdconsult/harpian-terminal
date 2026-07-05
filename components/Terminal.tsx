@@ -13,6 +13,7 @@ import Risco from "./screens/Risco";
 import Clientes from "./screens/Clientes";
 import Cliente from "./screens/Cliente";
 import Carteira from "./screens/Carteira";
+import PortfolioDetail from "./screens/PortfolioDetail";
 import Alertas from "./screens/Alertas";
 import Ordem from "./screens/Ordem";
 import Importar from "./screens/Importar";
@@ -35,6 +36,7 @@ export default function Terminal() {
   const [clientId, setClientId] = useState("vera");
   const [orderArg, setOrderArg] = useState<string | undefined>(undefined);
   const [chartArg, setChartArg] = useState<string | undefined>(undefined);
+  const [portfolioArg, setPortfolioArg] = useState<string | undefined>(undefined);
   const [jimOpen, setJimOpen] = useState(false);
 
   const go = (id: ScreenId, param?: string) => {
@@ -43,6 +45,7 @@ export default function Terminal() {
     if ((id === "cliente" || id === "carteira") && param) setClientId(param);
     if (id === "ordem") setOrderArg(param);
     if (id === "acoes" && param) setChartArg(param);
+    if (id === "portfolio-detalhe" && param) setPortfolioArg(param);
     if (typeof window !== "undefined") window.scrollTo(0, 0);
   };
 
@@ -56,6 +59,7 @@ export default function Terminal() {
       case "noticias": return <Noticias go={go} />;
       case "risco": return <Risco />;
       case "carteira": return <Carteira clientId={clientId} go={go} />;
+      case "portfolio-detalhe": return <PortfolioDetail arg={portfolioArg} go={go} />;
       case "clientes": return <Clientes go={go} />;
       case "cliente": return <Cliente clientId={clientId} go={go} />;
       case "ordem": return <Ordem preselect={orderArg} />;

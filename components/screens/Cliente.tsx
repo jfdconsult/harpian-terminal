@@ -161,16 +161,25 @@ export function ClientDetail({ client: clientProp, go, screen = "cliente" }: { c
       {(client.portfolios?.length || 0) > 0 && (
         <div className="card mt">
           <h3><i className="ti ti-briefcase" />Portfólios ({client.portfolios!.length})</h3>
+          <div className="muted mb" style={{ fontSize: 11 }}>Clique num portfólio para ver o detalhamento completo — cada portfólio tem sua própria tela.</div>
           <div className="grid g3">
             {client.portfolios!.map((p) => {
-              const total = p.positions.reduce((s, x) => s + x.qty * x.avgPrice, 0);
+              const hasItems = (p.items?.length || 0) > 0;
+              const totalUsd = hasItems ? p.items!.reduce((s, x) => s + x.valorUsd, 0) : null;
+              const totalBrl = p.positions.reduce((s, x) => s + x.qty * x.avgPrice, 0);
               const acc = client.accounts?.find((a) => a.id === p.accountId);
               return (
-                <div key={p.id} style={{ background: "var(--panel2)", border: "1px solid var(--line2)", borderRadius: 8, padding: 12 }}>
+                <div
+                  key={p.id}
+                  onClick={() => go("portfolio-detalhe", `${client.id}:${p.id}`)}
+                  style={{ background: "var(--panel2)", border: "1px solid var(--line2)", borderRadius: 8, padding: 12, cursor: "pointer", transition: "border-color .15s" }}
+                >
                   <div style={{ fontWeight: 600, color: "var(--tx)" }}>{p.name}</div>
-                  <div className="muted" style={{ fontSize: 11, marginTop: 2 }}>{acc ? acc.bank : "sem conta vinculada"}</div>
-                  <div style={{ fontSize: 15, color: "var(--gold)", fontWeight: 600, marginTop: 6 }}>{brl(total)}</div>
-                  <div className="muted" style={{ fontSize: 11 }}>{p.positions.length} posições</div>
+                  <div className="muted" style={{ fontSize: 11, marginTop: 2 }}>{acc ? acc.bank : "sem conta vinculada"}{p.modelLabel && ` · ${p.modelLabel}`}</div>
+                  <div style={{ fontSize: 15, color: "var(--gold)", fontWeight: 600, marginTop: 6 }}>
+                    {hasItems ? "US$ " + totalUsd!.toLocaleString("pt-BR", { maximumFractionDigits: 0 }) : brl(totalBrl)}
+                  </div>
+                  <div className="muted" style={{ fontSize: 11 }}>{hasItems ? p.items!.length : p.positions.length} {hasItems ? "produtos" : "posições"} <i className="ti ti-chevron-right" style={{ float: "right" }} /></div>
                 </div>
               );
             })}

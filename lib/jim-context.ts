@@ -58,6 +58,11 @@ const SCREEN_MAP: Record<ScreenId, Omit<ScreenContext, "id">> = {
     description: "Portfólio detalhado do cliente: posições, pesos, performance, adequação ao Risk Number, e sugestões de rebalanceamento.",
     dataAvailable: ["posições", "pesos", "performance", "adequação"],
   },
+  "portfolio-detalhe": {
+    title: "Detalhamento do Portfólio",
+    description: "Um portfólio específico do cliente, produto a produto: emissor, categoria, sub-categoria, geografia, alocação %, valor, perfil de risco, retorno e volatilidade estimados.",
+    dataAvailable: ["produtos", "alocação por geografia", "alocação por categoria", "perfil de risco", "concentração", "retorno estimado"],
+  },
   ordem: {
     title: "Ordens (Lynk)",
     description: "Módulo de envio de ordens via Lynk API: geração semiautomática de ordens com base nas mudanças do dia no portfólio modelo.",
@@ -149,6 +154,7 @@ const SCREEN_SUGGESTIONS: Record<ScreenId, string[]> = {
   clientes: ["Qual cliente está desenquadrado?", "Quem tem o maior AUM?", "Resuma a carteira de clientes."],
   cliente: ["Esse cliente está adequado ao perfil?", "Qual o Risk Number dele?", "O que sugerir pra ele agora?"],
   carteira: ["Essa carteira está adequada?", "Qual posição pesa mais no risco?", "Precisa rebalancear?"],
+  "portfolio-detalhe": ["Esse portfólio está bem diversificado?", "Qual a maior concentração de risco aqui?", "Como esse portfólio se compara ao mandato do cliente?"],
   ordem: ["O que essas ordens fazem?", "Por que essas mudanças hoje?", "Qual o impacto no portfólio?"],
   importar: ["Como importo uma carteira?", "Quais formatos são aceitos?", "Posso conectar a custódia?"],
   alertas: ["Qual alerta é mais urgente?", "O que exige ação minha hoje?", "Resuma os alertas."],

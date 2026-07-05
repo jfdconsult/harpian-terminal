@@ -10,6 +10,7 @@ export type ScreenId =
   | "cliente"
   | "ordem"
   | "carteira"
+  | "portfolio-detalhe"
   | "regime"
   | "acoes"
   | "noticias"
