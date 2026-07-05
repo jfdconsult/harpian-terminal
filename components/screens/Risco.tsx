@@ -3,16 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CLIENTS, brl, type Client } from "@/lib/clients";
 import { allClients } from "@/lib/clientStore";
 import { publishScreenData } from "@/lib/jim-data";
-
-// Níveis internos (motor / produto). Não são dados de mercado.
-const HPC22_RN = 38; // Número de Risco do produto (motor interno)
-const HPC11_RN = 34;
-
-// Tolerância e objetivo derivam do perfil do cliente (questionário).
-const TOLERANCE: Record<Client["profile"], number> = { Conservador: 40, Moderado: 62, Agressivo: 80 };
-const OBJETIVO: Record<Client["profile"], string> = {
-  Conservador: "Preservação", Moderado: "Equilíbrio", Agressivo: "Crescimento",
-};
+import { HPC22_RN, HPC11_RN, TOLERANCE, OBJETIVO } from "@/lib/riskLevels";
 
 // Régua compacta (inline) com marcadores — usada em cada linha da tabela.
 function MiniRegua({ portfolio, tolerance, mandate }: { portfolio: number; tolerance: number; mandate: number }) {

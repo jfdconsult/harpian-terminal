@@ -12,6 +12,7 @@ import { allClients, findClient } from "@/lib/clientStore";
 import { MARKET_GROUPS } from "@/lib/market";
 import { pctText, pctClass, numShort } from "@/lib/format";
 import { publishScreenData } from "@/lib/jim-data";
+import { HPC22_RN, TOLERANCE } from "@/lib/riskLevels";
 
 // Uma instância de módulo no painel — o mesmo módulo do catálogo (ex.: "cotacoes")
 // pode aparecer VÁRIAS vezes, cada instância com sua própria config (classe de
@@ -111,6 +112,42 @@ function CarteiraWidgetBody({ go, config }: { go: (id: ScreenId, param?: string)
         ))
       )}
       <div className="mt"><button className="btn ghost" onClick={() => go("cliente", client.id)}><i className="ti ti-arrow-right" />Abrir carteira completa</button></div>
+    </>
+  );
+}
+
+// ---- Risco por cliente (configurável por cliente) — a régua de 4 níveis, versão compacta ----
+function RiscoClienteWidgetBody({ go, config }: { go: (id: ScreenId, param?: string) => void; config?: Record<string, string> }) {
+  const [clients, setClients] = useState(CLIENTS);
+  useEffect(() => setClients(allClients()), []);
+  const client = (config?.clientId && findClient(config.clientId)) || clients[0];
+  if (!client) return <div className="muted">Nenhum cliente cadastrado.</div>;
+
+  const tol = TOLERANCE[client.profile];
+  const gap = client.riskNumber - client.mandate;
+  const markers = [
+    { v: HPC22_RN, color: "#C9A02C", label: "produto" },
+    { v: client.mandate, color: "#4A90D9", label: "mandato" },
+    { v: tol, color: "#EAF0F7", label: "tolerância" },
+    { v: client.riskNumber, color: gap > 0 ? "#E74C3C" : "#2ECC71", label: "portfólio" },
+  ];
+
+  return (
+    <>
+      <div className="flex between mb"><span style={{ fontWeight: 600, color: "var(--tx)" }}>{client.name}</span><span className={`v ${gap > 0 ? "neg" : "pos"}`}>{gap > 0 ? `▲ +${gap}` : "✓ dentro"}</span></div>
+      <div style={{ position: "relative", height: 26, margin: "6px 4px 4px" }}>
+        <div style={{ position: "absolute", top: 11, left: 0, right: 0, height: 6, borderRadius: 3, background: "linear-gradient(90deg,#2ECC71,#F39C12,#E74C3C)" }} />
+        {markers.map((m) => (
+          <div key={m.label} title={`${m.label} ${m.v}`} style={{ position: "absolute", top: 8, left: `${m.v}%`, transform: "translateX(-50%)", width: 3, height: 12, borderRadius: 2, background: m.color }} />
+        ))}
+      </div>
+      <div className="legend" style={{ fontSize: 9.5, marginTop: 2 }}>
+        <i><b style={{ background: "#C9A02C" }} />Produto {HPC22_RN}</i>
+        <i><b style={{ background: "#4A90D9" }} />Mandato {client.mandate}</i>
+        <i><b style={{ background: "#EAF0F7" }} />Tolerância {tol}</i>
+        <i><b style={{ background: gap > 0 ? "#E74C3C" : "#2ECC71" }} />Portfólio {client.riskNumber}</i>
+      </div>
+      <div className="mt"><button className="btn ghost" onClick={() => go("risco")}><i className="ti ti-arrow-right" />Ver régua completa</button></div>
     </>
   );
 }
@@ -227,15 +264,14 @@ const CATALOG: Record<string, WidgetDef> = {
     },
   },
   risco: {
-    id: "risco", title: "Risco · 4 níveis", icon: "ti-scale",
-    render: (go) => (
-      <>
-        <div className="kv"><span>Produto (HPC22)</span><span className="v" style={{ color: "var(--orange)" }}>38</span></div>
-        <div className="kv"><span>Mandato (teto)</span><span className="v">55</span></div>
-        <div className="kv"><span>Cliente (tolera)</span><span className="v">62</span></div>
-        <div className="mt"><button className="btn ghost" onClick={() => go("risco")}><i className="ti ti-arrow-right" />Ver os 4 níveis</button></div>
-      </>
-    ),
+    id: "risco", title: "Risco · 4 níveis por cliente", icon: "ti-scale",
+    allowMultiple: true,
+    configFields: [{ key: "clientId", label: "Cliente", options: CLIENTS.map((c) => ({ value: c.id, label: c.name })) }],
+    titleFor: (config) => {
+      const c = config?.clientId ? CLIENTS.find((x) => x.id === config.clientId) : null;
+      return `Risco · ${c?.name || CLIENTS[0].name}`;
+    },
+    Component: RiscoClienteWidgetBody,
   },
 };
 
