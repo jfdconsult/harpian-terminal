@@ -71,6 +71,31 @@ export const CLIENTS: Client[] = [
       { label: "HPC (Harpian)", pct: 0, tone: "r" },
     ],
     note: "100% fora da Harpian, sem a camada de defesa. Oportunidade: migrar parte para o HPC11/HPC22.",
+    // 2 portfólios em 2 bancos — estilo "Investimento Brasil" (Itaú) + "Investimento Exterior" (XP),
+    // igual os modelos de referência da apresentação (lente-3-portfolio.html).
+    accounts: [
+      { id: "vera-itau", bank: "Itaú Private", type: "Custódia", agency: "0910", accountNumber: "18.442-1" },
+      { id: "vera-xp", bank: "XP Investimentos", type: "Corretora", accountNumber: "XP-772104" },
+    ],
+    portfolios: [
+      {
+        id: "vera-p1", name: "Carteira Itaú · Brasil", accountId: "vera-itau",
+        positions: [
+          { ticker: "PETR4.SA", qty: 20000, avgPrice: 30 },
+          { ticker: "VALE3.SA", qty: 15000, avgPrice: 65 },
+          { ticker: "ITUB4.SA", qty: 30000, avgPrice: 30 },
+          { ticker: "BOVA11.SA", qty: 10000, avgPrice: 130 },
+        ],
+      },
+      {
+        id: "vera-p2", name: "Carteira XP · Exterior (All Weather)", accountId: "vera-xp",
+        positions: [
+          { ticker: "SPY", qty: 3000, avgPrice: 500 },
+          { ticker: "TLT", qty: 5000, avgPrice: 85 },
+          { ticker: "GLD", qty: 2000, avgPrice: 370 },
+        ],
+      },
+    ],
   },
   {
     id: "silveira", name: "Silveira Family Office", type: "Family Office", profile: "Agressivo",
@@ -83,6 +108,40 @@ export const CLIENTS: Client[] = [
       { label: "HPC (Harpian)", pct: 8, tone: "gold" },
     ],
     note: "Levemente acima do mandato; sem proteção estruturada na parte de risco.",
+    // 3 portfólios em 3 bancos — Itaú (Brasil + exterior misturado), Santander (cripto/tech),
+    // Bank of America (US mega-cap) — o cliente-exemplo com mais bancos, pra testar o leiaute.
+    accounts: [
+      { id: "silv-itau", bank: "Itaú Private", type: "Custódia", accountNumber: "IT-90234" },
+      { id: "silv-santander", bank: "Santander Private Banking", type: "Corretora", accountNumber: "SAN-44120" },
+      { id: "silv-boa", bank: "Bank of America Private Bank", type: "Corretora", accountNumber: "BOA-US-33871" },
+    ],
+    portfolios: [
+      {
+        id: "silv-p1", name: "Carteira Itaú (Brasil + Exterior)", accountId: "silv-itau",
+        positions: [
+          { ticker: "PETR4.SA", qty: 10000, avgPrice: 30 },
+          { ticker: "VALE3.SA", qty: 8000, avgPrice: 65 },
+          { ticker: "SPY", qty: 2000, avgPrice: 500 },
+          { ticker: "QQQ", qty: 1000, avgPrice: 480 },
+        ],
+      },
+      {
+        id: "silv-p2", name: "Carteira Santander (Cripto)", accountId: "silv-santander",
+        positions: [
+          { ticker: "BTC-USD", qty: 5, avgPrice: 45000 },
+          { ticker: "ETH-USD", qty: 50, avgPrice: 2000 },
+          { ticker: "AMZN", qty: 500, avgPrice: 180 },
+        ],
+      },
+      {
+        id: "silv-p3", name: "Carteira Bank of America (US)", accountId: "silv-boa",
+        positions: [
+          { ticker: "AAPL", qty: 2000, avgPrice: 200 },
+          { ticker: "MSFT", qty: 1000, avgPrice: 380 },
+          { ticker: "NVDA", qty: 500, avgPrice: 150 },
+        ],
+      },
+    ],
   },
   {
     id: "marazul", name: "Instituto MarAzul", type: "Institucional (endowment)", profile: "Conservador",
@@ -94,6 +153,19 @@ export const CLIENTS: Client[] = [
       { label: "Ações BR", pct: 12 },
     ],
     note: "Bem dentro do mandato. Perfil de preservação com a camada de defesa da Harpian.",
+    // Estilo "Endowment (Yale)" da apresentação: diversificação ampla, foco em preservação.
+    accounts: [{ id: "maz-bny", bank: "BNY Mellon", type: "Custódia", accountNumber: "BNYM-EC21625" }],
+    portfolios: [
+      {
+        id: "maz-p1", name: "Endowment · estilo Yale", accountId: "maz-bny",
+        positions: [
+          { ticker: "AGG", qty: 20000, avgPrice: 98 },
+          { ticker: "TLT", qty: 10000, avgPrice: 85 },
+          { ticker: "GLD", qty: 3000, avgPrice: 370 },
+          { ticker: "VTI", qty: 5000, avgPrice: 280 },
+        ],
+      },
+    ],
   },
   {
     id: "ricardo", name: "Ricardo Menezes", type: "Pessoa Física", profile: "Moderado",
@@ -105,6 +177,20 @@ export const CLIENTS: Client[] = [
       { label: "Multimercado", pct: 20 },
     ],
     note: "Alinhado ao mandato. Bom candidato a aumentar a alocação no HPC.",
+    // Estilo "All Weather (Bridgewater)" da apresentação: risk parity — equity, treasuries, ouro, commodities.
+    accounts: [{ id: "ric-btg", bank: "BTG Pactual", type: "Corretora", accountNumber: "BTG-551029" }],
+    portfolios: [
+      {
+        id: "ric-p1", name: "Carteira BTG · All Weather (Bridgewater)", accountId: "ric-btg",
+        positions: [
+          { ticker: "SPY", qty: 2000, avgPrice: 500 },
+          { ticker: "TLT", qty: 8000, avgPrice: 85 },
+          { ticker: "IEF", qty: 12000, avgPrice: 95 },
+          { ticker: "GLD", qty: 2000, avgPrice: 370 },
+          { ticker: "DBC", qty: 12000, avgPrice: 22 },
+        ],
+      },
+    ],
   },
   {
     id: "aurora", name: "Aurora Capital MFO", type: "Institucional", profile: "Agressivo",
@@ -116,6 +202,20 @@ export const CLIENTS: Client[] = [
       { label: "Renda fixa", pct: 15 },
     ],
     note: "Maior alocação Harpian da base. Dentro do mandato com retorno forte.",
+    // Estilo "Equity-Heavy Growth / Só Exterior" da apresentação — 100% ações US, alta concentração tech.
+    accounts: [{ id: "aur-ibkr", bank: "Interactive Brokers", type: "Corretora", accountNumber: "IBKR-U15982774" }],
+    portfolios: [
+      {
+        id: "aur-p1", name: "Carteira IBKR · Só Exterior (Growth)", accountId: "aur-ibkr",
+        positions: [
+          { ticker: "NVDA", qty: 8000, avgPrice: 150 },
+          { ticker: "AAPL", qty: 10000, avgPrice: 200 },
+          { ticker: "MSFT", qty: 8000, avgPrice: 380 },
+          { ticker: "GOOGL", qty: 6000, avgPrice: 300 },
+          { ticker: "AMZN", qty: 6000, avgPrice: 180 },
+        ],
+      },
+    ],
   },
   {
     id: "helena", name: "Helena Prado", type: "Pessoa Física", profile: "Conservador",
@@ -127,6 +227,20 @@ export const CLIENTS: Client[] = [
       { label: "HPC11 (Harpian)", pct: 5, tone: "g" },
     ],
     note: "Levemente acima do mandato conservador. Migrar parte para HPC11 reduz o risco.",
+    // Estilo "Family Office BR padrão / Investimento Brasil" — mesmos tickers reais do
+    // modelo P1 Conservador Brasil (80% Brasil / 20% EUA) usado na Análise USD.
+    accounts: [{ id: "hel-itau", bank: "Itaú", type: "Conta corrente", accountNumber: "IT-22841" }],
+    portfolios: [
+      {
+        id: "hel-p1", name: "Conservador · Brasil (modelo P1)", accountId: "hel-itau",
+        positions: [
+          { ticker: "BOVA11.SA", qty: 3000, avgPrice: 130 },
+          { ticker: "ITUB4.SA", qty: 8000, avgPrice: 30 },
+          { ticker: "AGG", qty: 3000, avgPrice: 98 },
+          { ticker: "TLT", qty: 1500, avgPrice: 85 },
+        ],
+      },
+    ],
   },
 ];
 
