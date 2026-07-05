@@ -6,7 +6,8 @@ import { publishScreenData } from "@/lib/jim-data";
 import { HPC22_RN, HPC11_RN, TOLERANCE, OBJETIVO } from "@/lib/riskLevels";
 
 // Régua compacta (inline) com marcadores — usada em cada linha da tabela.
-function MiniRegua({ portfolio, tolerance, mandate }: { portfolio: number; tolerance: number; mandate: number }) {
+// Exportada pra ser reaproveitada no módulo "Todos os clientes na régua" do Painel.
+export function MiniRegua({ portfolio, tolerance, mandate }: { portfolio: number; tolerance: number; mandate: number }) {
   const dot = (v: number, color: string, title: string) => (
     <div title={title} style={{ position: "absolute", top: -2, left: `${v}%`, transform: "translateX(-50%)", width: 8, height: 8, borderRadius: "50%", background: color, border: "1.5px solid var(--bg)" }} />
   );

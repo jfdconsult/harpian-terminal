@@ -13,6 +13,7 @@ import { MARKET_GROUPS } from "@/lib/market";
 import { pctText, pctClass, numShort } from "@/lib/format";
 import { publishScreenData } from "@/lib/jim-data";
 import { HPC22_RN, TOLERANCE } from "@/lib/riskLevels";
+import { MiniRegua } from "./Risco";
 
 // Uma instância de módulo no painel — o mesmo módulo do catálogo (ex.: "cotacoes")
 // pode aparecer VÁRIAS vezes, cada instância com sua própria config (classe de
@@ -152,6 +153,42 @@ function RiscoClienteWidgetBody({ go, config }: { go: (id: ScreenId, param?: str
   );
 }
 
+// ---- Todos os clientes na régua — panorama comparativo, um módulo só (sem config) ----
+function TodosClientesReguaWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }) {
+  const [clients, setClients] = useState(CLIENTS);
+  useEffect(() => setClients(allClients()), []);
+  const fora = clients.filter((c) => c.riskNumber > c.mandate);
+
+  return (
+    <>
+      <div className="flex between mb"><span className="muted">{clients.length} clientes</span><span className={`tag ${fora.length ? "r" : "g"}`}>{fora.length ? `${fora.length} fora do mandato` : "todos dentro"}</span></div>
+      <div style={{ overflowX: "auto" }}>
+        <table>
+          <thead><tr>
+            <th>Cliente</th><th className="num">Portfólio</th><th className="num">Mandato</th><th>Distribuição</th><th>Alinhamento</th>
+          </tr></thead>
+          <tbody>
+            {clients.map((c) => {
+              const aligned = c.riskNumber <= c.mandate;
+              const t = TOLERANCE[c.profile];
+              return (
+                <tr key={c.id} style={{ cursor: "pointer" }} onClick={() => go("risco")}>
+                  <td style={{ fontWeight: 600, color: "var(--tx)", fontSize: 12 }}>{c.name}</td>
+                  <td className="num" style={{ color: aligned ? "var(--tx)" : "var(--red)", fontWeight: 600 }}>{c.riskNumber}</td>
+                  <td className="num" style={{ color: "var(--tx2)" }}>{c.mandate}</td>
+                  <td><MiniRegua portfolio={c.riskNumber} tolerance={t} mandate={c.mandate} /></td>
+                  <td>{aligned ? <span className="tag g">dentro</span> : <span className="tag r">▲ +{c.riskNumber - c.mandate}</span>}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div className="mt"><button className="btn ghost" onClick={() => go("risco")}><i className="ti ti-arrow-right" />Ver detalhe por cliente</button></div>
+    </>
+  );
+}
+
 const CATALOG: Record<string, WidgetDef> = {
   fundos: {
     id: "fundos", title: "Seus fundos hoje", icon: "ti-coin",
@@ -272,6 +309,10 @@ const CATALOG: Record<string, WidgetDef> = {
       return `Risco · ${c?.name || CLIENTS[0].name}`;
     },
     Component: RiscoClienteWidgetBody,
+  },
+  "risco-todos": {
+    id: "risco-todos", title: "Todos os clientes na régua", icon: "ti-users-group",
+    Component: TodosClientesReguaWidgetBody,
   },
 };
 
