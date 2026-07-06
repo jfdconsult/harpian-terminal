@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HARPIAN ETP Terminal — Protótipo navegável v1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A1A30; --bg2:#0C2039; --panel:#0F2747; --panel2:#0C2039; --raise:#14315a;
+  --line:#16304f; --line2:#1d3a5f;
+  --gold:#C9A02C; --gold2:#e0c160; --green:#2ECC71; --red:#E74C3C; --orange:#F39C12; --blue:#4A90D9;
+  --tx:#E8ECF1; --tx2:#7d96b3; --tx3:#5b7a99;
+  --sans:'Segoe UI',system-ui,-apple-system,sans-serif; --mono:'Segoe UI',system-ui,sans-serif; --r:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:radial-gradient(1100px 520px at 50% -8%,#102a4a 0%,var(--bg) 58%) fixed;color:var(--tx);font-family:var(--sans);font-size:13.5px;-webkit-font-smoothing:antialiased;min-height:100vh}
+.app{display:flex;flex-direction:column;min-height:100vh}
+
+/* ===== OFFICE TOP BAR ===== */
+.topbar{display:flex;align-items:center;gap:2px;background:var(--bg2);border-bottom:1px solid var(--line2);padding:0 14px;height:52px;position:sticky;top:0;z-index:50}
+.brand{display:flex;align-items:center;gap:9px;font-weight:600;letter-spacing:.4px;margin-right:14px;cursor:pointer}
+.brand .lg{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#e0c160,#b08010);color:#1a1205;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px}
+.brand .sub{font-weight:400;color:var(--tx3);font-size:11px;letter-spacing:1px}
+.menu{position:relative}
+.menu>.mtab{display:flex;align-items:center;gap:5px;padding:8px 14px;border-radius:8px;font-size:13.5px;color:var(--tx2);cursor:pointer;user-select:none}
+.menu:hover>.mtab,.menu>.mtab.on{background:rgba(201,160,44,.13);color:var(--gold)}
+.menu>.mtab .ti{font-size:15px}
+.dropdown{position:absolute;top:46px;left:0;background:var(--panel);border:1px solid var(--line2);border-radius:12px;
+  box-shadow:0 18px 50px rgba(0,0,0,.55);padding:8px;min-width:240px;opacity:0;visibility:hidden;transform:translateY(-6px);
+  transition:.15s;z-index:60}
+.menu:hover .dropdown{opacity:1;visibility:visible;transform:translateY(0)}
+.dropdown.wide{display:flex;min-width:430px;gap:8px}
+.dd-col{flex:1}
+.dd-label{font-size:10px;letter-spacing:1px;color:var(--tx3);text-transform:uppercase;padding:6px 10px 4px}
+.dd-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;font-size:13px;color:var(--tx2);cursor:pointer}
+.dd-item:hover{background:var(--raise);color:var(--tx)}
+.dd-item .ti{font-size:16px;color:var(--gold)}
+.dd-item.cur{background:rgba(201,160,44,.12);color:var(--gold)}
+.dd-item.cur .ti{color:var(--gold)}
+.topbar .right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.pillstate{display:flex;align-items:center;gap:7px;background:rgba(46,204,113,.1);border:1px solid rgba(46,204,113,.28);color:var(--green);padding:5px 11px;border-radius:7px;font-size:11.5px;font-family:var(--mono)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.jim{display:flex;align-items:center;gap:7px;background:var(--raise);border:1px solid var(--line2);padding:5px 11px;border-radius:7px;font-size:12px;color:var(--tx2);cursor:pointer}
+.jim .ti{color:var(--gold);font-size:16px}
+.clock{font-family:var(--mono);color:var(--tx3);font-size:12px}
+
+/* ===== SCREEN AREA ===== */
+.main{flex:1;padding:18px 26px 56px;width:100%}
+.screen{display:none}
+.screen.on{display:block;animation:fade .2s}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+.crumb{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tx3);margin-bottom:6px;font-family:var(--mono)}
+.crumb b{color:var(--gold);font-weight:500}
+.h1{font-size:23px;font-weight:600;letter-spacing:.2px;margin-bottom:3px}
+.sub{font-size:13px;color:var(--tx2);margin-bottom:18px}
+
+/* cards / grid */
+.grid{display:grid;gap:14px}
+.g3{grid-template-columns:repeat(3,1fr)} .g2{grid-template-columns:repeat(2,1fr)} .g4{grid-template-columns:repeat(4,1fr)}
+.card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line2);border-radius:12px;padding:16px}
+.card.calm{padding:20px}
+.card h3{font-size:11px;font-weight:600;color:var(--gold);text-transform:uppercase;letter-spacing:1.1px;display:flex;align-items:center;gap:7px;margin-bottom:13px}
+.card h3 .ti{color:var(--gold);font-size:17px}
+.big{font-family:var(--mono);font-size:30px;font-weight:500;letter-spacing:.5px}
+.big.g{color:var(--green)} .big.r{color:var(--red)}
+.kv{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px}
+.kv:last-child{border:0}
+.kv .v{font-family:var(--mono);color:var(--tx)}
+.muted{color:var(--tx3);font-size:12px}
+.tag{font-family:var(--mono);font-size:10px;font-weight:500;padding:3px 8px;border-radius:5px;letter-spacing:.5px}
+.tag.g{background:rgba(46,204,113,.14);color:var(--green)} .tag.o{background:rgba(243,156,18,.14);color:var(--orange)}
+.tag.r{background:rgba(231,76,60,.14);color:var(--red)} .tag.b{background:rgba(74,144,217,.14);color:var(--blue)}
+.btn{display:inline-flex;align-items:center;gap:7px;background:var(--gold);color:#1a1205;border:0;font-family:var(--sans);font-weight:600;
+  font-size:12.5px;padding:8px 15px;border-radius:8px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--tx2);border:1px solid var(--line2)}
+.btn .ti{font-size:16px}
+
+/* fund hub tabs */
+.fhhead{display:flex;align-items:center;gap:18px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin-bottom:14px}
+.fhhead .tk{font-family:var(--mono);font-size:24px;color:var(--gold);font-weight:500}
+.fhhead .nm{font-size:12px;color:var(--tx2)}
+.fhstat{padding-left:18px;border-left:1px solid var(--line)}
+.fhstat .l{font-size:10px;letter-spacing:.5px;color:var(--tx3);text-transform:uppercase}
+.fhstat .v{font-family:var(--mono);font-size:18px;margin-top:3px}
+.fhstat .v.g{color:var(--green)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.tab{padding:9px 16px;font-size:13px;color:var(--tx2);cursor:pointer;border-bottom:2px solid transparent;display:flex;align-items:center;gap:7px}
+.tab .ti{font-size:16px}
+.tab:hover{color:var(--tx)}
+.tab.on{color:var(--gold);border-bottom-color:var(--gold)}
+.ftab-pane{display:none}.ftab-pane.on{display:block;animation:fade .2s}
+.otab-pane{display:none}.otab-pane.on{display:block;animation:fade .2s}
+.prow{margin-bottom:11px}
+.phead{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;align-items:baseline}
+.phead small{color:var(--tx3);font-size:10px}
+.dist{font-size:11px;font-weight:700}
+.bullet{height:13px;border-radius:7px;position:relative;background:#08182c;overflow:hidden}
+.bz{position:absolute;top:0;bottom:0;opacity:.30}
+.bneedle{position:absolute;top:-2px;bottom:-2px;width:3px;background:#fff;border-radius:2px;box-shadow:0 0 7px rgba(255,255,255,.7)}
+
+/* gauge */
+.gauge{position:relative;width:96px;height:96px;flex-shrink:0}
+.gauge .n{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gauge .n b{font-family:var(--mono);font-size:26px;color:var(--green);font-weight:500;line-height:1}
+.gauge .n span{font-size:9px;color:var(--tx3);letter-spacing:1px;margin-top:3px}
+
+/* tables */
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px}
+th{text-align:left;color:var(--tx3);font-weight:400;font-size:10px;letter-spacing:.5px;text-transform:uppercase;padding:8px 8px;border-bottom:1px solid var(--line)}
+td{padding:8px 8px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--tx)}
+td.num,th.num{text-align:right}
+.pos{color:var(--green)} .neg{color:var(--red)}
+tbody tr:hover{background:rgba(255,255,255,.025)}
+.eodlabel{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--orange);background:rgba(243,156,18,.1);padding:4px 9px;border-radius:6px}
+
+/* signal pills */
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pill{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11.5px;padding:6px 11px;border-radius:7px;border:1px solid var(--line2)}
+.pill .pd{width:7px;height:7px;border-radius:50%}
+.pill.g{color:var(--green);border-color:rgba(46,204,113,.3)}.pill.g .pd{background:var(--green)}
+.pill.o{color:var(--orange);border-color:rgba(243,156,18,.3)}.pill.o .pd{background:var(--orange)}
+.pill.r{color:var(--red);border-color:rgba(231,76,60,.3)}.pill.r .pd{background:var(--red)}
+
+.placeholder{background:var(--panel2);border:1px dashed var(--line2);border-radius:12px;padding:26px;text-align:center;color:var(--tx3)}
+.placeholder .ti{font-size:30px;color:var(--tx3);display:block;margin-bottom:10px}
+.placeholder b{color:var(--tx2);font-weight:500}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;justify-content:center}
+.chip{font-size:11.5px;color:var(--tx2);background:var(--raise);border:1px solid var(--line);padding:5px 11px;border-radius:20px}
+.seg{display:inline-flex;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:3px;gap:2px;margin-bottom:14px}
+.seg span{font-family:var(--mono);font-size:11.5px;color:var(--tx3);padding:5px 12px;border-radius:6px;cursor:pointer}
+.seg span.on{background:rgba(201,160,44,.16);color:var(--gold)}
+.flex{display:flex;align-items:center;gap:12px}.between{justify-content:space-between}.wrap{flex-wrap:wrap}.mt{margin-top:14px}.mb{margin-bottom:14px}
+.card{position:relative}
+.rm-btn{position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:6px;background:rgba(231,76,60,.15);color:var(--red);border:1px solid rgba(231,76,60,.32);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;z-index:5}
+.editing .card{outline:1px dashed var(--line2);outline-offset:2px}
+.add-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;border:1.5px dashed var(--line2);background:transparent;color:var(--tx3);cursor:pointer;min-height:120px}
+.add-tile:hover{color:var(--tx2);border-color:var(--gold)}
+.widget-lib{display:none;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+.widget-lib.open{display:block}
+.wl-item{display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border:1px solid var(--line2);border-radius:8px;margin:4px;cursor:pointer;font-size:12.5px;color:var(--tx2)}
+.wl-item:hover{background:var(--raise);color:var(--tx)}
+.wl-item .ti{color:var(--gold);font-size:15px}
+.wl-x{cursor:pointer;color:var(--tx3);font-size:14px}.wl-x:hover{color:var(--red)}
+.wl-input{background:#05090F;border:1px solid var(--line2);border-radius:8px;color:var(--tx);font-family:var(--mono);font-size:12px;padding:8px 10px}
+.fbtn{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:5px;border:1px solid var(--line2);color:var(--tx2);cursor:pointer;background:transparent;margin-left:6px}
+.fbtn:hover{border-color:var(--gold);color:var(--gold)}
+.fbtn.on{background:rgba(201,160,44,.15);color:var(--gold);border-color:rgba(201,160,44,.4)}
+.tag.forced{background:rgba(201,160,44,.16);color:var(--gold)}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:100;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:22px;width:440px;max-width:92vw}
+.modal h3{font-size:15px;margin-bottom:6px;color:var(--tx)}
+.modal label{display:block;font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin:12px 0 4px}
+.modal input{width:100%;background:#05090F;border:1px solid var(--line2);border-radius:8px;color:var(--tx);font-family:var(--mono);font-size:12px;padding:8px 10px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:11.5px;color:var(--tx2)}
+.legend i{display:flex;align-items:center;gap:6px;font-style:normal}.legend i b{width:15px;height:3px;border-radius:2px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ===== OFFICE TOP BAR ===== -->
+  <div class="topbar">
+    <div class="brand" onclick="go('painel')"><div class="lg">H</div>HARPIAN<span class="sub">ETP TERMINAL</span></div>
+
+    <div class="menu"><div class="mtab" onclick="go('painel')"><i class="ti ti-home"></i>Painel</div></div>
+
+    <div class="menu"><div class="mtab"><i class="ti ti-coin"></i>Fundos <i class="ti ti-chevron-down" style="font-size:13px"></i></div>
+      <div class="dropdown wide">
+        <div class="dd-col"><div class="dd-label">Escolha o fundo</div>
+          <div class="dd-item cur" onclick="openFund('HPC22')"><i class="ti ti-coin"></i>HPC22 · Agressivo</div>
+          <div class="dd-item" onclick="openFund('HPC11')"><i class="ti ti-coin"></i>HPC11 · I.G.</div>
+          <div class="dd-item" onclick="openFund('WL')"><i class="ti ti-tag"></i>White-label</div>
+        </div>
+        <div class="dd-col"><div class="dd-label">O que fazer</div>
+          <div class="dd-item" onclick="go('fundo');ftab('visao')"><i class="ti ti-eye"></i>Visão</div>
+          <div class="dd-item" onclick="go('fundo');ftab('perf')"><i class="ti ti-chart-line"></i>Performance</div>
+          <div class="dd-item" onclick="go('fundo');ftab('comp')"><i class="ti ti-chart-pie"></i>Composição</div>
+          <div class="dd-item" onclick="go('fundo');ftab('def')"><i class="ti ti-shield"></i>Defesa &amp; risco</div>
+          <div class="dd-item" onclick="go('fundo');ftab('rep')"><i class="ti ti-file-text"></i>Relatório</div>
+          <div class="dd-item" onclick="orderForFund()"><i class="ti ti-send"></i>Enviar ordem (Lynk) <span class="tag g" style="margin-left:auto">novo</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="menu"><div class="mtab"><i class="ti ti-users"></i>Clientes <i class="ti ti-chevron-down" style="font-size:13px"></i></div>
+      <div class="dropdown">
+        <div class="dd-item" onclick="go('clientes')"><i class="ti ti-list"></i>Lista de clientes</div>
+        <div class="dd-item" onclick="go('carteira')"><i class="ti ti-wallet"></i>Carteira do cliente</div>
+        <div class="dd-item" onclick="go('importar')"><i class="ti ti-upload"></i>Importar / conectar</div>
+        <div class="dd-item" onclick="go('alertas')"><i class="ti ti-bell"></i>Alertas</div>
+        <div class="dd-item" onclick="openOrder()"><i class="ti ti-send"></i>Ordens <span class="tag g" style="margin-left:auto">Lynk</span></div>
+      </div>
+    </div>
+
+    <div class="menu"><div class="mtab"><i class="ti ti-radar"></i>Mercado <i class="ti ti-chevron-down" style="font-size:13px"></i></div>
+      <div class="dropdown">
+        <div class="dd-item" onclick="go('regime')"><i class="ti ti-activity"></i>Sinais &amp; regime</div>
+        <div class="dd-item" onclick="go('cotacoes')"><i class="ti ti-table"></i>Cotações (FastTrack) <span class="tag g" style="margin-left:auto">novo</span></div>
+        <div class="dd-item" onclick="go('acoes')"><i class="ti ti-chart-candle"></i>Ações &amp; índices US</div>
+        <div class="dd-item" onclick="go('noticias')"><i class="ti ti-news"></i>Notícias</div>
+      </div>
+    </div>
+
+    <div class="menu"><div class="mtab"><i class="ti ti-shield-half"></i>Risco <i class="ti ti-chevron-down" style="font-size:13px"></i></div>
+      <div class="dropdown">
+        <div class="dd-item" onclick="go('risco')"><i class="ti ti-scale"></i>Comparação · 4 níveis <span class="tag g" style="margin-left:auto">novo</span></div>
+        <div class="dd-item" onclick="openFund('HPC22');ftab('def')"><i class="ti ti-coin"></i>Risco do produto</div>
+        <div class="dd-item" onclick="go('carteira')"><i class="ti ti-wallet"></i>Risco do portfólio</div>
+        <div class="dd-item" onclick="go('carteira')"><i class="ti ti-user-heart"></i>Risco do cliente</div>
+        <div class="dd-item" onclick="go('carteira')"><i class="ti ti-file-certificate"></i>Risco do mandato</div>
+      </div>
+    </div>
+
+    <div class="menu"><div class="mtab"><i class="ti ti-settings"></i>Ajustes <i class="ti ti-chevron-down" style="font-size:13px"></i></div>
+      <div class="dropdown">
+        <div class="dd-item" onclick="go('integracoes')"><i class="ti ti-plug"></i>Integrações</div>
+        <div class="dd-item" onclick="go('marca')"><i class="ti ti-palette"></i>Marca (white-label) <span class="tag g" style="margin-left:auto">novo</span></div>
+        <div class="dd-item" onclick="go('config')"><i class="ti ti-adjustments"></i>Configurações</div>
+      </div>
+    </div>
+
+    <div class="menu"><div class="mtab" onclick="go('tutorial')"><i class="ti ti-help-circle"></i>Tutorial</div></div>
+
+    <div class="right">
+      <div class="jim" onclick="alert('Jim AI — copiloto (demo)')"><i class="ti ti-sparkles"></i>Jim AI</div>
+      <div class="pillstate"><span class="dot"></span>RISK-ON · DEFESA ARMADA</div>
+      <div class="clock" id="clk">--:--:--</div>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- ===== PAINEL (home calma) ===== -->
+    <section class="screen on" id="screen-painel">
+      <div class="crumb"><b>Painel</b></div>
+      <div class="h1">Bom dia, João</div>
+      <div class="flex between mb">
+        <div class="sub" style="margin:0">O essencial do dia. Tudo o mais está a um clique nos menus do topo.</div>
+        <div class="flex" style="gap:8px">
+          <button class="btn ghost" id="painel-edit" onclick="custEdit('painel',true)"><i class="ti ti-layout-grid-add"></i>Personalizar painel</button>
+          <button class="btn ghost" id="painel-reset" onclick="custReset('painel')" style="display:none"><i class="ti ti-rotate"></i>Restaurar padrão</button>
+          <button class="btn" id="painel-done" onclick="custEdit('painel',false)" style="display:none"><i class="ti ti-check"></i>Concluir</button>
+        </div>
+      </div>
+      <div class="widget-lib" id="painel-lib">
+        <div class="muted mb">Adicionar ao painel:</div>
+        <span class="wl-item" onclick="custAdd('painel','noticias')"><i class="ti ti-news"></i>Notícias</span>
+        <span class="wl-item" onclick="custAdd('painel','cotacoes')"><i class="ti ti-table"></i>Cotações rápidas</span>
+        <span class="wl-item" onclick="custAdd('painel','calendario')"><i class="ti ti-calendar"></i>Calendário econômico</span>
+        <span class="wl-item" onclick="custAdd('painel','vencimentos')"><i class="ti ti-clock"></i>Próximos eventos dos fundos</span>
+        <span class="wl-item" onclick="custAdd('painel','alocacao')"><i class="ti ti-chart-donut"></i>Alocação por fundo</span>
+      </div>
+      <div class="grid g3" id="painel-grid">
+        <div class="card calm">
+          <h3><i class="ti ti-coin"></i>Seus fundos hoje</h3>
+          <div class="flex between mb"><span>HPC22 · Agressivo</span><span class="big g" style="font-size:24px">+2,31%</span></div>
+          <div class="flex between"><span>HPC11 · I.G.</span><span class="big g" style="font-size:24px">+1,44%</span></div>
+          <div class="mt"><button class="btn ghost" onclick="openFund('HPC22')"><i class="ti ti-arrow-right"></i>Abrir HPC22</button></div>
+        </div>
+        <div class="card calm">
+          <h3><i class="ti ti-basket"></i>Comprados no ETP <span class="muted" style="margin-left:auto;font-size:11px">HPC22</span></h3>
+          <div class="kv"><span>NVDA <span class="muted">Tech</span></span><span class="v" style="color:var(--green)">5,0% · +2,4%</span></div>
+          <div class="kv"><span>AVGO <span class="muted">Tech</span></span><span class="v" style="color:var(--green)">5,0% · +1,9%</span></div>
+          <div class="kv"><span>XOM <span class="muted">Energy</span></span><span class="v" style="color:var(--green)">5,0% · +1,1%</span></div>
+          <div class="kv"><span>JPM <span class="muted">Fin</span></span><span class="v" style="color:var(--red)">5,0% · −0,4%</span></div>
+          <div class="muted mt" style="font-size:11px;cursor:pointer" onclick="openFund('HPC22');ftab('comp')">+16 posições · ver composição ›</div>
+        </div>
+        <div class="card calm">
+          <h3><i class="ti ti-shield"></i>Regime &amp; defesa</h3>
+          <div id="rg-painel"></div>
+          <div class="flex between" style="margin-top:4px"><span class="tag g">StormGuard · GROWTH</span><span class="muted" style="font-size:11px">defesa armada · rampa pronta</span></div>
+        </div>
+        <div class="card calm">
+          <h3><i class="ti ti-users"></i>Clientes que precisam de atenção</h3>
+          <div class="kv"><span>Vera Hollanda <span class="tag r">desalinhada</span></span><span class="v">RN 78</span></div>
+          <div class="kv"><span>Silveira FO <span class="tag o">observar</span></span><span class="v">gap +6</span></div>
+          <div class="mt"><button class="btn ghost" onclick="go('clientes')"><i class="ti ti-arrow-right"></i>Ver clientes</button></div>
+        </div>
+        <div class="card calm" style="grid-column:span 2">
+          <h3><i class="ti ti-star"></i>Watchlist do cliente <span class="eodlabel" style="margin-left:auto"><i class="ti ti-clock"></i>EOD · US</span></h3>
+          <table><thead><tr><th>Ticker</th><th>Tipo</th><th class="num">Último</th><th class="num">Dia</th><th></th></tr></thead>
+            <tbody id="wl-body">
+              <tr><td>SPY</td><td>ETF</td><td class="num">5.431</td><td class="num neg">−0,30%</td><td class="num"><span class="wl-x" onclick="this.closest('tr').remove()">×</span></td></tr>
+              <tr><td>QQQ</td><td>ETF</td><td class="num">463,2</td><td class="num neg">−0,52%</td><td class="num"><span class="wl-x" onclick="this.closest('tr').remove()">×</span></td></tr>
+              <tr><td>GLD</td><td>Commodity</td><td class="num">221,4</td><td class="num pos">+0,8%</td><td class="num"><span class="wl-x" onclick="this.closest('tr').remove()">×</span></td></tr>
+              <tr><td>^VIX</td><td>Índice</td><td class="num">22,4</td><td class="num pos">+3,1%</td><td class="num"><span class="wl-x" onclick="this.closest('tr').remove()">×</span></td></tr>
+            </tbody></table>
+          <div class="flex mt" style="gap:8px">
+            <input id="wl-input" class="wl-input" style="flex:1" placeholder="adicionar ticker US — ex.: AAPL, GLD, ^VIX" onkeydown="if(event.key==='Enter')wlAdd()">
+            <button class="btn ghost" onclick="wlAdd()"><i class="ti ti-plus"></i>Adicionar</button>
+          </div>
+          <div class="muted mt" style="font-size:11px">Ações · ETFs · commodities · índices — bolsa US (EOD, FastTrack).</div>
+        </div>
+      </div>
+      <div class="card mt" style="display:flex;align-items:center;gap:14px;border-color:rgba(201,160,44,.3)">
+        <i class="ti ti-sparkles" style="font-size:24px;color:var(--gold)"></i>
+        <div style="flex:1"><b style="font-size:13px">Jim AI sugere:</b> <span class="muted" style="font-size:13px">CPI sai amanhã 08:30 ET — pode mexer com duration. Quer que eu prepare a leitura de impacto no HPC22?</span></div>
+        <button class="btn">Preparar</button>
+      </div>
+    </section>
+
+    <!-- ===== FUNDO (hub HPC22) ===== -->
+    <section class="screen" id="screen-fundo">
+      <div class="crumb">Fundos › <b id="fund-name">HPC22</b></div>
+      <div class="fhhead">
+        <div><div class="tk" id="fund-tk">HPC22</div><div class="nm" id="fund-desc">Harpian Capital · Agressivo · USD · Custódia Tier 1</div></div>
+        <div class="fhstat"><div class="l">NAV</div><div class="v" id="fh-nav">$ 22,10</div></div>
+        <div class="fhstat"><div class="l">Dia</div><div class="v g" id="fh-dia">+2,31%</div></div>
+        <div class="fhstat"><div class="l">YTD</div><div class="v g" id="fh-ytd">+24,3%</div></div>
+        <div class="fhstat"><div class="l">Risk Nº</div><div class="v" id="fh-rn">38</div></div>
+        <div style="margin-left:auto;display:flex;gap:8px"><button class="btn ghost"><i class="ti ti-table"></i>Excel</button><button class="btn" onclick="orderForFund()"><i class="ti ti-send"></i>Enviar ordem</button></div>
+      </div>
+      <div class="tabs">
+        <div class="tab on" data-ft="visao" onclick="ftab('visao')"><i class="ti ti-eye"></i>Visão</div>
+        <div class="tab" data-ft="perf" onclick="ftab('perf')"><i class="ti ti-chart-line"></i>Performance</div>
+        <div class="tab" data-ft="comp" onclick="ftab('comp')"><i class="ti ti-chart-pie"></i>Composição</div>
+        <div class="tab" data-ft="def" onclick="ftab('def')"><i class="ti ti-shield"></i>Defesa &amp; risco</div>
+        <div class="tab" data-ft="rep" onclick="ftab('rep')"><i class="ti ti-file-text"></i>Relatório</div>
+      </div>
+
+      <div class="ftab-pane on" id="ft-visao">
+        <div class="flex" style="justify-content:flex-end;gap:8px;margin-bottom:12px">
+          <button class="btn ghost" id="fundo-edit" onclick="custEdit('fundo',true)"><i class="ti ti-layout-grid-add"></i>Personalizar</button>
+          <button class="btn ghost" id="fundo-reset" onclick="custReset('fundo')" style="display:none"><i class="ti ti-rotate"></i>Restaurar padrão</button>
+          <button class="btn" id="fundo-done" onclick="custEdit('fundo',false)" style="display:none"><i class="ti ti-check"></i>Concluir</button>
+        </div>
+        <div class="widget-lib" id="fundo-lib"><div class="muted mb">Adicionar ao fundo:</div>
+          <span class="wl-item" onclick="custAdd('fundo','fkpis')"><i class="ti ti-gauge"></i>KPIs de risco</span>
+          <span class="wl-item" onclick="custAdd('fundo','fforca')"><i class="ti ti-trending-up"></i>Força relativa</span>
+          <span class="wl-item" onclick="custAdd('fundo','fnews')"><i class="ti ti-news"></i>Notícias do fundo</span>
+        </div>
+        <div class="grid g3" id="fundo-grid">
+          <div class="card" style="grid-column:span 2">
+            <h3><i class="ti ti-info-circle"></i>O que é o <span id="fund-title">HPC22</span></h3>
+            <p style="font-size:13.5px;line-height:1.7;color:var(--tx2)" id="fund-about">Motor de ataque puro: rotação dos ativos de maior momento na bolsa americana, com a mesma camada de defesa e temperatura homologada dos demais fundos. Veículo para o investidor que aceita mais oscilação em troca de mais retorno — sempre com a rampa de defesa armada.</p>
+            <div class="flex wrap mt" style="gap:14px 26px">
+              <div><div class="muted">Mandato</div><div style="font-family:var(--mono)" id="fund-mandato">Agressivo · ataque</div></div>
+              <div><div class="muted">Série / Emissor</div><div style="font-family:var(--mono)" id="fund-issuer">LS155 · Lseries DAC</div></div>
+              <div><div class="muted">ISIN</div><div style="font-family:var(--mono)" id="fund-isin">XS3386635109</div></div>
+              <div><div class="muted">Moeda</div><div style="font-family:var(--mono)">USD</div></div>
+              <div><div class="muted">Clearing</div><div style="font-family:var(--mono)">Euroclear / Clearstream</div></div>
+              <div><div class="muted">Custódia colateral</div><div style="font-family:var(--mono)">Interactive Brokers</div></div>
+              <div><div class="muted">Mínimo</div><div style="font-family:var(--mono)" id="fund-min">US$ 50.000</div></div>
+              <div><div class="muted">Vencimento</div><div style="font-family:var(--mono)" id="fund-due">2056</div></div>
+              <div><div class="muted">NAV</div><div style="font-family:var(--mono)">diário (CNAV)</div></div>
+              <div><div class="muted">Universo</div><div style="font-family:var(--mono)">Ações US (FastTrack)</div></div>
+              <div><div class="muted">Rebalance</div><div style="font-family:var(--mono)">semanal</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <h3><i class="ti ti-gauge"></i>Risco do fundo</h3>
+            <div class="flex" style="gap:14px"><div class="gauge"><svg width="96" height="96" viewBox="0 0 96 96"><circle cx="48" cy="48" r="40" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="7"/><circle id="fund-arc" cx="48" cy="48" r="40" fill="none" stroke="#F39C12" stroke-width="7" stroke-dasharray="251" stroke-dashoffset="155" stroke-linecap="round" transform="rotate(-90 48 48)"/></svg><div class="n"><b style="color:#F39C12" id="fund-gauge-num">38</b><span>RISK Nº</span></div></div>
+            <div class="muted" style="line-height:1.5" id="fund-rn-desc">Mais alto que o HPC11 (34) e bem abaixo do S&amp;P 500 (71). Agressivo, mas com defesa.</div></div>
+          </div>
+        </div>
+        <div class="card mt"><h3><i class="ti ti-bolt"></i>Estado agora</h3>
+          <div class="pills">
+            <span class="pill g"><span class="pd"></span>Defesa armada · GROWTH</span>
+            <span class="pill g"><span class="pd"></span>Momentum positivo</span>
+            <span class="pill o"><span class="pd"></span>VIX 22,4 elevado</span>
+            <span class="pill g"><span class="pd"></span>Exposição 96% ofensiva</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ftab-pane" id="ft-perf">
+        <div class="seg"><span>1A</span><span class="on">3A</span><span>5A</span><span>10A</span><span>Máx</span></div>
+        <div class="card">
+          <h3><i class="ti ti-chart-line"></i>Performance · histórico diário</h3>
+          <div id="perf-chart" style="height:360px;width:100%"></div>
+          <div class="legend">
+            <i><b style="background:#C9A02C"></b><span id="fund-legend">HPC22</span></i><i><b style="background:#4A90D9"></b>S&amp;P 500</i>
+            <span class="muted" style="margin-left:auto">~1.000 pontos diários · EOD (FastTrack) · zoom e crosshair</span>
+          </div>
+        </div>
+        <div class="grid g4 mt">
+          <div class="card"><div class="muted">CAGR</div><div class="big g" style="font-size:22px" id="fund-cagr">44,2%</div></div>
+          <div class="card"><div class="muted">Sharpe</div><div class="big" style="font-size:22px" id="fund-sharpe">1,44</div></div>
+          <div class="card"><div class="muted">Max DD</div><div class="big r" style="font-size:22px" id="fund-dd">−27,9%</div></div>
+          <div class="card"><div class="muted">Win rate</div><div class="big" style="font-size:22px" id="fund-win">71%</div></div>
+        </div>
+      </div>
+
+      <div class="ftab-pane" id="ft-comp">
+        <div class="card"><h3><i class="ti ti-chart-pie"></i>Composição de hoje · 20 posições · giro 5%</h3>
+          <table><thead><tr><th>Ativo</th><th>Setor</th><th class="num">Peso</th><th class="num">Dia</th><th class="num">Força rel.</th></tr></thead>
+          <tbody>
+            <tr><td>NVDA</td><td>Technology</td><td class="num">5,0%</td><td class="num pos">+2,4%</td><td class="num pos">+18</td></tr>
+            <tr><td>AVGO</td><td>Technology</td><td class="num">5,0%</td><td class="num pos">+1,9%</td><td class="num pos">+14</td></tr>
+            <tr><td>XOM</td><td>Energy</td><td class="num">5,0%</td><td class="num pos">+1,1%</td><td class="num pos">+9</td></tr>
+            <tr><td>JPM</td><td>Financials</td><td class="num">5,0%</td><td class="num neg">−0,4%</td><td class="num pos">+6</td></tr>
+            <tr><td>GLD</td><td>Real Assets</td><td class="num">5,0%</td><td class="num pos">+0,8%</td><td class="num pos">+11</td></tr>
+          </tbody></table>
+          <div class="muted mt">+15 posições · força relativa = ftalpha da FastTrack (ranking de momento vs S&amp;P)</div>
+        </div>
+      </div>
+
+      <div class="ftab-pane" id="ft-def">
+        <div class="card mb"><h3><i class="ti ti-shield"></i>Motor de defesa · StormGuard</h3>
+          <div class="flex" style="gap:18px;align-items:center"><div style="width:230px;flex-shrink:0" id="rg-fundo"></div><div class="muted" style="line-height:1.6">Exposição ofensiva <b style="color:var(--green)">96%</b>. Estado <b style="color:var(--green)">GROWTH · RISK-ON</b>, sem gatilho de saída. A rampa leva a exposição a 0% em poucos dias se o regime virar.</div></div>
+        </div>
+        <div class="grid g2">
+          <div class="card"><h3><i class="ti ti-activity"></i>Sinais · distância ao gatilho</h3>
+            <div id="sig-fundo"></div>
+          </div>
+          <div class="card"><h3><i class="ti ti-chart-line-down"></i>Drawdown histórico</h3>
+            <svg viewBox="0 0 420 130" width="100%" style="display:block"><polyline fill="none" stroke="#E74C3C" stroke-width="2" points="0,20 60,30 120,90 180,55 240,40 300,100 360,45 420,30"/></svg>
+            <div class="muted mt">Max DD −27,9% (crash 2025). Preço estrutural do CAGR; resolve-se na alocação, não no motor.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ftab-pane" id="ft-rep">
+        <div class="card"><h3><i class="ti ti-file-text"></i>Relatório white-label</h3>
+          <p class="muted mb" style="font-size:13px">Gere um PDF com a marca do assessor. Ordem: método → defesa → Risk Number → retorno (por último).</p>
+          <div class="flex wrap" style="gap:10px"><div class="seg"><span class="on">Mês</span><span>Trimestre</span><span>Ano</span></div></div>
+          <div class="placeholder mt"><i class="ti ti-file-download"></i><b>Pré-visualização do relatório</b><div class="muted mt">Capa com a marca do assessor · gráfico das 5 linhas · defesa · Risk Number</div><div class="mt"><button class="btn"><i class="ti ti-download"></i>Gerar PDF</button></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== COTAÇÕES FASTTRACK (novo) ===== -->
+    <section class="screen" id="screen-cotacoes">
+      <div class="crumb">Mercado › <b>Cotações (FastTrack)</b></div>
+      <div class="flex between wrap">
+        <div><div class="h1">Cotações</div><div class="sub">Tudo o que puxamos da FastTrack — bolsa americana e índices.</div></div>
+        <div class="eodlabel"><i class="ti ti-clock"></i>Fechamento do dia anterior (EOD)</div>
+      </div>
+      <div class="seg"><span class="on">Índices</span><span>ETFs</span><span>Ações</span><span>Setores</span></div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Ticker</th><th>Nome</th><th class="num">Último</th><th class="num">Dia</th><th class="num">1M</th><th class="num">YTD</th><th class="num">1A</th><th class="num">Força rel.</th><th class="num">Sharpe</th></tr></thead>
+          <tbody>
+            <tr><td>SPX</td><td>S&amp;P 500</td><td class="num">5.431</td><td class="num neg">−0,30%</td><td class="num pos">+2,1%</td><td class="num pos">+5,1%</td><td class="num pos">+14,2%</td><td class="num">—</td><td class="num">0,9</td></tr>
+            <tr><td>NDX</td><td>Nasdaq 100</td><td class="num">17.210</td><td class="num neg">−0,52%</td><td class="num pos">+3,4%</td><td class="num pos">+8,7%</td><td class="num pos">+21,0%</td><td class="num pos">+6</td><td class="num">1,1</td></tr>
+            <tr><td>RUT</td><td>Russell 2000</td><td class="num">2.041</td><td class="num pos">+0,41%</td><td class="num neg">−1,2%</td><td class="num pos">+1,9%</td><td class="num pos">+6,3%</td><td class="num neg">−8</td><td class="num">0,4</td></tr>
+            <tr><td>DJI</td><td>Dow Jones</td><td class="num">39.118</td><td class="num pos">+0,06%</td><td class="num pos">+1,1%</td><td class="num pos">+3,8%</td><td class="num pos">+11,4%</td><td class="num neg">−3</td><td class="num">0,8</td></tr>
+            <tr><td>SOX</td><td>Semicondutores (PHLX)</td><td class="num">5.290</td><td class="num pos">+1,80%</td><td class="num pos">+6,9%</td><td class="num pos">+19,2%</td><td class="num pos">+42,1%</td><td class="num pos">+22</td><td class="num">1,3</td></tr>
+            <tr><td>XLE</td><td>Energia (S&amp;P setorial)</td><td class="num">94,2</td><td class="num pos">+1,10%</td><td class="num pos">+4,2%</td><td class="num pos">+9,8%</td><td class="num pos">+18,5%</td><td class="num pos">+9</td><td class="num">0,9</td></tr>
+          </tbody>
+        </table>
+        <div class="muted mt">Dados ajustados por dividendos (retorno total). Força rel. = ftalpha FastTrack · risco = Sharpe/RSI da API v2 (já integrada).</div>
+      </div>
+    </section>
+
+    <!-- ===== RISCO (4 níveis) ===== -->
+    <section class="screen" id="screen-risco">
+      <div class="crumb">Risco › <b>Comparação · 4 níveis</b></div>
+      <div class="h1">Risco — os 4 níveis na mesma régua</div>
+      <div class="sub">Cliente: Vera Hollanda · tudo no Número de Risco (0–100).</div>
+      <div class="grid g4 mb">
+        <div class="card"><h3><i class="ti ti-coin"></i>Risco produto</h3><div class="big" style="color:var(--orange)">38</div><div class="muted mt">HPC22 (o fundo). HPC11 = 34.</div></div>
+        <div class="card"><h3><i class="ti ti-user-heart"></i>Risco cliente</h3><div class="big">62</div><div class="muted mt">Tolerância da pessoa (perfil/questionário).</div></div>
+        <div class="card"><h3><i class="ti ti-file-certificate"></i>Risco mandato</h3><div class="big">55</div><div class="muted mt">Teto contratual da conta (política de investimento).</div></div>
+        <div class="card" style="border-color:rgba(231,76,60,.3)"><h3><i class="ti ti-wallet"></i>Risco portfólio</h3><div class="big r" id="rp-num">78</div><div class="muted mt" id="rp-gap" style="color:var(--red)">▲ +23 acima do mandato</div></div>
+      </div>
+      <div class="card">
+        <h3><i class="ti ti-scale"></i>Na mesma régua — Número de Risco</h3>
+        <div style="position:relative;height:44px;margin:14px 8px 0">
+          <div style="position:absolute;top:20px;left:0;right:0;height:9px;border-radius:5px;background:linear-gradient(90deg,#2ECC71,#F39C12,#E74C3C)"></div>
+          <div style="position:absolute;top:14px;left:38%;width:2px;height:22px;background:var(--gold)"></div>
+          <div style="position:absolute;top:14px;left:55%;width:2px;height:22px;background:var(--blue)"></div>
+          <div style="position:absolute;top:14px;left:62%;width:2px;height:22px;background:var(--tx)"></div>
+          <div id="rp-marker" style="position:absolute;top:-2px;left:78%;transform:translateX(-50%);text-align:center;transition:left .2s">
+            <div id="rp-mlabel" style="font-size:11px;color:var(--red);white-space:nowrap;margin-bottom:2px">portfólio 78</div>
+            <div id="rp-mline" style="width:2px;height:22px;background:var(--red);margin:0 auto"></div>
+          </div>
+        </div>
+        <div class="legend" style="margin-top:6px">
+          <i><b style="background:#C9A02C"></b>HPC22 (produto) 38</i>
+          <i><b style="background:#4A90D9"></b>Mandato (teto) 55</i>
+          <i><b style="background:#EAF0F7"></b>Cliente (tolera) 62</i>
+          <i><b style="background:#E74C3C"></b>Portfólio (hoje) <span id="rp-leg">78</span></i>
+        </div>
+        <div class="flex mt" style="gap:14px"><span class="muted" style="min-width:170px">Simular: migrar p/ o HPC22</span><input type="range" min="0" max="100" value="0" id="rp-slider" style="flex:1"><span id="rp-pct" style="font-family:var(--mono);min-width:46px;text-align:right">0%</span></div>
+        <div id="rp-msg" class="muted mt">Mova o slider: ao migrar parte da carteira para o HPC, o risco do portfólio cai em direção ao mandato.</div>
+      </div>
+    </section>
+
+    <!-- ===== telas preservadas (estruturadas) ===== -->
+    <section class="screen" id="screen-clientes">
+      <div class="crumb">Clientes › <b>Lista</b></div>
+      <div class="flex between mb">
+        <div><div class="h1">Meus clientes</div><div class="sub" style="margin:0">Carteiras lidas das pastas do MFO (e, em fase 2, via API do sistema gerencial).</div></div>
+        <div class="flex" style="gap:8px">
+          <button class="btn ghost" id="clientes-edit" onclick="custEdit('clientes',true)"><i class="ti ti-layout-grid-add"></i>Personalizar</button>
+          <button class="btn ghost" id="clientes-reset" onclick="custReset('clientes')" style="display:none"><i class="ti ti-rotate"></i>Restaurar padrão</button>
+          <button class="btn" id="clientes-done" onclick="custEdit('clientes',false)" style="display:none"><i class="ti ti-check"></i>Concluir</button>
+        </div>
+      </div>
+      <div class="widget-lib" id="clientes-lib"><div class="muted mb">Adicionar à tela:</div>
+        <span class="wl-item" onclick="custAdd('clientes','cresumo')"><i class="ti ti-wallet"></i>Resumo (AUM)</span>
+        <span class="wl-item" onclick="custAdd('clientes','crisk')"><i class="ti ti-shield-half"></i>Distribuição de risco</span>
+        <span class="wl-item" onclick="custAdd('clientes','calertas')"><i class="ti ti-bell"></i>Alertas</span>
+      </div>
+      <div class="grid" id="clientes-grid" style="grid-template-columns:1fr 1fr;gap:14px">
+      <div class="card" style="grid-column:1/-1">
+        <table>
+          <thead><tr><th>Cliente</th><th>Início</th><th class="num">Investido</th><th class="num">Atual</th><th class="num">Ganho</th><th class="num">Risk Nº</th><th>Alinhamento</th><th></th></tr></thead>
+          <tbody id="crm-body"></tbody>
+        </table>
+        <div class="muted mt" style="font-size:11px">Alinhamento natural = calculado pelo sistema · "forçar" = você confirma manualmente, mesmo contra o sistema.</div>
+      </div>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-cliente">
+      <div class="crumb">Clientes › <b id="cd-crumb">Cliente</b></div>
+      <div id="cliente-detalhe"></div>
+    </section>
+
+    <section class="screen" id="screen-ordem">
+      <div class="crumb">Ordens › <b>via Lynk</b></div>
+      <div class="flex between mb">
+        <div><div class="h1">Ordens</div><div class="sub" style="margin:0">Pendentes, histórico e envio — subscrição/resgate do ETN via Lynk.</div></div>
+        <div class="flex" style="gap:8px">
+          <button class="btn ghost" onclick="renderOrders()"><i class="ti ti-refresh"></i>Atualizar</button>
+          <button class="btn" onclick="ordNova()"><i class="ti ti-plus"></i>Nova ordem</button>
+        </div>
+      </div>
+      <div id="ot-hist">
+        <div class="card mb">
+          <div class="flex between mb"><h3 style="margin:0"><i class="ti ti-clock-pause"></i>Ordens pendentes</h3><span class="tag o" id="pend-count">0</span></div>
+          <div class="grid g3 mb">
+            <div class="card"><div class="muted">Total de ordens</div><div class="big" id="pend-n" style="font-size:21px">0</div></div>
+            <div class="card"><div class="muted">Total em caixa</div><div class="big g" id="pend-cash" style="font-size:21px">US$ 0</div></div>
+            <div class="card"><div class="muted">Notas nominais</div><div class="big" id="pend-notes" style="font-size:21px">0</div></div>
+          </div>
+          <div class="flex wrap mb" style="gap:8px">
+            <input id="pf-isin" class="wl-input" placeholder="ISIN ou produto" oninput="renderPending()">
+            <input id="pf-ctrl" class="wl-input" placeholder="Control ID" oninput="renderPending()">
+            <select id="pf-cli" class="wl-input" onchange="renderPending()"></select>
+            <button class="btn ghost" onclick="ordClear('pend')"><i class="ti ti-filter-off"></i>Limpar filtros</button>
+          </div>
+          <table><thead><tr><th>Ref</th><th>Produto</th><th>Cliente</th><th>Tipo</th><th class="num">Caixa</th><th>Status</th><th></th></tr></thead><tbody id="pend-body"></tbody></table>
+          <div class="muted mt" id="pend-empty" style="font-size:11px"></div>
+        </div>
+        <div class="card">
+          <div class="flex between mb"><h3 style="margin:0"><i class="ti ti-history"></i>Histórico de trades</h3><button class="btn ghost" onclick="ordExport()"><i class="ti ti-download"></i>Exportar CSV</button></div>
+          <div class="grid g3 mb">
+            <div class="card"><div class="muted">Total de trades</div><div class="big" id="trd-n" style="font-size:21px">0</div></div>
+            <div class="card"><div class="muted">Total em caixa</div><div class="big g" id="trd-cash" style="font-size:21px">US$ 0</div></div>
+            <div class="card"><div class="muted">Notas nominais</div><div class="big" id="trd-notes" style="font-size:21px">0</div></div>
+          </div>
+          <div class="flex wrap mb" style="gap:8px">
+            <input id="tf-isin" class="wl-input" placeholder="ISIN ou produto" oninput="renderTrades()">
+            <select id="tf-status" class="wl-input" onchange="renderTrades()"></select>
+            <select id="tf-op" class="wl-input" onchange="renderTrades()"></select>
+            <select id="tf-cli" class="wl-input" onchange="renderTrades()"></select>
+            <button class="btn ghost" onclick="ordClear('trd')"><i class="ti ti-filter-off"></i>Limpar filtros</button>
+          </div>
+          <table><thead><tr><th>Ref</th><th>Produto</th><th>Cliente</th><th>Data</th><th>Tipo</th><th class="num">Caixa</th><th>Status</th><th></th></tr></thead><tbody id="trd-body"></tbody></table>
+          <div class="muted mt" id="trd-empty" style="font-size:11px"></div>
+        </div>
+      </div>
+      <div id="ot-nova" style="display:none">
+      <button class="btn ghost mb" onclick="ordVoltar()"><i class="ti ti-arrow-left"></i>Voltar ao histórico</button>
+      <div class="grid g2">
+        <div class="card"><h3><i class="ti ti-package"></i>Produto</h3>
+          <label class="muted" style="display:block;font-size:11px">Fundo (ETN)</label>
+          <select id="o-fund" class="wl-input" style="width:100%;margin-top:4px" onchange="orderGate()"></select>
+          <div class="kv mt"><span>ISIN</span><span class="v" id="o-isin">XS2…HPC22</span></div>
+          <div class="kv"><span>Moeda</span><span class="v">USD</span></div>
+          <div class="kv"><span>NAV (ontem)</span><span class="v" id="o-nav">$ 22,10</span></div>
+          <div class="kv"><span>Pricing</span><span class="v" style="color:var(--gold)">NAV diário (CNAV) · forward</span></div>
+          <div class="kv"><span>Liquidação</span><span class="v">Euroclear/Clearstream · BNY Mellon</span></div>
+          <div class="kv"><span>Mínimo</span><span class="v">US$ 50.000</span></div>
+          <div class="kv"><span>Risco do produto</span><span class="v" id="o-prodrisk">Risk Nº 38</span></div>
+        </div>
+        <div class="card"><h3><i class="ti ti-pencil"></i>Ordem</h3>
+          <div class="seg" id="o-side" style="margin-bottom:12px"><span class="on" onclick="setSide(this,'sub')">Subscrição</span><span onclick="setSide(this,'res')">Resgate</span></div>
+          <label class="muted" style="display:block;font-size:11px">Cliente</label>
+          <select id="o-client" class="wl-input" style="width:100%;margin-top:4px" onchange="orderGate()"></select>
+          <label class="muted" style="display:block;font-size:11px;margin-top:10px">Valor (US$)</label>
+          <input id="o-value" class="wl-input" type="number" value="250000" style="width:100%;margin-top:4px" oninput="orderGate()">
+        </div>
+      </div>
+      <div class="card mt" id="o-gate"></div>
+      <div class="flex mt" style="gap:8px"><button class="btn" id="o-review" onclick="orderReview()"><i class="ti ti-send"></i>Enviar ordem</button></div>
+      <div class="card mt" id="o-status" style="display:none"></div>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-carteira">
+      <div class="crumb">Clientes › <b>Carteira</b></div><div class="h1">Vera Hollanda</div><div class="sub">Family Office · Moderado · AUM R$ 8,2M</div>
+      <div class="grid g2">
+        <div class="card"><h3><i class="ti ti-wallet"></i>O que ela tem hoje</h3>
+          <div class="kv"><span>Renda fixa BR</span><span class="v">52%</span></div><div class="kv"><span>Ações BR</span><span class="v">28%</span></div><div class="kv"><span>Multimercado</span><span class="v">20%</span></div><div class="kv"><span>HPC (Harpian)</span><span class="v" style="color:var(--red)">0%</span></div>
+        </div>
+        <div class="card" style="border-color:rgba(231,76,60,.25)"><h3><i class="ti ti-alert-triangle"></i>Gap de risco</h3>
+          <div class="big r">+16</div><div class="muted mt" style="line-height:1.6">Risk Number 78 vs mandato 62. 100% fora da Harpian, sem a camada de defesa. Oportunidade: migrar parte para o HPC11/HPC22.</div>
+          <div class="mt"><button class="btn"><i class="ti ti-calculator"></i>Simular migração</button></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-regime">
+      <div class="crumb">Mercado › <b>Sinais &amp; regime</b></div><div class="h1">Sinais &amp; regime</div><div class="sub">Nosso motor proprietário — o diferencial que o Bloomberg não tem.</div>
+      <div class="grid g2 mb">
+        <div class="card"><h3><i class="ti ti-gauge"></i>Regime de mercado · 4 estados</h3><div id="rg-mercado"></div><div class="muted" style="font-size:11px;text-align:center">CRS 0,489 · defesa ativa</div></div>
+        <div class="card"><h3><i class="ti ti-temperature"></i>Sinais · distância ao gatilho</h3><div id="sig-mercado"></div></div>
+      </div>
+      <div class="grid g2">
+        <div class="card"><h3><i class="ti ti-temperature"></i>Temperatura de mercado</h3><div class="placeholder"><i class="ti ti-thermometer"></i><b>Termômetro ambiental (HSA v7)</b><div class="chips"><span class="chip">setor momentum</span><span class="chip">RPM momentum</span><span class="chip">social radar</span></div></div></div>
+        <div class="card"><h3><i class="ti ti-arrows-exchange"></i>Transições de regime</h3><div class="placeholder"><i class="ti ti-history"></i><b>Quando a defesa armou/desarmou</b><div class="muted mt">linha do tempo dos gatilhos</div></div></div>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-acoes">
+      <div class="crumb">Mercado › <b>Ações &amp; índices US</b></div>
+      <div class="flex between wrap">
+        <div><div class="h1" id="as-name">NVIDIA</div><div class="sub" style="margin:0" id="as-tk">NVDA · US</div></div>
+        <div class="flex" style="gap:10px;align-items:center">
+          <select id="as-select" class="wl-input" onchange="renderAsset(this.value)"></select>
+          <span class="eodlabel"><i class="ti ti-clock"></i>EOD · fech. dia anterior</span>
+        </div>
+      </div>
+      <div class="grid g4 mt mb">
+        <div class="card"><div class="muted">Último</div><div class="big" id="as-price">118,64</div><div class="muted" id="as-day">+2,4% hoje</div></div>
+        <div class="card"><div class="muted">YTD</div><div class="big g" id="as-ytd">+42,1%</div></div>
+        <div class="card"><div class="muted">1 ano</div><div class="big g" id="as-y1">+96%</div></div>
+        <div class="card"><div class="muted">Força relativa</div><div class="big" id="as-forca">+22</div><div class="muted">vs S&amp;P (ftalpha)</div></div>
+      </div>
+      <div class="grid g3">
+        <div class="card" style="grid-column:span 2"><h3><i class="ti ti-chart-line"></i>Retorno total · diário</h3>
+          <div id="acoes-chart" style="height:320px;width:100%"></div>
+          <div class="legend"><i><b style="background:#2ECC71"></b><span id="as-legend">NVDA</span></i><i><b style="background:#4A90D9"></b>S&amp;P 500</i><span class="muted" style="margin-left:auto">~1.000 pontos · FastTrack EOD</span></div>
+        </div>
+        <div class="card"><h3><i class="ti ti-ruler-2"></i>Risco &amp; métricas</h3>
+          <div class="kv"><span>Sharpe</span><span class="v" id="as-sharpe">1,30</span></div>
+          <div class="kv"><span>Max drawdown</span><span class="v" id="as-dd">−32%</span></div>
+          <div class="kv"><span>RSI</span><span class="v" id="as-rsi">64</span></div>
+          <div class="kv"><span>52 semanas</span><span class="v" id="as-w52">48,2 – 140,8</span></div>
+          <div class="muted mt" style="font-size:11px">Snapshot FastTrack (Sharpe/RSI/ftalpha). Sem fundamentos — esses vêm do SEC EDGAR à parte.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-noticias"><div class="crumb">Mercado › <b>Notícias</b></div><div class="h1">Notícias que importam</div><div class="sub">Filtradas pelo impacto no fundo.</div>
+      <div class="card"><div class="flex mb" style="gap:10px"><span class="tag r">BEAR</span><div><b>Fed sinaliza juros altos por mais tempo</b><div class="muted">Bloomberg · risco de repricing em duration longa</div></div></div><div class="flex" style="gap:10px"><span class="tag o">EVENTO</span><div><b>CPI amanhã 08:30 ET</b><div class="muted">afeta todos os ativos</div></div></div></div>
+    </section>
+
+    <section class="screen" id="screen-importar"><div class="crumb">Clientes › <b>Importar</b></div><div class="h1">Importar / conectar</div><div class="sub">Fase 1: ler pasta de portfólios. Fase 2: API do sistema gerencial.</div>
+      <div class="placeholder"><i class="ti ti-upload"></i><b>Arraste a planilha do cliente aqui</b><div class="muted mt">Excel / CSV · ou conecte uma pasta do MFO</div><div class="chips"><span class="chip">pasta de portfólios</span><span class="chip">API (fase 2)</span></div></div>
+    </section>
+
+    <section class="screen" id="screen-alertas"><div class="crumb">Clientes › <b>Alertas</b></div><div class="h1">Alertas</div><div class="sub">O que precisa de ação.</div>
+      <div class="card"><div class="kv"><span><span class="tag r">crítico</span> Vera Hollanda fora do mandato</span><span class="muted">há 2h</span></div><div class="kv"><span><span class="tag o">observar</span> Silveira FO sem proteção</span><span class="muted">hoje</span></div><div class="kv"><span><span class="tag b">info</span> CPI amanhã</span><span class="muted">08:30 ET</span></div></div>
+    </section>
+
+    <section class="screen" id="screen-integracoes"><div class="crumb">Ajustes › <b>Integrações</b></div><div class="h1">Integrações</div><div class="sub">Conexões de dados e sistemas.</div>
+      <div class="grid g3"><div class="card"><h3><i class="ti ti-plug"></i>FastTrack</h3><span class="tag g">conectado</span><div class="muted mt">API v2 · EOD US</div></div><div class="card"><h3><i class="ti ti-chart-candle"></i>TradingView</h3><span class="tag o">a configurar</span></div><div class="card"><h3><i class="ti ti-folder"></i>Pasta do MFO</h3><span class="tag o">a configurar</span></div></div>
+    </section>
+
+    <section class="screen" id="screen-marca"><div class="crumb">Ajustes › <b>Marca</b></div><div class="h1">Marca (white-label)</div><div class="sub">A identidade do assessor nos relatórios.</div>
+      <div class="placeholder"><i class="ti ti-palette"></i><b>Logo, cores e nome do assessor</b><div class="muted mt">aparece nos PDFs gerados pra o cliente final</div></div>
+    </section>
+
+    <section class="screen" id="screen-config"><div class="crumb">Ajustes › <b>Configurações</b></div><div class="h1">Configurações</div><div class="sub">Conta, usuários e preferências.</div>
+      <div class="placeholder"><i class="ti ti-adjustments"></i><b>Family Office · HARPIAN Capital</b><div class="muted mt">usuários · permissões · preferências</div></div>
+    </section>
+
+    <section class="screen" id="screen-tutorial">
+      <div class="crumb"><b>Tutorial</b></div>
+      <div class="h1">Como usar o terminal em 4 passos</div>
+      <div class="sub">Leva 2 minutos. Você pode voltar aqui quando quiser.</div>
+      <div class="grid g4">
+        <div class="card"><h3><i class="ti ti-number-1"></i>Veja seus fundos</h3><div class="muted">No menu Fundos, abra o HPC22 e veja NAV, performance e composição.</div></div>
+        <div class="card"><h3><i class="ti ti-number-2"></i>Entenda a defesa</h3><div class="muted">A aba Defesa &amp; risco mostra o motor e o estado da proteção.</div></div>
+        <div class="card"><h3><i class="ti ti-number-3"></i>Leia o risco do cliente</h3><div class="muted">No menu Risco, compare cliente, mandato e portfólio na mesma régua.</div></div>
+        <div class="card"><h3><i class="ti ti-number-4"></i>Gere o relatório</h3><div class="muted">Na aba Relatório do fundo, exporte o PDF com a sua marca.</div></div>
+      </div>
+      <div class="card mt" style="border-color:rgba(201,160,44,.3)">
+        <h3><i class="ti ti-layout-grid-add"></i>Personalize tudo (como o Bloomberg)</h3>
+        <div class="muted" style="line-height:1.6">Cada painel tem um layout <b style="color:var(--tx)">padrão</b>, mas você <b style="color:var(--tx)">adiciona e remove informações</b> — no Painel, nos Fundos, nos Ativos e nos Clientes. Clique em "Personalizar painel", tire o que não usa, traga o que importa, e o terminal <b style="color:var(--tx)">salva o seu layout</b>. É assim que ele vira a sua ferramenta de trabalho.</div>
+      </div>
+      <div class="card mt" style="display:flex;align-items:center;gap:14px;border-color:rgba(201,160,44,.3)">
+        <i class="ti ti-sparkles" style="font-size:22px;color:var(--gold)"></i>
+        <div style="flex:1"><b style="font-size:13px">Precisa de ajuda?</b> <span class="muted" style="font-size:13px">Pergunte ao Jim AI a qualquer momento, ou veja o glossário dos termos.</span></div>
+        <button class="btn ghost">Glossário</button>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div id="crm-modal" class="modal-bg" onclick="if(event.target===this)crmClose()">
+  <div class="modal">
+    <h3>Editar cliente</h3>
+    <div class="muted" style="font-size:11px;margin-bottom:8px">CRM — dados do investidor</div>
+    <label>Nome</label><input id="cm-nome">
+    <label>Início do investimento</label><input id="cm-inicio">
+    <label>Investido (R$)</label><input id="cm-inv" type="number">
+    <label>Valor atual (R$)</label><input id="cm-atual" type="number">
+    <label>Risk Number</label><input id="cm-rn" type="number">
+    <div class="flex mt" style="justify-content:flex-end;gap:8px"><button class="btn ghost" onclick="crmClose()">Cancelar</button><button class="btn" onclick="crmSave()"><i class="ti ti-check"></i>Salvar</button></div>
+  </div>
+</div>
+<div id="ord-modal" class="modal-bg" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal"><h3>Detalhe da ordem</h3><div id="ord-modal-body"></div>
+    <div class="flex mt" style="justify-content:flex-end;gap:8px"><button class="btn ghost" onclick="document.getElementById('ord-modal').classList.remove('open')">Fechar</button></div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+<script>
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  var el=document.getElementById('screen-'+id); if(el)el.classList.add('on');
+  document.querySelectorAll('.mtab').forEach(m=>m.classList.remove('on'));
+  if(id==='clientes')renderClients();
+  if(id==='acoes')setTimeout(function(){var s=document.getElementById('as-select');renderAsset(s&&s.value?s.value:'NVDA');},40);
+  window.scrollTo(0,0);
+}
+var currentFund='HPC22';
+var FUNDS={
+ HPC22:{tk:'HPC22',sub:'Harpian CORE22 · Agressivo · USD · série LS155',nav:'$ 22,10',dia:'+2,31%',ytd:'+24,3%',rn:38,col:'#F39C12',mandato:'Agressivo · ataque',isin:'XS3386635109',min:'US$ 50.000',minNum:50000,issuer:'LS155 · Lseries DAC',due:'2056',cagr:'44,2%',sharpe:'1,44',dd:'−27,9%',win:'71%',drift:0.468,
+  about:'Harpian CORE22: motor de ataque puro long-only — rotação dos ativos de maior momento na bolsa americana, com a defesa e temperatura homologadas. Mais oscilação em troca de mais retorno, sempre com a rampa de defesa armada.',
+  rndesc:'Mais alto que o HPC11 (34) e bem abaixo do S&P 500 (71). Agressivo, mas com defesa.'},
+ HPC11:{tk:'HPC11',sub:'Harpian · Investment Grade · USD',nav:'$ 14,82',dia:'+1,44%',ytd:'+7,5%',rn:34,col:'#2ECC71',mandato:'Investment Grade · equilibrado',isin:'a confirmar',min:'US$ 50.000',minNum:50000,issuer:'Lseries DAC (série a confirmar)',due:'—',cagr:'18,5%',sharpe:'1,82',dd:'−7,6%',win:'62%',drift:0.482,
+  about:'Investment Grade: carteira de qualidade com a defesa estrutural da casa. Foco em consistência e drawdown contido — o veículo equilibrado para quem quer o método Harpian com menos oscilação.',
+  rndesc:'Conservador. Bem abaixo do S&P 500 (71). Defesa estrutural com drawdown contido.'},
+ WL:{tk:'WL',sub:'Fundo white-label · marca do assessor · USD',nav:'$ 10,40',dia:'+0,9%',ytd:'+6,2%',rn:36,col:'#2ECC71',mandato:'Configurável',isin:'—',min:'—',minNum:0,issuer:'—',due:'—',cagr:'—',sharpe:'—',dd:'—',win:'—',drift:0.482,
+  about:'Versão white-label: o mesmo motor Harpian, com a marca do assessor. Estrutura e defesa idênticas; a identidade é do parceiro.',
+  rndesc:'Espelha o perfil de risco escolhido pelo assessor.'}
+};
+function set(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
+function renderFund(f){var d=FUNDS[f]||FUNDS.HPC22;currentFund=f;
+ set('fund-tk',d.tk);set('fund-name',d.tk);set('fund-desc',d.sub);set('fund-title',d.tk);set('fund-legend',d.tk);
+ set('fh-nav',d.nav);set('fh-dia',d.dia);set('fh-ytd',d.ytd);set('fh-rn',d.rn);
+ set('fund-about',d.about);set('fund-mandato',d.mandato);set('fund-isin',d.isin);set('fund-min',d.min);set('fund-issuer',d.issuer);set('fund-due',d.due);
+ set('fund-gauge-num',d.rn);set('fund-rn-desc',d.rndesc);
+ set('fund-cagr',d.cagr);set('fund-sharpe',d.sharpe);set('fund-dd',d.dd);set('fund-win',d.win);
+ var num=document.getElementById('fund-gauge-num');if(num)num.style.color=d.col;
+ var arc=document.getElementById('fund-arc');if(arc){arc.setAttribute('stroke',d.col);arc.setAttribute('stroke-dashoffset',Math.round(251*(1-d.rn/100)));}
+ ['fh-dia','fh-ytd'].forEach(function(idd){var e=document.getElementById(idd);if(e)e.className='v '+((e.textContent||'').indexOf('−')===0?'':'g');});
+}
+function openFund(f){renderFund(f);if(perfChart){try{perfChart.remove();}catch(e){}perfChart=null;}go('fundo');ftab('visao');}
+function ftab(t){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.ft===t));
+  document.querySelectorAll('.ftab-pane').forEach(p=>p.classList.remove('on'));
+  var el=document.getElementById('ft-'+t); if(el)el.classList.add('on');
+  if(t==='perf')setTimeout(ensurePerfChart,40);
+}
+document.querySelectorAll('.seg').forEach(seg=>seg.querySelectorAll('span').forEach(s=>s.onclick=()=>{seg.querySelectorAll('span').forEach(x=>x.classList.remove('on'));s.classList.add('on')}));
+var rpS=document.getElementById('rp-slider');
+if(rpS)rpS.oninput=function(){
+  var x=+this.value/100, rp=Math.round(78*(1-x)+38*x);
+  var MAND=55, CLI=62, okM=rp<=MAND, okC=rp<=CLI, gap=rp-MAND;
+  var col=okM?'var(--green)':(okC?'var(--orange)':'var(--red)');
+  document.getElementById('rp-pct').textContent=this.value+'%';
+  var num=document.getElementById('rp-num'); num.textContent=rp; num.style.color=col;
+  document.getElementById('rp-leg').textContent=rp;
+  var m=document.getElementById('rp-marker'); m.style.left=rp+'%';
+  document.getElementById('rp-mlabel').textContent='portfólio '+rp;
+  document.getElementById('rp-mlabel').style.color=col;
+  document.getElementById('rp-mline').style.background=col;
+  var g=document.getElementById('rp-gap'); g.style.color=col;
+  g.textContent=okM?'✓ dentro do mandato':('▲ +'+gap+' acima do mandato');
+  var msg=document.getElementById('rp-msg');
+  if(!okC) msg.textContent='Acima do que a cliente tolera (62) E do mandato (teto 55). Migre mais para o HPC.';
+  else if(!okM) msg.textContent='Já dentro da tolerância da cliente (62), mas ainda acima do mandato (teto 55).';
+  else msg.textContent='Enquadrado: dentro do mandato (55) e da tolerância da cliente (62).';
+};
+
+var CUST={defaults:{},tiles:{}};
+var WIDGETS={
+ noticias:'<div class="card"><h3><i class="ti ti-news"></i>Notícias</h3><div class="kv"><span><span class="tag r">BEAR</span> Fed: juros altos por mais tempo</span></div><div class="kv"><span><span class="tag o">EVENTO</span> CPI amanhã 08:30 ET</span></div></div>',
+ cotacoes:'<div class="card"><h3><i class="ti ti-table"></i>Cotações rápidas</h3><div class="kv"><span>S&amp;P 500</span><span class="v" style="color:var(--red)">−0,30%</span></div><div class="kv"><span>VIX</span><span class="v">22,4</span></div><div class="kv"><span>Ouro</span><span class="v" style="color:var(--green)">+0,8%</span></div></div>',
+ calendario:'<div class="card"><h3><i class="ti ti-calendar"></i>Calendário econômico</h3><div class="kv"><span>CPI EUA</span><span class="v">amanhã 08:30</span></div><div class="kv"><span>FOMC</span><span class="v">12 jun</span></div></div>',
+ vencimentos:'<div class="card"><h3><i class="ti ti-clock"></i>Próximos eventos dos fundos</h3><div class="kv"><span>HPC22 rebalance</span><span class="v">segunda</span></div><div class="kv"><span>Relatório mensal</span><span class="v">30 jun</span></div></div>',
+ alocacao:'<div class="card"><h3><i class="ti ti-chart-donut"></i>Alocação por fundo</h3><div class="kv"><span>HPC11</span><span class="v">R$ 8,2M</span></div><div class="kv"><span>HPC22</span><span class="v">R$ 4,2M</span></div></div>',
+ fkpis:'<div class="card"><h3><i class="ti ti-gauge"></i>KPIs de risco</h3><div class="kv"><span>CAGR</span><span class="v" style="color:var(--green)">44,2%</span></div><div class="kv"><span>Sharpe</span><span class="v">1,44</span></div><div class="kv"><span>Max DD</span><span class="v" style="color:var(--red)">−27,9%</span></div></div>',
+ fforca:'<div class="card"><h3><i class="ti ti-trending-up"></i>Força relativa</h3><div class="kv"><span>vs S&amp;P 500</span><span class="v" style="color:var(--green)">+12</span></div><div class="kv"><span>Ranking momento</span><span class="v">top 8%</span></div></div>',
+ fnews:'<div class="card"><h3><i class="ti ti-news"></i>Notícias do fundo</h3><div class="kv"><span><span class="tag o">EVENTO</span> CPI amanhã — afeta duration</span></div></div>',
+ cresumo:'<div class="card"><h3><i class="ti ti-wallet"></i>Resumo</h3><div class="kv"><span>AUM total</span><span class="v">R$ 25,4M</span></div><div class="kv"><span>Clientes</span><span class="v">3</span></div></div>',
+ crisk:'<div class="card"><h3><i class="ti ti-shield-half"></i>Distribuição de risco</h3><div class="kv"><span>Alinhados</span><span class="v" style="color:var(--green)">1</span></div><div class="kv"><span>Observar / estourados</span><span class="v" style="color:var(--red)">2</span></div></div>',
+ calertas:'<div class="card"><h3><i class="ti ti-bell"></i>Alertas</h3><div class="kv"><span><span class="tag r">crítico</span> Vera fora do mandato</span></div></div>'
+};
+function _rm(card){if(card.querySelector('.rm-btn'))return;var b=document.createElement('div');b.className='rm-btn';b.innerHTML='<i class="ti ti-x"></i>';b.onclick=function(e){e.stopPropagation();card.remove();};card.appendChild(b);}
+function _tile(key){var g=document.getElementById(key+'-grid');if(!g)return;if(CUST.tiles[key]&&g.contains(CUST.tiles[key]))return;var t=document.createElement('div');t.className='card add-tile';t.innerHTML='<i class="ti ti-plus" style="font-size:26px"></i><span style="margin-top:6px">Adicionar informação</span>';t.onclick=function(){document.getElementById(key+'-lib').classList.toggle('open');};g.appendChild(t);CUST.tiles[key]=t;}
+function custInit(key){var g=document.getElementById(key+'-grid');if(g&&CUST.defaults[key]==null)CUST.defaults[key]=g.innerHTML;}
+function custEdit(key,on){var g=document.getElementById(key+'-grid');if(!g)return;g.classList.toggle('editing',on);
+ var e=document.getElementById(key+'-edit'),d=document.getElementById(key+'-done'),r=document.getElementById(key+'-reset');
+ if(e)e.style.display=on?'none':'inline-flex';if(d)d.style.display=on?'inline-flex':'none';if(r)r.style.display=on?'inline-flex':'none';
+ if(on){_tile(key);g.querySelectorAll(':scope > .card:not(.add-tile)').forEach(_rm);}
+ else{g.querySelectorAll('.rm-btn').forEach(b=>b.remove());if(CUST.tiles[key]){CUST.tiles[key].remove();CUST.tiles[key]=null;}var lib=document.getElementById(key+'-lib');if(lib)lib.classList.remove('open');}
+}
+function custReset(key){var g=document.getElementById(key+'-grid');if(!g)return;g.innerHTML=CUST.defaults[key]||'';CUST.tiles[key]=null;if(key==='clientes')renderClients();custEdit(key,true);}
+function custAdd(key,type){var g=document.getElementById(key+'-grid');if(!g||!WIDGETS[type])return;var d=document.createElement('div');d.innerHTML=WIDGETS[type].trim();var c=d.firstElementChild;_tile(key);g.insertBefore(c,CUST.tiles[key]);_rm(c);}
+['painel','fundo','clientes'].forEach(custInit);
+
+var WLDB={SPY:['ETF','5.431','−0,30%','neg'],QQQ:['ETF','463,2','−0,52%','neg'],AAPL:['Ação','214,1','+0,4%','pos'],NVDA:['Ação','118,6','+2,4%','pos'],MSFT:['Ação','441,0','+0,9%','pos'],AVGO:['Ação','1.642','+1,9%','pos'],GLD:['Commodity','221,4','+0,8%','pos'],SLV:['Commodity','27,1','+0,5%','pos'],USO:['Commodity','78,3','+1,1%','pos'],XLE:['ETF','94,2','+1,1%','pos'],'^VIX':['Índice','22,4','+3,1%','pos'],'^GSPC':['Índice','5.431','−0,30%','neg'],'^IXIC':['Índice','17.210','−0,52%','neg'],'^DJI':['Índice','39.118','+0,06%','pos']};
+function wlAdd(){var i=document.getElementById('wl-input');if(!i)return;var t=(i.value||'').trim().toUpperCase();if(!t)return;var d=WLDB[t]||['Ação','—','—','m'];var cls=d[3]==='neg'?'neg':(d[3]==='pos'?'pos':'');var tr=document.createElement('tr');tr.innerHTML='<td>'+t+'</td><td>'+d[0]+'</td><td class="num">'+d[1]+'</td><td class="num '+cls+'">'+d[2]+'</td><td class="num"><span class="wl-x" onclick="this.closest(\'tr\').remove()">×</span></td>';var b=document.getElementById('wl-body');if(b)b.appendChild(tr);i.value='';}
+
+var perfChart=null;
+function ensurePerfChart(){
+  if(perfChart||typeof LightweightCharts==='undefined')return;
+  var el=document.getElementById('perf-chart');if(!el||!el.clientWidth)return;
+  perfChart=LightweightCharts.createChart(el,{width:el.clientWidth,height:el.clientHeight||360,
+   layout:{background:{type:'solid',color:'rgba(0,0,0,0)'},textColor:'#A4B3C6',fontFamily:'DM Mono, monospace',fontSize:11},
+   grid:{vertLines:{color:'rgba(255,255,255,0.05)'},horzLines:{color:'rgba(255,255,255,0.05)'}},
+   rightPriceScale:{borderColor:'rgba(255,255,255,0.1)'},timeScale:{borderColor:'rgba(255,255,255,0.1)'},
+   crosshair:{mode:0,vertLine:{color:'rgba(201,160,44,0.45)',labelBackgroundColor:'#b08010'},horzLine:{color:'rgba(201,160,44,0.45)',labelBackgroundColor:'#b08010'}}});
+  var s1=perfChart.addLineSeries({color:'#C9A02C',lineWidth:2}),s2=perfChart.addLineSeries({color:'#4A90D9',lineWidth:1});
+  var fd=FUNDS[currentFund]||FUNDS.HPC22;var dr=fd.drift||0.468;var vol=currentFund==='HPC11'?0.012:0.02;
+  var d1=[],d2=[],v1=100,v2=100,dt=new Date(2021,0,1);
+  for(var k=0;k<1000;k++){v1*=(1+(Math.random()-dr)*vol);v2*=(1+(Math.random()-0.49)*0.016);
+   var ds=dt.toISOString().slice(0,10);d1.push({time:ds,value:+v1.toFixed(2)});d2.push({time:ds,value:+v2.toFixed(2)});dt.setDate(dt.getDate()+1);}
+  s1.setData(d1);s2.setData(d2);perfChart.timeScale().fitContent();
+  window.addEventListener('resize',function(){if(perfChart){var e=document.getElementById('perf-chart');if(e)perfChart.applyOptions({width:e.clientWidth});}});
+}
+
+var CLIENTS=[
+ {id:1,nome:'Vera Hollanda',email:'vera@hollandafo.com',tel:'+55 11 98888-1234',perfil:'Moderado',inicio:'12/03/2024',investido:8200000,atual:8610000,rn:78,mandato:55,sys:'desalinhado',forcado:false,proximo:'02/07/2026',obs:'Sensível a drawdown. Prefere relatórios mensais. Avaliar migração gradual para HPC11.',aportes:[['12/03/2024',5000000],['20/09/2024',2000000],['15/01/2026',1200000]]},
+ {id:2,nome:'Silveira FO',email:'contato@silveirafo.com',tel:'+55 21 97777-5678',perfil:'Moderado',inicio:'05/08/2023',investido:5100000,atual:5480000,rn:61,mandato:62,sys:'observar',forcado:false,proximo:'10/07/2026',obs:'Multi-asset sem proteção. Abrir conversa sobre a defesa do HPC.',aportes:[['05/08/2023',5100000]]},
+ {id:3,nome:'Antunes Family',email:'family@antunes.com',tel:'+55 11 96666-9012',perfil:'Conservador',inicio:'20/01/2022',investido:12000000,atual:14400000,rn:40,mandato:50,sys:'alinhado',forcado:false,proximo:'28/06/2026',obs:'Alinhado e satisfeito. Candidato a aumentar posição no HPC11.',aportes:[['20/01/2022',10000000],['11/11/2023',2000000]]}
+];
+function fmtBRL(n){return 'R$ '+Number(n).toLocaleString('pt-BR');}
+function effStatus(c){if(c.forcado)return{txt:'alinhado (forçado)',cls:'forced'};return {alinhado:{txt:'alinhado',cls:'g'},observar:{txt:'observar',cls:'o'},desalinhado:{txt:'desalinhado',cls:'r'}}[c.sys];}
+function renderClients(){var b=document.getElementById('crm-body');if(!b)return;b.innerHTML=CLIENTS.map(function(c){
+ var g=c.atual-c.investido,p=g/c.investido*100,gc=g>=0?'pos':'neg',st=effStatus(c);
+ return '<tr><td>'+c.nome+'</td><td>'+c.inicio+'</td><td class="num">'+fmtBRL(c.investido)+'</td><td class="num">'+fmtBRL(c.atual)+'</td>'
+ +'<td class="num '+gc+'">'+(g>=0?'+':'')+fmtBRL(g)+' · '+(p>=0?'+':'')+p.toFixed(1)+'%</td>'
+ +'<td class="num">'+c.rn+'</td>'
+ +'<td><span class="tag '+st.cls+'">'+st.txt+'</span><span class="fbtn '+(c.forcado?'on':'')+'" onclick="crmForce('+c.id+')">'+(c.forcado?'forçado ✓':'forçar')+'</span></td>'
+ +'<td class="num"><span class="muted" style="cursor:pointer" onclick="openClient('+c.id+')">abrir ›</span></td></tr>';
+}).join('');}
+function openClient(id){renderClientDetail(id);go('cliente');}
+function renderClientDetail(id){var c=CLIENTS.find(function(x){return x.id===id;});if(!c)return;
+ var g=c.atual-c.investido,p=g/c.investido*100,gc=g>=0?'pos':'neg',st=effStatus(c);
+ document.getElementById('cd-crumb').textContent=c.nome;
+ var ap=c.aportes.map(function(a){return '<div class="kv"><span>'+a[0]+'</span><span class="v">'+fmtBRL(a[1])+'</span></div>';}).join('');
+ var tot=c.aportes.reduce(function(s,a){return s+a[1];},0);
+ document.getElementById('cliente-detalhe').innerHTML=
+ '<div class="flex between mb"><div><div class="h1">'+c.nome+'</div><div class="sub" style="margin:0">'+c.perfil+' · cliente desde '+c.inicio+'</div></div>'
+ +'<div class="flex" style="gap:8px"><button class="btn ghost" onclick="crmEdit('+c.id+')"><i class="ti ti-edit"></i>Editar dados</button><button class="btn" onclick="orderFor('+c.id+')"><i class="ti ti-send"></i>Enviar ordem</button></div></div>'
+ +'<div class="grid g3">'
+ +'<div class="card"><h3><i class="ti ti-address-book"></i>Contato</h3>'
+  +'<div class="kv"><span>E-mail</span><span class="v">'+c.email+'</span></div>'
+  +'<div class="kv"><span>Telefone</span><span class="v">'+c.tel+'</span></div>'
+  +'<div class="kv"><span>Perfil</span><span class="v">'+c.perfil+'</span></div>'
+  +'<div class="kv"><span>Próximo contato</span><span class="v" style="color:var(--gold)">'+c.proximo+'</span></div></div>'
+ +'<div class="card"><h3><i class="ti ti-wallet"></i>Posição</h3>'
+  +'<div class="kv"><span>Investido</span><span class="v">'+fmtBRL(c.investido)+'</span></div>'
+  +'<div class="kv"><span>Atual</span><span class="v">'+fmtBRL(c.atual)+'</span></div>'
+  +'<div class="kv"><span>Ganho</span><span class="v '+gc+'">'+(g>=0?'+':'')+fmtBRL(g)+' · '+(p>=0?'+':'')+p.toFixed(1)+'%</span></div>'
+  +'<div class="kv"><span>Risk Number</span><span class="v">'+c.rn+'</span></div></div>'
+ +'<div class="card"><h3><i class="ti ti-shield-half"></i>Alinhamento</h3>'
+  +'<div class="flex" style="gap:8px;margin-bottom:10px"><span class="tag '+st.cls+'">'+st.txt+'</span><span class="fbtn '+(c.forcado?'on':'')+'" onclick="crmForce('+c.id+');renderClientDetail('+c.id+')">'+(c.forcado?'forçado ✓':'forçar')+'</span></div>'
+  +'<div class="kv"><span>Mandato (teto)</span><span class="v">'+c.mandato+'</span></div>'
+  +'<div class="kv"><span>Portfólio (RN)</span><span class="v '+(c.rn>c.mandato?'neg':'pos')+'">'+c.rn+'</span></div>'
+  +'<div class="muted mt" style="font-size:11px">'+(c.rn>c.mandato?('Acima do mandato em +'+(c.rn-c.mandato)+' — migrar p/ HPC reduz.'):'Dentro do mandato.')+'</div></div>'
+ +'</div>'
+ +'<div class="grid g2 mt">'
+ +'<div class="card"><h3><i class="ti ti-notes"></i>Observações</h3><div class="muted" style="line-height:1.7">'+c.obs+'</div></div>'
+ +'<div class="card"><h3><i class="ti ti-history"></i>Histórico de aportes</h3>'+ap+'<div class="kv" style="border-top:1px solid var(--line2);margin-top:4px"><span>Total aportado</span><span class="v">'+fmtBRL(tot)+'</span></div></div>'
+ +'</div>';
+}
+
+var orderSide='sub';
+function setSide(el,s){orderSide=s;var p=el.parentNode;p.querySelectorAll('span').forEach(function(x){x.classList.remove('on');});el.classList.add('on');orderGate();}
+function renderOrder(){
+ var fs=document.getElementById('o-fund');if(fs)fs.innerHTML=Object.keys(FUNDS).map(function(k){return '<option value="'+k+'">'+FUNDS[k].tk+' — '+FUNDS[k].mandato+'</option>';}).join('');
+ if(fs)fs.value=currentFund;
+ var sel=document.getElementById('o-client');if(sel)sel.innerHTML=CLIENTS.map(function(c){return '<option value="'+c.id+'">'+c.nome+' · mandato '+c.mandato+'</option>';}).join('');
+ orderSide='sub';var ss=document.getElementById('o-side');if(ss)ss.querySelectorAll('span').forEach(function(x,i){x.classList.toggle('on',i===0);});
+ var os=document.getElementById('o-status');if(os)os.style.display='none';orderGate();}
+function showHist(){document.getElementById('ot-hist').style.display='block';document.getElementById('ot-nova').style.display='none';}
+function showNova(){document.getElementById('ot-hist').style.display='none';document.getElementById('ot-nova').style.display='block';}
+function openOrder(){go('ordem');showHist();renderOrders();}
+function ordNova(){go('ordem');showNova();renderOrder();}
+function ordVoltar(){showHist();renderOrders();}
+function orderForFund(){go('ordem');showNova();renderOrder();var fs=document.getElementById('o-fund');if(fs)fs.value=currentFund;orderGate();}
+function orderFor(id){go('ordem');showNova();renderOrder();var sel=document.getElementById('o-client');if(sel)sel.value=id;orderGate();}
+function orderGate(){var sel=document.getElementById('o-client');if(!sel)return;var c=CLIENTS.find(function(x){return x.id===+sel.value;});
+ var fk=(document.getElementById('o-fund')||{}).value||currentFund;var fd=FUNDS[fk]||FUNDS.HPC22;var pr=fd.rn;
+ set('o-isin',fd.isin);set('o-nav',fd.nav);set('o-prodrisk','Risk Nº '+pr);
+ var g=document.getElementById('o-gate');if(!c){g.innerHTML='';return;}
+ var v=+((document.getElementById('o-value')||{}).value)||0;
+ var riskOk=pr<=c.mandato;var minOk=(orderSide==='res')||(v>=(fd.minNum||0));var ok=riskOk&&minOk;
+ g.innerHTML='<h3><i class="ti ti-shield-check"></i>Checagem pré-ordem (suitability)</h3>'
+ +'<div class="flex wrap" style="gap:9px">'
+ +'<span class="tag '+(riskOk?'g':'r')+'">Risk Nº do '+fd.tk+' '+pr+' '+(riskOk?'≤':'>')+' mandato do cliente '+c.mandato+'</span>'
+ +'<span class="tag '+(c.rn>c.mandato?'o':'g')+'">Portfólio atual: RN '+c.rn+'</span>'
+ +'<span class="tag '+(minOk?'g':'r')+'">'+(orderSide==='res'?'Resgate · sem mínimo':('Mínimo US$ 50.000 '+(minOk?'✓':'✗')))+'</span>'
+ +'<span class="tag b">Não-US person · elegível</span>'
+ +'</div>'
+ +'<div class="muted mt" style="font-size:12px">'+(!riskOk?'Bloqueado: o risco do produto excede o mandato. Requer override de compliance.':(!minOk?'Abaixo do mínimo de subscrição (US$ 50.000).':('Ordem alinhada — o '+fd.tk+' (risco '+pr+') está dentro do mandato.'+(orderSide==='sub'&&c.rn>c.mandato?' A subscrição reduz o risco do portfólio (RN '+c.rn+' → '+c.mandato+').':'')+(orderSide==='res'?' Resgate: aviso de 15–30 dias via Put Swift (Euroclear), ao CNAV.':''))))+'</div>';
+ var rb=document.getElementById('o-review');if(rb)rb.disabled=!ok;}
+function orderReview(){var sel=document.getElementById('o-client');var c=CLIENTS.find(function(x){return x.id===+sel.value;});var fk=(document.getElementById('o-fund')||{}).value||currentFund;var fd=FUNDS[fk]||FUNDS.HPC22;var v=+document.getElementById('o-value').value||0;var st=document.getElementById('o-status');st.style.display='block';
+ st.innerHTML='<h3><i class="ti ti-clipboard-check"></i>Revisão da ordem</h3>'
+ +'<div class="kv"><span>Produto</span><span class="v">'+fd.tk+' · ISIN '+fd.isin+'</span></div>'
+ +'<div class="kv"><span>Lado</span><span class="v">'+(orderSide==='sub'?'Subscrição':'Resgate')+'</span></div>'
+ +'<div class="kv"><span>Cliente</span><span class="v">'+(c?c.nome:'—')+'</span></div>'
+ +'<div class="kv"><span>Valor</span><span class="v">US$ '+v.toLocaleString('pt-BR')+'</span></div>'
+ +'<div class="kv"><span>Preço</span><span class="v">NAV do dealing day (não garantido agora)</span></div>'
+ +'<div class="muted mt" style="font-size:11px">Trilha de auditoria registrada · requer aprovação (maker-checker).</div>'
+ +'<div class="flex mt" style="gap:8px;justify-content:flex-end"><button class="btn ghost" onclick="document.getElementById(\'o-status\').style.display=\'none\'">Cancelar</button><button class="btn" onclick="orderSend()"><i class="ti ti-send"></i>Enviar para a Lynk</button></div>';}
+function orderSend(){var sel=document.getElementById('o-client');var c=CLIENTS.find(function(x){return x.id===+sel.value;});var fk=(document.getElementById('o-fund')||{}).value||currentFund;var v=+document.getElementById('o-value').value||0;
+ var newId='ORD-2026-0'+(419+(ordSeq++));
+ ORDERS.unshift({id:newId,data:'27/06/2026',cid:c?c.id:0,fundo:fk,lado:orderSide,valor:v,status:'Submetida'});
+ var st=document.getElementById('o-status');var steps=['Submetida','Recebida pelo emissor','Precificada (NAV de hoje)','Liquidada (DvP Euroclear)','Concluída'];
+ st.innerHTML='<h3><i class="ti ti-route"></i>Status da ordem</h3><div class="muted mb" style="font-size:11px">Ref. '+newId+' · via adapter OrderGateway (Lynk) · adicionada ao histórico</div>'
+ +'<div style="display:flex;flex-direction:column;gap:8px">'+steps.map(function(s,i){var done=i<1;return '<div class="flex" style="gap:9px"><span style="color:'+(done?'var(--green)':'var(--tx3)')+'">'+(done?'●':'○')+'</span><span style="color:'+(done?'var(--tx)':'var(--tx3)')+'">'+s+'</span></div>';}).join('')+'</div>'
+ +'<div class="flex mt" style="gap:8px"><button class="btn ghost" onclick="ordVoltar()"><i class="ti ti-history"></i>Ver no histórico</button></div>'
+ +'<div class="muted mt" style="font-size:11px">Mockup — integração real via Lynk•Port (sem API pública confirmada; adapter plugável).</div>';}
+var ordSeq=0;
+var ORDERS=[
+ {id:'ORD-2026-0417',data:'26/06/2026',cid:2,fundo:'HPC22',lado:'res',valor:300000,status:'Submetida'},
+ {id:'ORD-2026-0415',data:'25/06/2026',cid:3,fundo:'HPC11',lado:'sub',valor:1000000,status:'Precificada'},
+ {id:'ORD-2026-0412',data:'24/06/2026',cid:1,fundo:'HPC22',lado:'sub',valor:250000,status:'Concluída'},
+ {id:'ORD-2026-0411',data:'20/06/2026',cid:1,fundo:'HPC11',lado:'sub',valor:500000,status:'Liquidada'},
+ {id:'ORD-2026-0409',data:'18/06/2026',cid:2,fundo:'HPC22',lado:'res',valor:150000,status:'Rejeitada'}
+];
+function statusCls(s){return {'Concluída':'g','Liquidada':'g','Precificada':'b','Recebida':'b','Submetida':'b','Rascunho':'o','Rejeitada':'r','Cancelada':'r'}[s]||'b';}
+var PEND=['Rascunho','Submetida','Recebida'];
+function fillSel(id,html){var e=document.getElementById(id);if(e&&e.options.length===0)e.innerHTML=html;}
+function nfmt(n){return n.toLocaleString('pt-BR');}
+function ordSelects(){var cliOpts='<option value="0">Todos os clientes</option>'+CLIENTS.map(function(c){return '<option value="'+c.id+'">'+c.nome+'</option>';}).join('');
+ fillSel('pf-cli',cliOpts);fillSel('tf-cli',cliOpts);
+ fillSel('tf-status','<option value="all">Todos os status</option>'+['Precificada','Liquidada','Concluída','Rejeitada','Cancelada'].map(function(s){return '<option>'+s+'</option>';}).join(''));
+ fillSel('tf-op','<option value="all">Todos os tipos</option><option value="sub">Subscrição</option><option value="res">Resgate</option>');}
+function ordRow(o,kind){var c=CLIENTS.find(function(x){return x.id===o.cid;})||{nome:'—'};var ed=(o.status==='Rascunho'||o.status==='Submetida');
+ var acts='<button class="btn ghost" style="padding:3px 9px;font-size:11px" onclick="ordView(\''+o.id+'\')">Ver</button>'+(ed?' <button class="btn ghost" style="padding:3px 9px;font-size:11px" onclick="ordEdit(\''+o.id+'\')">Editar</button>':'');
+ var tipo=(o.lado==='sub'?'Subscrição':'Resgate'),caixa='US$ '+nfmt(o.valor),stt='<span class="tag '+statusCls(o.status)+'">'+o.status+'</span>';
+ if(kind==='pend')return '<tr><td>'+o.id+'</td><td>'+o.fundo+'</td><td>'+c.nome+'</td><td>'+tipo+'</td><td class="num">'+caixa+'</td><td>'+stt+'</td><td class="num">'+acts+'</td></tr>';
+ return '<tr><td>'+o.id+'</td><td>'+o.fundo+'</td><td>'+c.nome+'</td><td>'+o.data+'</td><td>'+tipo+'</td><td class="num">'+caixa+'</td><td>'+stt+'</td><td class="num">'+acts+'</td></tr>';}
+function renderPending(){ordSelects();var b=document.getElementById('pend-body');if(!b)return;
+ var fi=((document.getElementById('pf-isin')||{}).value||'').toLowerCase(),fctrl=((document.getElementById('pf-ctrl')||{}).value||'').toLowerCase(),fc=+(document.getElementById('pf-cli')||{}).value||0;
+ var rows=ORDERS.filter(function(o){return PEND.indexOf(o.status)>-1;}).filter(function(o){var fd=FUNDS[o.fundo]||{};var hay=(o.fundo+' '+(fd.isin||'')).toLowerCase();return (!fi||hay.indexOf(fi)>-1)&&(!fctrl||o.id.toLowerCase().indexOf(fctrl)>-1)&&(fc===0||o.cid===fc);});
+ b.innerHTML=rows.map(function(o){return ordRow(o,'pend');}).join('');
+ var cash=rows.reduce(function(s,o){return s+o.valor;},0);
+ document.getElementById('pend-n').textContent=rows.length;document.getElementById('pend-cash').textContent='US$ '+nfmt(cash);document.getElementById('pend-notes').textContent=nfmt(Math.round(cash/1000));document.getElementById('pend-count').textContent=rows.length;
+ document.getElementById('pend-empty').textContent=rows.length?'':'Nenhuma ordem pendente nesse escopo.';}
+function renderTrades(){ordSelects();var b=document.getElementById('trd-body');if(!b)return;
+ var fi=((document.getElementById('tf-isin')||{}).value||'').toLowerCase(),fs=(document.getElementById('tf-status')||{}).value||'all',fop=(document.getElementById('tf-op')||{}).value||'all',fc=+(document.getElementById('tf-cli')||{}).value||0;
+ var rows=ORDERS.filter(function(o){return PEND.indexOf(o.status)===-1;}).filter(function(o){var fd=FUNDS[o.fundo]||{};var hay=(o.fundo+' '+(fd.isin||'')).toLowerCase();return (!fi||hay.indexOf(fi)>-1)&&(fs==='all'||o.status===fs)&&(fop==='all'||o.lado===fop)&&(fc===0||o.cid===fc);});
+ b.innerHTML=rows.map(function(o){return ordRow(o,'trd');}).join('');
+ var cash=rows.reduce(function(s,o){return s+o.valor;},0);
+ document.getElementById('trd-n').textContent=rows.length;document.getElementById('trd-cash').textContent='US$ '+nfmt(cash);document.getElementById('trd-notes').textContent=nfmt(Math.round(cash/1000));
+ document.getElementById('trd-empty').textContent=rows.length?'':'Nenhum trade nesse escopo.';}
+function renderOrders(){renderPending();renderTrades();}
+function ordClear(which){if(which==='pend'){['pf-isin','pf-ctrl'].forEach(function(i){var e=document.getElementById(i);if(e)e.value='';});var c=document.getElementById('pf-cli');if(c)c.value='0';renderPending();}else{var t=document.getElementById('tf-isin');if(t)t.value='';['tf-status','tf-op'].forEach(function(i){var e=document.getElementById(i);if(e)e.value='all';});var c=document.getElementById('tf-cli');if(c)c.value='0';renderTrades();}}
+function ordExport(){var rows=ORDERS.filter(function(o){return PEND.indexOf(o.status)===-1;});var csv='Ref,Data,Cliente,Produto,Tipo,Caixa_USD,Status\n'+rows.map(function(o){var cl=(CLIENTS.find(function(x){return x.id===o.cid;})||{nome:''}).nome;return [o.id,o.data,cl,o.fundo,(o.lado==='sub'?'Subscricao':'Resgate'),o.valor,o.status].join(',');}).join('\n');
+ var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='ordens_harpian.csv';a.click();}
+function ordView(id){var o=ORDERS.find(function(x){return x.id===id;});if(!o)return;var c=CLIENTS.find(function(x){return x.id===o.cid;})||{nome:'—'};var fd=FUNDS[o.fundo]||{};
+ document.getElementById('ord-modal-body').innerHTML='<div class="kv"><span>Ref</span><span class="v">'+o.id+'</span></div><div class="kv"><span>Data</span><span class="v">'+o.data+'</span></div><div class="kv"><span>Cliente</span><span class="v">'+c.nome+'</span></div><div class="kv"><span>Produto</span><span class="v">'+o.fundo+' · '+(fd.isin||'')+'</span></div><div class="kv"><span>Tipo</span><span class="v">'+(o.lado==='sub'?'Subscrição':'Resgate')+'</span></div><div class="kv"><span>Caixa</span><span class="v">US$ '+nfmt(o.valor)+'</span></div><div class="kv"><span>Status</span><span class="v"><span class="tag '+statusCls(o.status)+'">'+o.status+'</span></span></div>';
+ document.getElementById('ord-modal').classList.add('open');}
+function ordEdit(id){var o=ORDERS.find(function(x){return x.id===id;});if(!o)return;showNova();renderOrder();var ff=document.getElementById('o-fund');if(ff)ff.value=o.fundo;var cc=document.getElementById('o-client');if(cc)cc.value=o.cid;var vv=document.getElementById('o-value');if(vv)vv.value=o.valor;orderSide=o.lado;var ss=document.getElementById('o-side');if(ss)ss.querySelectorAll('span').forEach(function(x,i){x.classList.toggle('on',(i===0)===(o.lado==='sub'));});orderGate();}
+
+var ASSETS={
+ NVDA:{name:'NVIDIA',price:'118,64',day:'+2,4%',dc:'pos',ytd:'+42,1%',y1:'+96%',forca:'+22',sharpe:'1,30',dd:'−32%',rsi:'64',w52:'48,2 – 140,8',drift:0.455},
+ SPY:{name:'S&P 500 ETF',price:'543,1',day:'−0,3%',dc:'neg',ytd:'+5,1%',y1:'+14,2%',forca:'—',sharpe:'0,90',dd:'−24%',rsi:'52',w52:'410 – 545',drift:0.487},
+ AAPL:{name:'Apple',price:'214,1',day:'+0,4%',dc:'pos',ytd:'+12%',y1:'+28%',forca:'+6',sharpe:'1,10',dd:'−20%',rsi:'55',w52:'164 – 220',drift:0.47},
+ GLD:{name:'Ouro (ETF)',price:'221,4',day:'+0,8%',dc:'pos',ytd:'+9,8%',y1:'+18,5%',forca:'+9',sharpe:'0,95',dd:'−14%',rsi:'58',w52:'185 – 224',drift:0.475},
+ '^VIX':{name:'VIX (volatilidade)',price:'22,4',day:'+3,1%',dc:'pos',ytd:'+12%',y1:'−5%',forca:'—',sharpe:'—',dd:'—',rsi:'61',w52:'12 – 38',drift:0.5}
+};
+var acoesChart=null;
+function initAcoesSelect(){var sel=document.getElementById('as-select');if(sel)sel.innerHTML=Object.keys(ASSETS).map(function(t){return '<option value="'+t+'">'+t+' · '+ASSETS[t].name+'</option>';}).join('');}
+function renderAsset(t){var a=ASSETS[t]||ASSETS.NVDA;
+ set('as-name',a.name);set('as-tk',t+' · US');set('as-price',a.price);set('as-day',a.day+' hoje');set('as-ytd',a.ytd);set('as-y1',a.y1);set('as-forca',a.forca);set('as-sharpe',a.sharpe);set('as-dd',a.dd);set('as-rsi',a.rsi);set('as-w52',a.w52);set('as-legend',t);
+ var dEl=document.getElementById('as-day');if(dEl)dEl.style.color=a.dc==='neg'?'var(--red)':'var(--green)';
+ ['as-ytd','as-y1'].forEach(function(idd){var e=document.getElementById(idd);if(e)e.className='big '+((e.textContent||'').indexOf('−')===0?'r':'g');});
+ var sel=document.getElementById('as-select');if(sel&&sel.value!==t)sel.value=t;
+ drawAcoes(a);}
+function drawAcoes(a){if(typeof LightweightCharts==='undefined')return;var el=document.getElementById('acoes-chart');if(!el||!el.clientWidth)return;
+ if(acoesChart){try{acoesChart.remove();}catch(e){}acoesChart=null;}
+ acoesChart=LightweightCharts.createChart(el,{width:el.clientWidth,height:320,
+  layout:{background:{type:'solid',color:'rgba(0,0,0,0)'},textColor:'#A4B3C6',fontFamily:'DM Mono, monospace',fontSize:11},
+  grid:{vertLines:{color:'rgba(255,255,255,0.05)'},horzLines:{color:'rgba(255,255,255,0.05)'}},
+  rightPriceScale:{borderColor:'rgba(255,255,255,0.1)'},timeScale:{borderColor:'rgba(255,255,255,0.1)'},
+  crosshair:{mode:0,vertLine:{color:'rgba(201,160,44,0.45)'},horzLine:{color:'rgba(201,160,44,0.45)'}}});
+ var s1=acoesChart.addLineSeries({color:'#2ECC71',lineWidth:2}),s2=acoesChart.addLineSeries({color:'#4A90D9',lineWidth:1});
+ var dr=a.drift||0.47,d1=[],d2=[],v1=100,v2=100,dt=new Date(2021,0,1);
+ for(var k=0;k<1000;k++){v1*=(1+(Math.random()-dr)*0.022);v2*=(1+(Math.random()-0.49)*0.016);var ds=dt.toISOString().slice(0,10);d1.push({time:ds,value:+v1.toFixed(2)});d2.push({time:ds,value:+v2.toFixed(2)});dt.setDate(dt.getDate()+1);}
+ s1.setData(d1);s2.setData(d2);acoesChart.timeScale().fitContent();}
+initAcoesSelect();
+
+function regimeGaugeSVG(state,sub){var map={'RISK-OFF':[0.13,'#E74C3C'],'WARNING':[0.38,'#F39C12'],'RISK-ON':[0.62,'#2ECC71'],'CÉU ABERTO':[0.88,'#4A90D9']};var m=map[state]||map['RISK-ON'];var frac=m[0],col=m[1];var ang=(180-frac*180)*Math.PI/180;var L=118;var nx=200+L*Math.cos(ang),ny=200-L*Math.sin(ang);
+ return '<svg viewBox="0 0 400 232" width="100%" style="display:block;max-height:200px">'
+ +'<path d="M40,200 A160,160 0 0,1 86.9,86.9" fill="none" stroke="#E74C3C" stroke-width="24" stroke-linecap="round" opacity=".9"/>'
+ +'<path d="M86.9,86.9 A160,160 0 0,1 200,40" fill="none" stroke="#F39C12" stroke-width="24" opacity=".9"/>'
+ +'<path d="M200,40 A160,160 0 0,1 313.1,86.9" fill="none" stroke="#2ECC71" stroke-width="24" opacity=".9"/>'
+ +'<path d="M313.1,86.9 A160,160 0 0,1 360,200" fill="none" stroke="#4A90D9" stroke-width="24" stroke-linecap="round" opacity=".9"/>'
+ +'<text x="50" y="222" fill="#E74C3C" font-size="11" font-weight="700" text-anchor="middle">RISK-OFF</text>'
+ +'<text x="128" y="58" fill="#F39C12" font-size="9.5" font-weight="700" text-anchor="middle">WARNING</text>'
+ +'<text x="300" y="66" fill="#2ECC71" font-size="11" font-weight="700" text-anchor="middle">RISK-ON</text>'
+ +'<text x="350" y="222" fill="#4A90D9" font-size="9.5" font-weight="700" text-anchor="middle">CÉU ABERTO</text>'
+ +'<line x1="200" y1="200" x2="'+nx.toFixed(1)+'" y2="'+ny.toFixed(1)+'" stroke="#fff" stroke-width="4" stroke-linecap="round"/>'
+ +'<circle cx="200" cy="200" r="9" fill="#fff"/><circle cx="200" cy="200" r="4" fill="#0A1A30"/>'
+ +'<text x="200" y="150" fill="'+col+'" font-size="28" font-weight="800" text-anchor="middle">'+state+'</text>'
+ +(sub?'<text x="200" y="174" fill="#7d96b3" font-size="11" text-anchor="middle">'+sub+'</text>':'')+'</svg>';}
+var SIGNALS=[['Inovação · SOXX','temp 0,448 / lim 0,45',55,'folga 0,002','#2ECC71'],['Líderes · QQQ','temp 0,554 / lim 0,40',45,'gatilho +0,154','#F39C12'],['Navegador · SPY','temp 0,403 / lim 0,45',60,'folga 0,047','#2ECC71'],['VIX','22,4 elevado',40,'atenção','#F39C12'],['Crédito (HY)','spreads estáveis',62,'ok','#2ECC71'],['Momentum','positivo',64,'ok','#2ECC71']];
+function regimeBar(name,sub,pct,dist,dcol){return '<div class="prow"><div class="phead"><span>'+name+' <small>'+sub+'</small></span><span class="dist" style="color:'+dcol+'">'+dist+'</span></div><div class="bullet"><div class="bz" style="left:0;width:25%;background:#E74C3C"></div><div class="bz" style="left:25%;width:25%;background:#F39C12"></div><div class="bz" style="left:50%;width:25%;background:#2ECC71"></div><div class="bz" style="left:75%;width:25%;background:#4A90D9"></div><div class="bneedle" style="left:calc('+pct+'% - 1px)"></div></div></div>';}
+function signalBars(){return SIGNALS.map(function(s){return regimeBar(s[0],s[1],s[2],s[3],s[4]);}).join('')+'<div style="font-size:9px;color:var(--tx3);margin-top:8px;line-height:1.5">agulha = estado atual · esquerda vermelho = quente/defesa · direita azul = frio/seguro. Direita = melhor, sempre.</div>';}
+function fillRegime(){['rg-painel','rg-mercado','rg-fundo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=regimeGaugeSVG('RISK-ON','exposição de ataque: 96%');});['sig-mercado','sig-fundo'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=signalBars();});}
+fillRegime();
+function crmForce(id){var c=CLIENTS.find(function(x){return x.id===id;});if(c){c.forcado=!c.forcado;renderClients();}}
+var crmEditId=null;
+function crmEdit(id){var c=CLIENTS.find(function(x){return x.id===id;});if(!c)return;crmEditId=id;
+ document.getElementById('cm-nome').value=c.nome;document.getElementById('cm-inicio').value=c.inicio;
+ document.getElementById('cm-inv').value=c.investido;document.getElementById('cm-atual').value=c.atual;
+ document.getElementById('cm-rn').value=c.rn;document.getElementById('crm-modal').classList.add('open');}
+function crmSave(){var c=CLIENTS.find(function(x){return x.id===crmEditId;});if(c){c.nome=document.getElementById('cm-nome').value;c.inicio=document.getElementById('cm-inicio').value;c.investido=+document.getElementById('cm-inv').value||c.investido;c.atual=+document.getElementById('cm-atual').value||c.atual;c.rn=+document.getElementById('cm-rn').value||c.rn;}crmClose();renderClients();}
+function crmClose(){document.getElementById('crm-modal').classList.remove('open');}
+renderClients();
+
+function clk(){var d=new Date(),p=n=>String(n).padStart(2,'0');document.getElementById('clk').textContent=p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds())+' ET';}
+setInterval(clk,1000);clk();
+</script>
+</body>
+</html>

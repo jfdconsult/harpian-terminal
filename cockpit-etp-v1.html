@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HARPIAN — ETP Terminal · Cockpit (wireframe v1)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#060B12; --bg2:#0C1420; --panel:#101A28; --panel2:#0B1421;
+  --line:rgba(255,255,255,.07); --line2:rgba(255,255,255,.12);
+  --gold:#D4AF45; --green:#3EE68B; --red:#FF4D4F; --orange:#F59E0B; --blue:#4A8FD4;
+  --tx:#E6ECF3; --tx2:#9FB0C3; --tx3:#5E7185;
+  --mono:'DM Mono',monospace; --sans:'Space Grotesk',sans-serif; --r:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:var(--sans);font-size:13px;
+  -webkit-font-smoothing:antialiased;height:100vh;overflow:hidden}
+.app{display:grid;grid-template-rows:46px 34px 1fr 26px;height:100vh}
+
+/* ---------- COMMAND BAR ---------- */
+.cmd{display:flex;align-items:center;gap:14px;background:var(--bg2);border-bottom:1px solid var(--line2);padding:0 14px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;letter-spacing:.5px}
+.logo{width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,#D4AF45,#a8842b);
+  display:flex;align-items:center;justify-content:center;color:#1a1205;font-weight:700;font-size:15px}
+.brand .sub{font-weight:400;color:var(--tx3);font-size:11px;letter-spacing:1px}
+.cmdbox{flex:1;max-width:560px;display:flex;align-items:center;gap:8px;background:#05090F;
+  border:1px solid var(--line2);border-radius:6px;padding:5px 10px;font-family:var(--mono)}
+.ykey{background:var(--gold);color:#1a1205;font-weight:600;font-size:10px;padding:2px 7px;border-radius:3px;font-family:var(--mono)}
+.cmdbox input{flex:1;background:transparent;border:0;color:var(--gold);font-family:var(--mono);
+  font-size:13px;outline:none;letter-spacing:.5px}
+.cmdbox input::placeholder{color:var(--tx3)}
+.gokey{background:var(--green);color:#04140b;font-weight:700;font-size:10px;padding:3px 9px;border-radius:3px;font-family:var(--mono)}
+.cmd-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.clock{font-family:var(--mono);color:var(--tx2);font-size:12px}
+.live{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--green);font-family:var(--mono)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.regime-badge{display:flex;align-items:center;gap:7px;background:rgba(62,230,139,.1);border:1px solid rgba(62,230,139,.3);
+  color:var(--green);padding:4px 10px;border-radius:5px;font-size:11px;font-family:var(--mono);font-weight:500}
+
+/* ---------- FUNCTION TABS ---------- */
+.ftabs{display:flex;align-items:stretch;background:var(--panel2);border-bottom:1px solid var(--line)}
+.ftab{display:flex;align-items:center;gap:7px;padding:0 16px;font-size:11.5px;color:var(--tx2);
+  border-right:1px solid var(--line);cursor:pointer;font-family:var(--mono);letter-spacing:.5px;position:relative}
+.ftab b{color:var(--gold);font-weight:600}
+.ftab:hover{background:rgba(255,255,255,.03);color:var(--tx)}
+.ftab.on{background:var(--panel);color:var(--tx)}
+.ftab.on::after{content:"";position:absolute;left:0;bottom:-1px;width:100%;height:2px;background:var(--gold)}
+
+/* ---------- BODY ---------- */
+.body{display:grid;grid-template-columns:188px 1fr;overflow:hidden}
+.rail{background:var(--bg2);border-right:1px solid var(--line);padding:10px 0;overflow-y:auto}
+.rgroup{padding:6px 14px 4px;font-size:9.5px;letter-spacing:1.5px;color:var(--tx3);text-transform:uppercase;margin-top:6px}
+.ritem{display:flex;align-items:center;gap:9px;padding:7px 14px;font-size:12.5px;color:var(--tx2);cursor:pointer}
+.ritem:hover{background:rgba(255,255,255,.03);color:var(--tx)}
+.ritem.on{background:rgba(212,175,69,.1);color:var(--gold);border-left:2px solid var(--gold);padding-left:12px}
+.ritem .tk{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--tx3)}
+.ritem.on .tk{color:var(--gold)}
+
+.canvas{overflow:auto;padding:12px;background:var(--bg);
+  display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto auto;gap:12px;align-content:start}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.ph{display:flex;align-items:center;gap:9px;padding:9px 13px;border-bottom:1px solid var(--line);background:var(--panel2)}
+.ph .fn{font-family:var(--mono);font-size:10px;color:var(--gold);background:rgba(212,175,69,.12);padding:2px 6px;border-radius:3px}
+.ph h3{font-size:12px;font-weight:500;letter-spacing:.3px;color:var(--tx)}
+.ph .meta{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--tx3)}
+.pc{padding:13px}
+
+/* fund header strip — full width */
+.fundhead{grid-column:1 / -1;display:flex;align-items:center;gap:0;background:var(--panel);
+  border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.fh-id{padding:13px 18px;border-right:1px solid var(--line);min-width:230px}
+.fh-id .tkr{font-family:var(--mono);font-size:21px;font-weight:500;color:var(--gold);letter-spacing:.5px}
+.fh-id .nm{font-size:11.5px;color:var(--tx2);margin-top:2px}
+.fh-id .cls{font-family:var(--mono);font-size:9.5px;color:var(--tx3);margin-top:5px;letter-spacing:.5px}
+.fh-stat{padding:11px 20px;border-right:1px solid var(--line);min-width:118px}
+.fh-stat .lbl{font-size:9.5px;letter-spacing:1px;color:var(--tx3);text-transform:uppercase}
+.fh-stat .val{font-family:var(--mono);font-size:18px;font-weight:500;margin-top:5px}
+.fh-stat .val.g{color:var(--green)} .fh-stat .val.r{color:var(--red)}
+.fh-stat .sub{font-family:var(--mono);font-size:10px;color:var(--tx3);margin-top:2px}
+.fh-rn{margin-left:auto;padding:11px 20px;display:flex;align-items:center;gap:14px}
+.gauge{position:relative;width:74px;height:74px}
+.gauge .num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gauge .num b{font-family:var(--mono);font-size:21px;color:var(--green);font-weight:500;line-height:1}
+.gauge .num span{font-size:8px;color:var(--tx3);letter-spacing:1px;margin-top:2px}
+.rn-leg .lbl{font-size:9.5px;letter-spacing:1px;color:var(--tx3);text-transform:uppercase}
+.rn-leg .desc{font-size:11px;color:var(--tx2);margin-top:4px;max-width:140px;line-height:1.4}
+
+/* performance chart */
+.periods{display:flex;gap:3px}
+.periods span{font-family:var(--mono);font-size:10px;color:var(--tx3);padding:2px 7px;border-radius:3px;cursor:pointer}
+.periods span.on{background:rgba(212,175,69,.15);color:var(--gold)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px}
+.legend i{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--tx2);font-style:normal}
+.legend i b{width:14px;height:2.5px;border-radius:2px}
+
+/* holdings table */
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px}
+th{text-align:left;color:var(--tx3);font-weight:400;font-size:9.5px;letter-spacing:.5px;
+  text-transform:uppercase;padding:5px 6px;border-bottom:1px solid var(--line)}
+td{padding:5px 6px;border-bottom:1px solid rgba(255,255,255,.035);color:var(--tx)}
+td.num{text-align:right} .pos{color:var(--green)} .neg{color:var(--red)}
+.bar{height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;width:100%}
+.bar i{display:block;height:100%;background:var(--blue)}
+
+/* sector bars */
+.secrow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.secrow .sn{font-size:11px;color:var(--tx2);min-width:88px;font-family:var(--sans)}
+.secrow .st{flex:1}
+.secrow .sv{font-family:var(--mono);font-size:10.5px;color:var(--tx2);min-width:34px;text-align:right}
+
+/* regime panel */
+.pills{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:13px}
+.pill{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;
+  padding:4px 9px;border-radius:4px;border:1px solid var(--line2)}
+.pill .pd{width:6px;height:6px;border-radius:50%}
+.pill.g{color:var(--green);border-color:rgba(62,230,139,.3)} .pill.g .pd{background:var(--green)}
+.pill.o{color:var(--orange);border-color:rgba(245,158,11,.3)} .pill.o .pd{background:var(--orange)}
+.pill.r{color:var(--red);border-color:rgba(255,77,79,.3)} .pill.r .pd{background:var(--red)}
+.defense{display:flex;align-items:center;gap:16px;padding:12px;background:var(--panel2);border-radius:6px;border:1px solid var(--line)}
+.defense .dg{font-family:var(--mono);font-size:30px;font-weight:500;color:var(--green)}
+.defense .dl b{display:block;font-size:11px;color:var(--tx);margin-bottom:3px}
+.defense .dl span{font-size:11px;color:var(--tx2);line-height:1.5}
+
+/* news */
+.news-item{padding:9px 0;border-bottom:1px solid rgba(255,255,255,.04);display:flex;gap:10px}
+.news-item:last-child{border:0}
+.ni-tag{font-family:var(--mono);font-size:8.5px;font-weight:600;padding:2px 6px;border-radius:3px;height:fit-content;letter-spacing:.5px}
+.ni-tag.bear{background:rgba(255,77,79,.14);color:var(--red)}
+.ni-tag.evt{background:rgba(245,158,11,.14);color:var(--orange)}
+.ni-tag.opp{background:rgba(62,230,139,.14);color:var(--green)}
+.ni-body b{font-size:11.5px;color:var(--tx);font-weight:500;display:block;line-height:1.4}
+.ni-body span{font-family:var(--mono);font-size:9.5px;color:var(--tx3);margin-top:3px;display:block}
+
+/* ticker */
+.ticker{background:var(--bg2);border-top:1px solid var(--line2);display:flex;align-items:center;overflow:hidden;font-family:var(--mono);font-size:11px}
+.ticker .tk{display:flex;gap:8px;padding:0 16px;white-space:nowrap;animation:scroll 48s linear infinite}
+.ticker .ti{display:inline-flex;gap:6px}
+.ticker .ti b{color:var(--tx2);font-weight:400}
+@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.wm{position:fixed;bottom:30px;right:12px;font-family:var(--mono);font-size:9px;color:var(--tx3);
+  background:rgba(0,0,0,.4);padding:3px 8px;border-radius:4px;letter-spacing:.5px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- COMMAND BAR -->
+  <div class="cmd">
+    <div class="brand"><div class="logo">H</div>HARPIAN<span class="sub">ETP TERMINAL</span></div>
+    <div class="cmdbox">
+      <span class="ykey">ETP</span>
+      <input value="HPC11  ·  DES" placeholder="digite um fundo ou função…">
+      <span class="gokey">GO</span>
+    </div>
+    <div class="cmd-right">
+      <div class="regime-badge"><span class="dot"></span>RISK-ON · DEFESA ARMADA</div>
+      <div class="live"><span class="dot"></span>LIVE</div>
+      <div class="clock" id="clk">14:32:08 ET</div>
+    </div>
+  </div>
+
+  <!-- FUNCTION TABS -->
+  <div class="ftabs">
+    <div class="ftab on"><b>DES</b> Descrição</div>
+    <div class="ftab"><b>GP</b> Performance</div>
+    <div class="ftab"><b>PORT</b> Composição</div>
+    <div class="ftab"><b>RISK</b> Risco & Defesa</div>
+    <div class="ftab"><b>RV</b> Valor Relativo</div>
+    <div class="ftab"><b>REGIME</b> Inteligência</div>
+    <div class="ftab"><b>NEWS</b> Notícias</div>
+    <div class="ftab"><b>BOOK</b> Meu Livro</div>
+    <div class="ftab"><b>REP</b> Relatório</div>
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+    <!-- LEFT RAIL -->
+    <div class="rail">
+      <div class="rgroup">Fundos Harpian</div>
+      <div class="ritem on">HPC11 · I.G. <span class="tk">ETP</span></div>
+      <div class="ritem">HPC22 · Agressivo <span class="tk">ETP</span></div>
+      <div class="ritem">HC-US Total <span class="tk">lab</span></div>
+      <div class="rgroup">Mercado</div>
+      <div class="ritem">Panorama Global <span class="tk">WEI</span></div>
+      <div class="ritem">Regime & Sinais <span class="tk">REG</span></div>
+      <div class="ritem">Ativos <span class="tk">EQS</span></div>
+      <div class="rgroup">Meu Trabalho</div>
+      <div class="ritem">Meu Livro <span class="tk">BOOK</span></div>
+      <div class="ritem">Clientes <span class="tk">CLI</span></div>
+      <div class="ritem">Relatórios <span class="tk">REP</span></div>
+      <div class="rgroup">Sistema</div>
+      <div class="ritem">Desk Harpian <span class="tk">IB</span></div>
+      <div class="ritem">Configurações <span class="tk">CFG</span></div>
+    </div>
+
+    <!-- CANVAS -->
+    <div class="canvas">
+
+      <!-- FUND HEADER -->
+      <div class="fundhead">
+        <div class="fh-id">
+          <div class="tkr">HPC11</div>
+          <div class="nm">Harpian Capital · Investment Grade ETP</div>
+          <div class="cls">USD · UCITS-style · Custódia Tier 1</div>
+        </div>
+        <div class="fh-stat"><div class="lbl">NAV</div><div class="val">$ 14.82</div><div class="sub">+0.21 hoje</div></div>
+        <div class="fh-stat"><div class="lbl">Dia</div><div class="val g">+1.44%</div><div class="sub">▲ vs −0.3% S&P</div></div>
+        <div class="fh-stat"><div class="lbl">MTD</div><div class="val g">+3.1%</div><div class="sub">jun/26</div></div>
+        <div class="fh-stat"><div class="lbl">YTD</div><div class="val g">+7.5%</div><div class="sub">vs +5.1% S&P</div></div>
+        <div class="fh-rn">
+          <div class="gauge">
+            <svg width="74" height="74" viewBox="0 0 74 74">
+              <circle cx="37" cy="37" r="31" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="6"/>
+              <circle cx="37" cy="37" r="31" fill="none" stroke="#3EE68B" stroke-width="6"
+                stroke-dasharray="195" stroke-dashoffset="128" stroke-linecap="round" transform="rotate(-90 37 37)"/>
+            </svg>
+            <div class="num"><b>34</b><span>RISK Nº</span></div>
+          </div>
+          <div class="rn-leg">
+            <div class="lbl">Perfil de Risco</div>
+            <div class="desc">Conservador. S&P 500 = 71. Defesa estrutural ativa.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PERFORMANCE (GP) -->
+      <div class="panel">
+        <div class="ph"><span class="fn">GP</span><h3>Performance · 5 linhas</h3>
+          <div class="meta periods"><span>1A</span><span class="on">3A</span><span>5A</span><span>10A</span><span>Máx</span></div>
+        </div>
+        <div class="pc">
+          <svg viewBox="0 0 460 170" width="100%" preserveAspectRatio="none" style="display:block">
+            <g stroke="rgba(255,255,255,.05)" stroke-width="1">
+              <line x1="0" y1="42" x2="460" y2="42"/><line x1="0" y1="85" x2="460" y2="85"/><line x1="0" y1="128" x2="460" y2="128"/>
+            </g>
+            <polyline fill="none" stroke="#4A8FD4" stroke-width="1.4" opacity=".55" points="0,150 70,142 140,135 210,128 280,118 350,110 420,104 460,100"/>
+            <polyline fill="none" stroke="#5E7185" stroke-width="1.4" points="0,150 70,140 140,148 210,120 280,132 350,108 420,118 460,96"/>
+            <polyline fill="none" stroke="#F59E0B" stroke-width="1.8" points="0,150 70,128 140,118 210,132 280,96 350,86 420,72 460,60"/>
+            <polyline fill="none" stroke="#D4AF45" stroke-width="2.4" points="0,150 70,134 140,120 210,112 280,90 350,74 420,58 460,42"/>
+            <polyline fill="none" stroke="#3EE68B" stroke-width="2.4" points="0,150 70,130 140,112 210,96 280,72 350,52 420,34 460,18"/>
+          </svg>
+          <div class="legend">
+            <i><b style="background:#3EE68B"></b>HPC11 (líquido)</i>
+            <i><b style="background:#D4AF45"></b>HPC22</i>
+            <i><b style="background:#F59E0B"></b>Seu dólar c/ Harpian</i>
+            <i><b style="background:#5E7185"></b>Seu dólar atual</i>
+            <i><b style="background:#4A8FD4"></b>S&P 500</i>
+          </div>
+        </div>
+      </div>
+
+      <!-- HOLDINGS (PORT) -->
+      <div class="panel">
+        <div class="ph"><span class="fn">PORT</span><h3>Composição · hoje</h3><span class="meta">11 posições · giro 4%</span></div>
+        <div class="pc">
+          <table>
+            <thead><tr><th>Ativo</th><th>Setor</th><th class="num">Peso</th><th class="num">Dia</th></tr></thead>
+            <tbody>
+              <tr><td>NVDA</td><td>Technology</td><td class="num">9.1%</td><td class="num pos">+2.4%</td></tr>
+              <tr><td>MSFT</td><td>Technology</td><td class="num">9.1%</td><td class="num pos">+0.9%</td></tr>
+              <tr><td>XOM</td><td>Energy</td><td class="num">9.1%</td><td class="num pos">+1.1%</td></tr>
+              <tr><td>JPM</td><td>Financials</td><td class="num">9.1%</td><td class="num neg">−0.4%</td></tr>
+              <tr><td>UNH</td><td>Health Care</td><td class="num">9.1%</td><td class="num pos">+0.6%</td></tr>
+              <tr><td>GLD</td><td>Real Assets</td><td class="num">9.1%</td><td class="num pos">+0.8%</td></tr>
+            </tbody>
+          </table>
+          <div style="margin-top:13px">
+            <div class="secrow"><span class="sn">Technology</span><div class="st bar"><i style="width:35%"></i></div><span class="sv">35%</span></div>
+            <div class="secrow"><span class="sn">Energy</span><div class="st bar"><i style="width:18%;background:#F59E0B"></i></div><span class="sv">18%</span></div>
+            <div class="secrow"><span class="sn">Financials</span><div class="st bar"><i style="width:15%"></i></div><span class="sv">15%</span></div>
+            <div class="secrow"><span class="sn">Health Care</span><div class="st bar"><i style="width:14%"></i></div><span class="sv">14%</span></div>
+            <div class="secrow"><span class="sn">Real Assets</span><div class="st bar"><i style="width:18%;background:#3EE68B"></i></div><span class="sv">18%</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- REGIME & DEFENSE -->
+      <div class="panel">
+        <div class="ph"><span class="fn">REGIME</span><h3>Inteligência de Regime · motor proprietário</h3><span class="meta">StormGuard · AlphaDroid</span></div>
+        <div class="pc">
+          <div class="pills">
+            <span class="pill o"><span class="pd"></span>VIX 22.4 elevado</span>
+            <span class="pill r"><span class="pd"></span>Fed hawkish</span>
+            <span class="pill g"><span class="pd"></span>Spreads HY estáveis</span>
+            <span class="pill o"><span class="pd"></span>Curva achatada</span>
+            <span class="pill g"><span class="pd"></span>Momentum positivo</span>
+            <span class="pill g"><span class="pd"></span>Crescimento resiliente</span>
+          </div>
+          <div class="defense">
+            <div class="dg">96%</div>
+            <div class="dl">
+              <b>Exposição ofensiva · defesa em prontidão</b>
+              <span>StormGuard: <b style="color:var(--green)">GROWTH</b> · sem gatilho de saída. Motor monitora 6 sinais; rampa de defesa pronta para 0% em &lt;5 dias se o regime virar.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NEWS -->
+      <div class="panel">
+        <div class="ph"><span class="fn">NEWS</span><h3>Notícias que movem o fundo</h3><span class="meta">alto sinal</span></div>
+        <div class="pc">
+          <div class="news-item"><span class="ni-tag bear">BEAR</span>
+            <div class="ni-body"><b>Fed sinaliza juros altos por mais tempo</b>
+            <span>Bloomberg · 11min · risco de repricing 8–12% em duration longa</span></div></div>
+          <div class="news-item"><span class="ni-tag evt">EVENTO</span>
+            <div class="ni-body"><b>CPI amanhã 08:30 ET — afeta todos os ativos</b>
+            <span>Calendário econômico · consenso 3.1% YoY</span></div></div>
+          <div class="news-item"><span class="ni-tag opp">OPORT.</span>
+            <div class="ni-body"><b>Rotação setorial favorece energia e real assets</b>
+            <span>Harpian Intelligence · momentum confirma bull em commodities</span></div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TICKER -->
+  <div class="ticker">
+    <div class="tk" id="tk">
+      <span class="ti"><b>HPC11</b><span class="pos">14.82 +1.44%</span></span>
+      <span class="ti"><b>HPC22</b><span class="pos">22.10 +2.31%</span></span>
+      <span class="ti"><b>S&P 500</b><span class="neg">5,431 −0.30%</span></span>
+      <span class="ti"><b>NASDAQ</b><span class="neg">17,210 −0.52%</span></span>
+      <span class="ti"><b>VIX</b><span class="pos">22.4 +3.1%</span></span>
+      <span class="ti"><b>10Y UST</b><span>4.72%</span></span>
+      <span class="ti"><b>GOLD</b><span class="pos">2,388 +0.8%</span></span>
+      <span class="ti"><b>WTI</b><span class="pos">81.2 +1.1%</span></span>
+      <span class="ti"><b>USD/BRL</b><span>5.42</span></span>
+      <span class="ti"><b>BTC</b><span class="pos">68,140 +1.9%</span></span>
+      <span class="ti"><b>HPC11</b><span class="pos">14.82 +1.44%</span></span>
+      <span class="ti"><b>HPC22</b><span class="pos">22.10 +2.31%</span></span>
+      <span class="ti"><b>S&P 500</b><span class="neg">5,431 −0.30%</span></span>
+      <span class="ti"><b>NASDAQ</b><span class="neg">17,210 −0.52%</span></span>
+      <span class="ti"><b>VIX</b><span class="pos">22.4 +3.1%</span></span>
+      <span class="ti"><b>10Y UST</b><span>4.72%</span></span>
+      <span class="ti"><b>GOLD</b><span class="pos">2,388 +0.8%</span></span>
+      <span class="ti"><b>WTI</b><span class="pos">81.2 +1.1%</span></span>
+      <span class="ti"><b>USD/BRL</b><span>5.42</span></span>
+      <span class="ti"><b>BTC</b><span class="pos">68,140 +1.9%</span></span>
+    </div>
+  </div>
+</div>
+<div class="wm">WIREFRAME v1 · dados ilustrativos</div>
+<script>
+function tick(){var d=new Date();var p=n=>String(n).padStart(2,'0');
+document.getElementById('clk').textContent=p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds())+' ET';}
+setInterval(tick,1000);tick();
+document.querySelectorAll('.ftab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.ftab').forEach(x=>x.classList.remove('on'));t.classList.add('on');});
+</script>
+</body>
+</html>
