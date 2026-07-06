@@ -5,7 +5,7 @@
   --bg:#0A1A30; --bg2:#0C2039; --panel:#0F2747; --panel2:#0C2039; --raise:#14315a;
   --line:#16304f; --line2:#1d3a5f;
   --gold:#C9A02C; --gold2:#e0c160; --green:#2ECC71; --red:#E74C3C; --orange:#F39C12; --blue:#4A90D9;
-  --tx:#E8ECF1; --tx2:#7d96b3; --tx3:#5b7a99;
+  --tx:#E8ECF1; --tx2:#7d96b3; --tx3:#5b7a99; --jim-heading:rgba(232,236,241,0.85);
   --sans:'Segoe UI',system-ui,-apple-system,sans-serif; --mono:'Cascadia Code','Consolas','SF Mono','JetBrains Mono',monospace;
   --r-sm:6px; --r-md:8px; --r-lg:12px;
 }
@@ -211,7 +211,7 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
 .jim-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--bg2);flex-shrink:0}
 .jim-header-left{display:flex;align-items:center;gap:10px}
 .jim-logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--gold2),#b08010);color:#1a1205;display:flex;align-items:center;justify-content:center;font-size:18px}
-.jim-title{font-size:15px;font-weight:700;letter-spacing:.5px;color:var(--gold)}
+.jim-title{font-size:15px;font-weight:700;letter-spacing:.5px;color:var(--tx)}
 .jim-subtitle{font-size:10px;color:var(--tx3);letter-spacing:.8px;text-transform:uppercase}
 .jim-header-actions{display:flex;gap:4px}
 .jim-hbtn{background:transparent;border:1px solid transparent;color:var(--tx3);width:32px;height:32px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:background .15s,color .15s,border-color .15s}
@@ -288,7 +288,7 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
   --line:#d8dde6; --line2:#c8cdd6;
   --gold:#9e7c0a; --gold2:#b08a10;
   --green:#1a9e52; --red:#d63031; --orange:#d68910; --blue:#2b6cb0;
-  --tx:#1a2333; --tx2:#4a5568; --tx3:#718096;
+  --tx:#1a2333; --tx2:#4a5568; --tx3:#718096; --jim-heading:rgba(232,236,241,0.75);
 }
 [data-theme="light"] body{background:#f0f2f5;color:var(--tx)}
 [data-theme="light"] .topbar{background:#ffffff;border-bottom-color:var(--line)}
@@ -310,7 +310,7 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
   --line:#222222; --line2:#2a2a2a;
   --gold:#d4aa1e; --gold2:#e8c040;
   --green:#2ECC71; --red:#E74C3C; --orange:#F39C12; --blue:#5a9edf;
-  --tx:#e4e4e4; --tx2:#888888; --tx3:#666666;
+  --tx:#e4e4e4; --tx2:#888888; --tx3:#666666; --jim-heading:rgba(228,228,228,0.7);
 }
 [data-theme="dark"] body{background:#000;color:var(--tx)}
 [data-theme="dark"] .topbar{background:#0a0a0a;border-bottom-color:#1a1a1a}

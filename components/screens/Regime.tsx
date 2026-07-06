@@ -209,8 +209,8 @@ export default function Regime({ go }: { go?: (id: ScreenId, param?: string) => 
         {/* JIM ao lado dos cards, mesma altura */}
         <div style={{
           flex: 1, minWidth: 0,
-          background: "linear-gradient(135deg, rgba(12,25,48,0.95), rgba(8,18,38,0.98))",
-          border: "1px solid rgba(201,160,44,0.3)",
+          background: "var(--panel)",
+          border: "1px solid var(--line2)",
           borderRadius: 8, padding: "10px 14px", position: "relative", overflow: "hidden",
         }}>
           <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, var(--gold), rgba(201,160,44,0.2), var(--gold))" }} />
@@ -224,7 +224,7 @@ export default function Regime({ go }: { go?: (id: ScreenId, param?: string) => 
               <i className="ti ti-brain" style={{ fontSize: 14, color: "#0C1930" }} />
             </div>
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--gold)" }}>JIM — Análise de Mercado</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--tx)" }}>JIM — Análise de Mercado</div>
             </div>
           </div>
           <div style={{ fontSize: 13, color: "var(--tx)", lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical" as const }}>{jimText}</div>

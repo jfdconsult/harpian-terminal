@@ -183,8 +183,8 @@ function JimMorningBriefing({ go }: { go: (id: ScreenId, param?: string) => void
 
   return (
     <div style={{
-      background: "linear-gradient(135deg, rgba(12,25,48,0.95), rgba(8,18,38,0.98))",
-      border: "1px solid rgba(201,160,44,0.35)",
+      background: "var(--panel)",
+      border: "1px solid var(--line2)",
       borderRadius: 14,
       padding: "24px 28px",
       marginBottom: 18,
@@ -206,7 +206,7 @@ function JimMorningBriefing({ go }: { go: (id: ScreenId, param?: string) => void
             <i className="ti ti-brain" style={{ fontSize: 22, color: "#0C1930" }} />
           </div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "var(--gold)", letterSpacing: "0.5px" }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "var(--tx)", letterSpacing: "0.5px" }}>
               JIM — Morning Briefing
             </div>
             <div style={{ fontSize: 11.5, color: "var(--tx3)", marginTop: 2 }}>
