@@ -6,7 +6,7 @@ import {
 import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { ScreenId } from "@/lib/nav";
-import { SR_POSTS } from "@/lib/data";
+import { SR_POSTS, GOV_API } from "@/lib/data";
 import { CLIENTS, brl } from "@/lib/clients";
 import { allClients, findClient } from "@/lib/clientStore";
 import { MARKET_GROUPS } from "@/lib/market";
@@ -14,6 +14,293 @@ import { pctText, pctClass, numShort } from "@/lib/format";
 import { publishScreenData } from "@/lib/jim-data";
 import { HPC22_RN, TOLERANCE } from "@/lib/riskLevels";
 import { MiniRegua } from "./Risco";
+
+// ════════════════════════════════════════════════════════════════
+// JIM MORNING BRIEFING — proactive intelligence box
+// ════════════════════════════════════════════════════════════════
+
+interface DnaLayer { name: string; status: string; data?: Record<string, unknown> }
+interface DnaResponse { layers: DnaLayer[]; timestamp: string }
+
+interface BriefingSection { title: string; icon: string; color: string; screenId?: ScreenId; items: BriefingItem[] }
+interface BriefingItem { label: string; value: string; color?: string; detail?: string }
+
+function generateBriefingSections(dna: DnaResponse | null): BriefingSection[] {
+  const sections: BriefingSection[] = [];
+
+  // 1) PORTFOLIO STATUS
+  sections.push({
+    title: "Portfólio", icon: "ti-coin", color: "var(--green)", screenId: "fundo" as ScreenId,
+    items: [
+      { label: "HPC22 Agressivo", value: "+2,31% hoje", color: "var(--green)", detail: "Exposição plena — sem hedge ativo" },
+      { label: "HPC11 I.G.", value: "+1,44% hoje", color: "var(--green)", detail: "Investment Grade — dentro da banda" },
+      { label: "Movimentação", value: "Sem ajustes", detail: "Última rebalanceamento em 01/jul" },
+    ],
+  });
+
+  // 2) REGIME & DEFENSE
+  sections.push({
+    title: "Regime & Defesa", icon: "ti-shield-check", color: "var(--green)", screenId: "regime" as ScreenId,
+    items: [
+      { label: "Regime atual", value: "RISK-ON", color: "var(--green)", detail: "StormGuard positivo — tendência sustentada" },
+      { label: "Defesa", value: "Desarmada", color: "var(--tx2)", detail: "Exposição plena a risco — sem rotação para proteção" },
+      { label: "Mudança recente?", value: "Não", detail: "Regime estável há 14 dias consecutivos" },
+    ],
+  });
+
+  // 3) MARKET DNA (from API)
+  if (dna && dna.layers?.length) {
+    const dnaItems: BriefingItem[] = [];
+    for (const layer of dna.layers) {
+      if (!layer.data) continue;
+      const d = layer.data;
+      if (layer.name === "Volatility & Options") {
+        const vix = d.vix_last as number | undefined;
+        const regime = d.vol_regime as string | undefined;
+        if (vix) dnaItems.push({
+          label: "VIX", value: `${vix.toFixed(1)} (${regime || "Normal"})`,
+          color: vix < 20 ? "var(--green)" : vix < 30 ? "var(--gold)" : "var(--red)",
+          detail: vix < 20 ? "Volatilidade baixa — ambiente favorável para risco" : "Volatilidade elevada — monitorar"
+        });
+      }
+      if (layer.name === "Sentiment & Breadth") {
+        const fg = d.fear_greed_score as number | undefined;
+        const fgRating = d.fear_greed_rating as string | undefined;
+        const breadth = d.pct_above_200ma as number | undefined;
+        if (fg) dnaItems.push({
+          label: "Fear & Greed", value: `${fg.toFixed(0)} (${fgRating || ""})`,
+          color: fg > 60 ? "var(--green)" : fg > 40 ? "var(--gold)" : "var(--red)",
+          detail: fg > 60 ? "Mercado ganancioso — atenção a excessos" : fg < 40 ? "Medo predomina — oportunidade ou cautela?" : "Sentimento neutro"
+        });
+        if (breadth) dnaItems.push({
+          label: "Breadth (>200MA)", value: `${breadth.toFixed(0)}%`,
+          color: breadth > 60 ? "var(--green)" : breadth > 40 ? "var(--gold)" : "var(--red)",
+          detail: breadth > 60 ? "Participação ampla — rally saudável" : "Participação estreita — risco de concentração"
+        });
+      }
+      if (layer.name === "Macro & Rates") {
+        const curve = d.yield_curve_spread as number | undefined;
+        const curveStatus = d.yield_curve_status as string | undefined;
+        if (curve != null) dnaItems.push({
+          label: "Curva de Juros", value: `${curve > 0 ? "+" : ""}${(curve * 100).toFixed(0)}bps (${curveStatus || ""})`,
+          color: curve > 0 ? "var(--green)" : "var(--red)",
+          detail: curve > 0 ? "Curva normalizada — sinal positivo para crescimento" : "Curva invertida — atenção recessiva"
+        });
+      }
+      if (layer.name === "Liquidity (Dark Pool)") {
+        const tracked = d.tracked_symbols as number | undefined;
+        if (tracked) dnaItems.push({
+          label: "Dark Pool", value: `${tracked} ativos monitorados`,
+          color: "var(--tx2)", detail: "Volume fora de bolsa — monitoramento institucional"
+        });
+      }
+    }
+    if (dnaItems.length) {
+      sections.push({ title: "DNA do Mercado", icon: "ti-dna", color: "var(--gold)", screenId: "market-dna" as ScreenId, items: dnaItems });
+    }
+  }
+
+  // 4) CLIENTS & RISK
+  const fora = CLIENTS.filter((c) => c.riskNumber > c.mandate);
+  const aum = CLIENTS.reduce((s, c) => s + c.current, 0);
+  sections.push({
+    title: "Clientes & Risco", icon: "ti-users", color: fora.length ? "var(--red)" : "var(--green)", screenId: "risco" as ScreenId,
+    items: [
+      { label: "AUM Total", value: brl(aum) },
+      { label: "Clientes ativos", value: `${CLIENTS.length}` },
+      {
+        label: "Fora do mandato", value: fora.length ? `${fora.length} cliente(s)` : "Nenhum",
+        color: fora.length ? "var(--red)" : "var(--green)",
+        detail: fora.length ? `Atenção: ${fora.map(c => c.name).join(", ")}` : "Todos dentro dos limites",
+      },
+    ],
+  });
+
+  // 5) ECONOMIC CALENDAR & ALERTS
+  sections.push({
+    title: "Calendário & Alertas", icon: "ti-calendar-event", color: "var(--gold)", screenId: "alertas" as ScreenId,
+    items: [
+      { label: "Próximo evento", value: "FOMC Minutes — 09/jul", color: "var(--gold)", detail: "Ata do Federal Reserve — pode impactar expectativas de juros" },
+      { label: "Payroll", value: "Divulgado 04/jul: 206K", detail: "Acima do consenso (190K) — mercado de trabalho resiliente" },
+      { label: "CPI (inflação)", value: "11/jul 09:30 ET", color: "var(--gold)", detail: "Dado mais relevante da semana para política monetária" },
+    ],
+  });
+
+  return sections;
+}
+
+function generateHeadline(dna: DnaResponse | null): { text: string; color: string } {
+  const fora = CLIENTS.filter((c) => c.riskNumber > c.mandate).length;
+  if (fora > 0) return {
+    text: `Atenção: ${fora} cliente(s) fora do mandato de risco. Regime RISK-ON, portfólios positivos, mas ação necessária na conformidade.`,
+    color: "var(--red)"
+  };
+
+  if (dna?.layers?.length) {
+    const volLayer = dna.layers.find(l => l.name === "Volatility & Options");
+    const vix = volLayer?.data?.vix_last as number | undefined;
+    const sentLayer = dna.layers.find(l => l.name === "Sentiment & Breadth");
+    const fg = sentLayer?.data?.fear_greed_score as number | undefined;
+
+    if (vix && vix > 25) return {
+      text: `VIX em ${vix.toFixed(1)} — volatilidade elevada. Regime RISK-ON sustentado, mas monitore de perto. Portfólios positivos.`,
+      color: "var(--gold)"
+    };
+    if (fg && fg < 30) return {
+      text: `Fear & Greed em ${fg.toFixed(0)} (medo extremo). Historicamente, esses níveis precedem recuperações. Regime RISK-ON intacto.`,
+      color: "var(--gold)"
+    };
+    if (fg && fg > 80) return {
+      text: `Fear & Greed em ${fg.toFixed(0)} (ganância extrema). Cautela — excessos de otimismo frequentemente antecedem correções.`,
+      color: "var(--gold)"
+    };
+  }
+
+  return {
+    text: "Dia tranquilo. Regime RISK-ON estável, portfólios positivos, todos os clientes dentro do mandato. Nenhuma ação urgente necessária.",
+    color: "var(--green)"
+  };
+}
+
+function JimMorningBriefing({ go }: { go: (id: ScreenId, param?: string) => void }) {
+  const [dna, setDna] = useState<DnaResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState(true);
+
+  useEffect(() => {
+    fetch(`${GOV_API}/api/market-dna`)
+      .then(r => r.json())
+      .then((d: DnaResponse) => { setDna(d); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const sections = generateBriefingSections(dna);
+  const headline = generateHeadline(dna);
+  const now = new Date();
+  const hora = now.getHours();
+  const saudacao = hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
+  const dataStr = now.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+  return (
+    <div style={{
+      background: "linear-gradient(135deg, rgba(12,25,48,0.95), rgba(8,18,38,0.98))",
+      border: "1px solid rgba(201,160,44,0.35)",
+      borderRadius: 14,
+      padding: "24px 28px",
+      marginBottom: 18,
+      position: "relative",
+      overflow: "hidden",
+    }}>
+      {/* Gold accent line */}
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg, var(--gold), rgba(201,160,44,0.3), var(--gold))" }} />
+
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{
+            width: 42, height: 42, borderRadius: "50%",
+            background: "linear-gradient(135deg, var(--gold), #B8860B)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 0 20px rgba(201,160,44,0.3)",
+          }}>
+            <i className="ti ti-brain" style={{ fontSize: 22, color: "#0C1930" }} />
+          </div>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "var(--gold)", letterSpacing: "0.5px" }}>
+              JIM — Morning Briefing
+            </div>
+            <div style={{ fontSize: 11.5, color: "var(--tx3)", marginTop: 2 }}>
+              {saudacao}, João · {dataStr} · Atualizado {now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+            </div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <button className="btn ghost" style={{ padding: "5px 10px", fontSize: 11 }} onClick={() => go("market-dna")}>
+            <i className="ti ti-dna" style={{ marginRight: 4 }} />Market DNA
+          </button>
+          <button
+            onClick={() => setExpanded(v => !v)}
+            style={{
+              background: "none", border: "1px solid var(--line2)", borderRadius: 6,
+              padding: "4px 8px", cursor: "pointer", color: "var(--tx3)", fontSize: 12,
+            }}
+            title={expanded ? "Recolher" : "Expandir"}
+          >
+            <i className={`ti ${expanded ? "ti-chevron-up" : "ti-chevron-down"}`} />
+          </button>
+        </div>
+      </div>
+
+      {/* Headline */}
+      <div style={{
+        background: "rgba(201,160,44,0.08)",
+        border: "1px solid rgba(201,160,44,0.2)",
+        borderRadius: 10, padding: "14px 18px", marginBottom: expanded ? 20 : 0,
+      }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+          <i className="ti ti-bulb" style={{ color: headline.color, fontSize: 18, marginTop: 1, flexShrink: 0 }} />
+          <div style={{ fontSize: 14, color: "var(--tx)", lineHeight: 1.55 }}>
+            {loading ? <span className="muted">Analisando dados do mercado...</span> : headline.text}
+          </div>
+        </div>
+      </div>
+
+      {/* Sections grid */}
+      {expanded && !loading && (
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          gap: 14,
+        }}>
+          {sections.map((sec) => (
+            <div key={sec.title} style={{
+              background: "rgba(255,255,255,0.02)",
+              border: "1px solid var(--line2)",
+              borderRadius: 10, padding: "14px 16px",
+            }}>
+              <div
+                onClick={sec.screenId ? () => go(sec.screenId!) : undefined}
+                style={{
+                  display: "flex", alignItems: "center", gap: 7,
+                  fontSize: 11, fontWeight: 600, color: sec.color,
+                  textTransform: "uppercase", letterSpacing: "1px",
+                  marginBottom: 10, paddingBottom: 8,
+                  borderBottom: "1px solid rgba(255,255,255,0.06)",
+                  cursor: sec.screenId ? "pointer" : "default",
+                  transition: "opacity 0.15s",
+                }}
+                onMouseEnter={(e) => { if (sec.screenId) e.currentTarget.style.opacity = "0.7"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
+              >
+                <i className={`ti ${sec.icon}`} style={{ fontSize: 15 }} />
+                {sec.title}
+                {sec.screenId && <i className="ti ti-arrow-right" style={{ fontSize: 12, marginLeft: "auto", opacity: 0.5 }} />}
+              </div>
+              {sec.items.map((item, i) => (
+                <div key={i} style={{ marginBottom: i < sec.items.length - 1 ? 8 : 0 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                    <span style={{ fontSize: 12.5, color: "var(--tx2)" }}>{item.label}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: item.color || "var(--tx)" }}>{item.value}</span>
+                  </div>
+                  {item.detail && (
+                    <div style={{ fontSize: 10.5, color: "var(--tx3)", marginTop: 2, lineHeight: 1.4 }}>{item.detail}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {expanded && loading && (
+        <div style={{ textAlign: "center", padding: "20px 0", color: "var(--tx3)", fontSize: 13 }}>
+          <i className="ti ti-loader" style={{ marginRight: 8, animation: "spin 1s linear infinite" }} />
+          Consolidando inteligência de mercado...
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Uma instância de módulo no painel — o mesmo módulo do catálogo (ex.: "cotacoes")
 // pode aparecer VÁRIAS vezes, cada instância com sua própria config (classe de
@@ -490,6 +777,8 @@ export default function Painel({ go }: { go: (id: ScreenId, param?: string) => v
           </button>
         </div>
       </div>
+
+      <JimMorningBriefing go={go} />
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={widgets.map((w) => w.instanceId)} strategy={rectSortingStrategy}>

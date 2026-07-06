@@ -152,51 +152,34 @@ const DEMO_DATA: CotIndexData[] = [
 
 // ---------- Components ----------
 
-function CotGauge({ value }: { value: number }) {
-  const w = 120;
-  const h = 68;
-  const cx = w / 2;
-  const cy = h - 4;
-  const r = 50;
-  const startAngle = Math.PI;
-  const endAngle = 0;
-  const angle = startAngle - ((value / 100) * Math.PI);
-  const nx = cx + r * Math.cos(angle);
-  const ny = cy - r * Math.sin(angle);
+function CotBar({ value }: { value: number }) {
   const sig = cotSignal(value);
-
   return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: "block", margin: "0 auto" }}>
-      <path
-        d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
-        fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={8} strokeLinecap="round"
-      />
-      <path
-        d={`M ${cx - r} ${cy} A ${r} ${r} 0 ${value > 50 ? 1 : 0} 1 ${nx} ${ny}`}
-        fill="none" stroke={sig.color} strokeWidth={8} strokeLinecap="round"
-        style={{ transition: "d 0.4s ease" }}
-      />
-      <text x={cx} y={cy - 18} textAnchor="middle" fill={sig.color} fontSize={22} fontWeight={700} fontFamily="var(--mono)">
-        {value}
-      </text>
-      <text x={cx} y={cy - 4} textAnchor="middle" fill="var(--tx3)" fontSize={8} fontFamily="var(--mono)" letterSpacing=".08em">
-        COT INDEX
-      </text>
-      <text x={4} y={cy + 2} fill="var(--tx3)" fontSize={7} fontFamily="var(--mono)">0</text>
-      <text x={w - 12} y={cy + 2} fill="var(--tx3)" fontSize={7} fontFamily="var(--mono)">100</text>
-    </svg>
+    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <span style={{ fontSize: 10, color: "var(--tx3)", fontFamily: "var(--mono)", width: 14 }}>0</span>
+      <div style={{ flex: 1, height: 8, background: "rgba(255,255,255,0.06)", borderRadius: 4, position: "relative" }}>
+        <div style={{ width: `${value}%`, height: "100%", background: `${sig.color}50`, borderRadius: 4, transition: "width .3s" }} />
+        <div style={{
+          position: "absolute", left: `${value}%`, top: -2, width: 3, height: 12,
+          background: sig.color, borderRadius: 2, transform: "translateX(-1px)",
+          transition: "left .3s",
+        }} />
+      </div>
+      <span style={{ fontSize: 10, color: "var(--tx3)", fontFamily: "var(--mono)", width: 22, textAlign: "right" }}>100</span>
+    </div>
   );
 }
 
 function NetBar({ label, value, pct, color }: { label: string; value: number; pct: number; color: string }) {
   const barW = Math.min(Math.abs(pct) * 2, 100);
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, lineHeight: "18px" }}>
-      <span style={{ color: "var(--tx3)", width: 42, flexShrink: 0, fontFamily: "var(--mono)", fontSize: 9, letterSpacing: ".04em" }}>{label}</span>
-      <div style={{ flex: 1, height: 4, background: "rgba(255,255,255,0.04)", borderRadius: 2, overflow: "hidden" }}>
-        <div style={{ width: `${barW}%`, height: "100%", background: color, borderRadius: 2, transition: "width .3s" }} />
+    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, lineHeight: "20px" }}>
+      <span style={{ color, width: 38, flexShrink: 0, fontFamily: "var(--mono)", fontSize: 11, fontWeight: 600 }}>{label}</span>
+      <span style={{ fontFamily: "var(--mono)", fontSize: 13, color, minWidth: 72, textAlign: "right", fontWeight: 600 }}>{value >= 0 ? "+" : ""}{fmtN(value)}</span>
+      <div style={{ flex: 1, height: 6, background: "rgba(255,255,255,0.04)", borderRadius: 3, overflow: "hidden" }}>
+        <div style={{ width: `${barW}%`, height: "100%", background: color, borderRadius: 3, transition: "width .3s" }} />
       </div>
-      <span style={{ fontFamily: "var(--mono)", fontSize: 10, color, minWidth: 52, textAlign: "right" }}>{value >= 0 ? "+" : ""}{fmtN(value)}</span>
+      <span style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--tx2)", minWidth: 44, textAlign: "right" }}>{pct > 0 ? "+" : ""}{pct.toFixed(1)}%</span>
     </div>
   );
 }
@@ -208,41 +191,60 @@ function MarketCard({ d }: { d: CotIndexData }) {
   const isExtreme = d.index >= 80 || d.index <= 20;
 
   return (
-    <div className="card" style={{ border: isExtreme ? `1px solid ${sig.color}40` : undefined, transition: "border-color .2s, box-shadow .2s" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: "var(--tx)" }}>{d.market}</div>
-          <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 3 }}>
-            <span style={{ fontSize: 8, fontFamily: "var(--mono)", padding: "1px 5px", borderRadius: 3, background: `${clsColor}20`, color: clsColor, letterSpacing: ".06em" }}>{cls.toUpperCase()}</span>
-            <span style={{ fontSize: 9, color: "var(--tx3)", fontFamily: "var(--mono)" }}>{d.date}</span>
-          </div>
+    <div className="card" style={{
+      border: isExtreme ? `1px solid ${sig.color}40` : undefined,
+      boxShadow: isExtreme ? `0 0 12px ${sig.color}15` : undefined,
+      padding: "12px 14px",
+      transition: "border-color .2s, box-shadow .2s",
+    }}>
+      {/* Header: name + class + signal */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+          <span style={{ fontSize: 16, fontWeight: 700, color: "var(--tx)" }}>{d.market}</span>
+          <span style={{ fontSize: 9, fontFamily: "var(--mono)", padding: "2px 6px", borderRadius: 3, background: `${clsColor}20`, color: clsColor, letterSpacing: ".04em" }}>{cls.toUpperCase()}</span>
         </div>
         <span style={{
-          fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 4,
-          background: sig.bg, color: sig.color, fontFamily: "var(--mono)", letterSpacing: ".06em",
+          fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 4,
+          background: sig.bg, color: sig.color, fontFamily: "var(--mono)", letterSpacing: ".04em",
         }}>
           {sig.label}
         </span>
       </div>
 
-      <CotGauge value={d.index} />
+      {/* COT Index number + WoW */}
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 6 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+          <span style={{ fontSize: 36, fontWeight: 800, fontFamily: "var(--mono)", color: sig.color, lineHeight: 1 }}>{d.index}</span>
+          <span style={{ fontSize: 10, color: "var(--tx3)", fontFamily: "var(--mono)", letterSpacing: ".06em" }}>COT INDEX</span>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 14, fontFamily: "var(--mono)", fontWeight: 700, color: d.weekChange >= 0 ? "var(--green)" : "var(--red)" }}>
+            {d.weekChange >= 0 ? "▲" : "▼"} {d.weekChange >= 0 ? "+" : ""}{fmtN(d.weekChange)}
+          </div>
+          <div style={{ fontSize: 9, color: "var(--tx3)", fontFamily: "var(--mono)" }}>WoW SPEC NET</div>
+        </div>
+      </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8 }}>
+      {/* Horizontal COT bar */}
+      <CotBar value={d.index} />
+
+      {/* Net positions by participant */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 10 }}>
         <NetBar label="SPEC" value={d.specNet} pct={d.specPctOi} color="#4A90D9" />
         <NetBar label="COMM" value={d.commNet} pct={d.commPctOi} color="#C9A02C" />
         <NetBar label="NONR" value={d.nonreptNet} pct={Math.round((d.nonreptNet / (d.oi || 1)) * 1000) / 10} color="#7d96b3" />
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, paddingTop: 6, borderTop: "1px solid var(--line)" }}>
-        <span style={{ fontSize: 9, color: "var(--tx3)", fontFamily: "var(--mono)" }}>OI {fmtN(d.oi)}</span>
-        <span style={{ fontSize: 9, fontFamily: "var(--mono)", color: d.weekChange >= 0 ? "var(--green)" : "var(--red)" }}>
-          WoW {d.weekChange >= 0 ? "+" : ""}{fmtN(d.weekChange)}
-        </span>
+      {/* Footer: OI + date */}
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, paddingTop: 5, borderTop: "1px solid var(--line)" }}>
+        <span style={{ fontSize: 11, color: "var(--tx3)", fontFamily: "var(--mono)" }}>OI {fmtN(d.oi)}</span>
+        <span style={{ fontSize: 10, color: "var(--tx3)", fontFamily: "var(--mono)" }}>{d.date}</span>
       </div>
 
+      {/* Extreme contrarian alert */}
       {isExtreme && (
-        <div style={{ fontSize: 10, color: sig.color, marginTop: 6, lineHeight: 1.5, padding: "6px 8px", background: sig.bg, borderRadius: 6 }}>
-          <i className="ti ti-alert-triangle" style={{ fontSize: 11, marginRight: 4 }} />
+        <div style={{ fontSize: 11, color: sig.color, marginTop: 6, lineHeight: 1.5, padding: "7px 10px", background: sig.bg, borderRadius: 6 }}>
+          <i className="ti ti-alert-triangle" style={{ fontSize: 12, marginRight: 4 }} />
           {sig.desc}
         </div>
       )}
@@ -350,50 +352,37 @@ export default function CotSentiment() {
         </div>
       )}
 
-      {/* Summary strip */}
-      <div className="grid g4 mt" style={{ marginBottom: 10 }}>
-        <div className="card" style={{ textAlign: "center" }}>
-          <div className="muted" style={{ fontSize: 10 }}>COT Index Médio</div>
-          <div className="big" style={{ color: cotSignal(avgIdx).color, fontSize: 28 }}>{avgIdx}</div>
-        </div>
-        <div className="card" style={{ textAlign: "center" }}>
-          <div className="muted" style={{ fontSize: 10 }}>Mercados Monitorados</div>
-          <div className="big" style={{ fontSize: 28 }}>{data.length}</div>
-        </div>
-        <div className="card" style={{ textAlign: "center" }}>
-          <div className="muted" style={{ fontSize: 10 }}>Extremos Ativos</div>
-          <div className="big" style={{ color: extremes.length ? "var(--orange)" : "var(--green)", fontSize: 28 }}>{extremes.length}</div>
-        </div>
-        <div className="card" style={{ textAlign: "center" }}>
-          <div className="muted" style={{ fontSize: 10 }}>Atualização</div>
-          <div style={{ fontSize: 12, fontFamily: "var(--mono)", color: "var(--tx2)", marginTop: 6 }}>{data[0]?.date || "—"}</div>
-          <div style={{ fontSize: 9, color: "var(--tx3)" }}>CFTC semanal (sex.)</div>
-        </div>
-      </div>
-
-      {/* Extremes alert */}
-      {extremes.length > 0 && (
-        <div className="card" style={{ borderColor: "rgba(230,126,34,.25)", marginBottom: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-            <i className="ti ti-alert-triangle" style={{ color: "var(--orange)" }} />
-            <span style={{ fontWeight: 600, fontSize: 13, color: "var(--tx)" }}>Sinais contrários ativos</span>
-            <span className="muted" style={{ fontSize: 10 }}>· COT em extremo histórico (3 anos)</span>
-          </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      {/* Compact summary + extremes — single strip */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", padding: "8px 0", marginBottom: 6, borderBottom: "1px solid var(--line)" }}>
+        <span style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--tx3)" }}>
+          Índice médio <b style={{ color: cotSignal(avgIdx).color, fontSize: 13 }}>{avgIdx}</b>
+        </span>
+        <span style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--tx3)" }}>
+          {data.length} mercados
+        </span>
+        <span style={{ fontSize: 11, fontFamily: "var(--mono)", color: extremes.length ? "var(--orange)" : "var(--tx3)" }}>
+          {extremes.length} extremo{extremes.length !== 1 ? "s" : ""}
+        </span>
+        <span style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--tx3)" }}>
+          CFTC {data[0]?.date || "—"}
+        </span>
+        {extremes.length > 0 && (
+          <>
+            <span style={{ width: 1, height: 16, background: "var(--line)" }} />
             {extremes.map((d) => {
               const sig = cotSignal(d.index);
               return (
                 <span key={d.market} style={{
-                  fontSize: 11, padding: "4px 10px", borderRadius: 6, fontFamily: "var(--mono)",
-                  background: sig.bg, color: sig.color, border: `1px solid ${sig.color}30`,
+                  fontSize: 11, padding: "2px 8px", borderRadius: 4, fontFamily: "var(--mono)",
+                  background: sig.bg, color: sig.color,
                 }}>
-                  {d.market} <b>{d.index}</b> {d.index >= 80 ? "↑ (bearish)" : "↓ (bullish)"}
+                  {d.market} {d.index} {d.index >= 80 ? "↑" : "↓"}
                 </span>
               );
             })}
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </div>
 
       {/* Filters */}
       <div className="flex" style={{ gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
@@ -410,8 +399,8 @@ export default function CotSentiment() {
         ))}
       </div>
 
-      {/* Grid of cards */}
-      <div className="grid g3">
+      {/* Grid of cards — 3 columns */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
         {filtered.map((d) => <MarketCard key={d.market} d={d} />)}
       </div>
 

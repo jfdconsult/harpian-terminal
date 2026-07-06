@@ -28,6 +28,7 @@ import InsiderOrders from "./screens/InsiderOrders";
 import Institutional from "./screens/Institutional";
 import CotSentiment from "./screens/CotSentiment";
 import CotLegacy from "./screens/CotLegacy";
+import MarketDna from "./screens/MarketDna";
 import type { ScreenId } from "@/lib/nav";
 
 export default function Terminal() {
@@ -55,7 +56,7 @@ export default function Terminal() {
       case "fundo": return <Fundo fundId={fundId} onSelectFund={setFundId} go={go} />;
       case "cotacoes": return <Cotacoes go={go} />;
       case "acoes": return <Acoes symbol={chartArg} />;
-      case "regime": return <Regime />;
+      case "regime": return <Regime go={go} />;
       case "noticias": return <Noticias go={go} />;
       case "risco": return <Risco />;
       case "carteira": return <Carteira clientId={clientId} go={go} />;
@@ -66,6 +67,7 @@ export default function Terminal() {
       case "importar": return <Importar />;
       case "alertas": return <Alertas go={go} />;
       case "institutional": return <Institutional />;
+      case "market-dna": return <MarketDna />;
       case "cot-sentiment": return <CotSentiment />;
       case "cot-legacy": return <CotLegacy />;
       case "social-radar": return <SocialRadar />;

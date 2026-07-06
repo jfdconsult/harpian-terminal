@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { buildSystemPrompt, getScreenContext } from "@/lib/jim-context";
+import { consultBlackLibrary, fetchNewsIntelligence, buildKnowledgeContext } from "@/lib/jim-knowledge";
 import type { ScreenId } from "@/lib/nav";
 
 export const dynamic = "force-dynamic";
@@ -121,10 +122,19 @@ export async function POST(req: NextRequest) {
   systemPrompt += buildScreenDataContext(screenSummary, screenData);
   const modelId = MODEL_MAP[model] || MODEL_MAP.haiku;
 
+  const sources = { books: false, blackLibrary: false, news: false };
   const lastUserMsg = [...messages].reverse().find((m) => m.role === "user");
   if (lastUserMsg) {
-    const bookResults = await searchBooks(lastUserMsg.content);
+    const [bookResults, blContext, newsContext] = await Promise.all([
+      searchBooks(lastUserMsg.content),
+      consultBlackLibrary(lastUserMsg.content),
+      fetchNewsIntelligence(),
+    ]);
+    if (bookResults.length) sources.books = true;
+    if (blContext) sources.blackLibrary = true;
+    if (newsContext) sources.news = true;
     systemPrompt += buildBookContext(bookResults);
+    systemPrompt += buildKnowledgeContext(blContext, newsContext);
   }
 
   try {
@@ -167,6 +177,7 @@ export async function POST(req: NextRequest) {
         input: usage.input_tokens || 0,
         output: usage.output_tokens || 0,
       },
+      sources,
     });
   } catch (e) {
     console.error("[JIM] Request failed:", e);

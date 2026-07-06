@@ -42,6 +42,9 @@ yarn-error.log*
 # local dev tooling (preview server launch config — máquina-específico)
 /.claude
 
+# JIM session data (runtime, server-side)
+/data/jim-sessions/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -26,6 +26,7 @@ export type ScreenId =
   | "social-radar"
   | "news-broadcast"
   | "insider-orders"
+  | "market-dna"
   | "tutorial";
 
 export interface MenuItem {
@@ -96,7 +97,7 @@ export const MENUS: Menu[] = [
       {
         items: [
           { id: "cotacoes", label: "Cotações", icon: "ti-table" },
-          { id: "regime", label: "Regime de mercado", icon: "ti-activity" },
+          { id: "regime", label: "Visão de Mercado", icon: "ti-world" },
         ],
       },
     ],
@@ -111,6 +112,7 @@ export const MENUS: Menu[] = [
           { id: "news-broadcast", label: "News Broadcast", icon: "ti-broadcast", tag: "novo" },
           { id: "insider-orders", label: "Insider Orders", icon: "ti-gavel", tag: "novo" },
           { id: "institutional", label: "13F Holdings", icon: "ti-report-money", tag: "SEC" },
+          { id: "market-dna", label: "Market DNA", icon: "ti-dna-2", tag: "novo" },
           { id: "cot-sentiment", label: "COT Intelligence", icon: "ti-flame", tag: "CFTC" },
           { id: "cot-legacy", label: "COT Data Explorer", icon: "ti-chart-bar" },
         ],

@@ -11,6 +11,36 @@ interface Msg {
   model?: string;
   tokens?: { input: number; output: number };
   greeting?: boolean;
+  screen?: string;
+}
+
+const SESSION_ID = "default";
+
+async function loadSessionMessages(): Promise<Msg[]> {
+  try {
+    const res = await fetch(`/api/jim/sessions?id=${SESSION_ID}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.messages || [];
+  } catch {
+    return [];
+  }
+}
+
+async function saveSessionMessages(msgs: Msg[], screens: string[]): Promise<void> {
+  try {
+    await fetch("/api/jim/sessions", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: SESSION_ID, messages: msgs, screens }),
+    });
+  } catch {}
+}
+
+async function deleteSession(): Promise<void> {
+  try {
+    await fetch(`/api/jim/sessions?id=${SESSION_ID}`, { method: "DELETE" });
+  } catch {}
 }
 
 interface Props {
@@ -82,12 +112,30 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
   const [greeted, setGreeted] = useState<ScreenId | null>(null);
   const [greetHadBriefing, setGreetHadBriefing] = useState(false);
   const [snap, setSnap] = useState<ScreenSnapshot | null>(null);
+  const [sessionLoaded, setSessionLoaded] = useState(false);
+  const [knowledgeSources, setKnowledgeSources] = useState<string[]>([]);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const visitedScreens = useRef<Set<string>>(new Set());
 
   const scrollToEnd = useCallback(() => {
     setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
   }, []);
+
+  // Carrega sessão salva ao montar o componente.
+  useEffect(() => {
+    if (sessionLoaded) return;
+    loadSessionMessages().then((saved) => {
+      if (saved.length > 0) {
+        setMessages(saved);
+        const screens = new Set(saved.map((m) => m.screen).filter(Boolean) as string[]);
+        screens.forEach((s) => visitedScreens.current.add(s));
+        const lastGreetedScreen = [...saved].reverse().find((m) => m.greeting)?.screen;
+        if (lastGreetedScreen) setGreeted(lastGreetedScreen as ScreenId);
+      }
+      setSessionLoaded(true);
+    });
+  }, [sessionLoaded]);
 
   // Assina os dados da tela atual — atualiza saudação/chips quando a tela publica.
   useEffect(() => {
@@ -100,20 +148,26 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
 
   // Saudação ao abrir / trocar de tela — usa o melhor dado disponível na hora.
   useEffect(() => {
-    if (open && greeted !== screen) {
+    if (open && greeted !== screen && sessionLoaded) {
       const cur = readScreenData(screen);
       const greeting: Msg = {
         role: "assistant",
         content: buildGreeting(screen, cur),
         ts: Date.now(),
         greeting: true,
+        screen,
       };
-      setMessages((prev) => [...prev, greeting]);
+      visitedScreens.current.add(screen);
+      setMessages((prev) => {
+        const next = [...prev, greeting];
+        saveSessionMessages(next, [...visitedScreens.current]);
+        return next;
+      });
       setGreeted(screen);
       setGreetHadBriefing(!!cur?.briefing);
       scrollToEnd();
     }
-  }, [open, screen, greeted, scrollToEnd]);
+  }, [open, screen, greeted, scrollToEnd, sessionLoaded]);
 
   // Se os dados (briefing) chegarem DEPOIS da saudação, atualiza a saudação in-place.
   useEffect(() => {
@@ -142,7 +196,7 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
     if (!text || loading) return;
     setInput("");
 
-    const userMsg: Msg = { role: "user", content: text, ts: Date.now() };
+    const userMsg: Msg = { role: "user", content: text, ts: Date.now(), screen };
     setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
 
@@ -177,15 +231,31 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
         ts: Date.now(),
         model: data.model,
         tokens: data.tokens,
+        screen,
       };
-      setMessages((prev) => [...prev, aiMsg]);
+      const sources: string[] = [];
+      if (data.sources?.blackLibrary) sources.push("Black Library");
+      if (data.sources?.news) sources.push("JD NEWS");
+      if (data.sources?.books) sources.push("Livros");
+      setKnowledgeSources(sources);
+
+      setMessages((prev) => {
+        const next = [...prev, aiMsg];
+        saveSessionMessages(next, [...visitedScreens.current]);
+        return next;
+      });
     } catch (e) {
       const errMsg: Msg = {
         role: "assistant",
         content: `⚠ Erro: ${e instanceof Error ? e.message : "Falha na comunicação"}.\n\nVerifique se a chave \`ANTHROPIC_API_KEY\` está configurada em \`.env.local\`.`,
         ts: Date.now(),
+        screen,
       };
-      setMessages((prev) => [...prev, errMsg]);
+      setMessages((prev) => {
+        const next = [...prev, errMsg];
+        saveSessionMessages(next, [...visitedScreens.current]);
+        return next;
+      });
     } finally {
       setLoading(false);
     }
@@ -202,6 +272,9 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
     setMessages([]);
     setGreeted(null);
     setGreetHadBriefing(false);
+    setKnowledgeSources([]);
+    visitedScreens.current.clear();
+    deleteSession();
   };
 
   const ctx = getScreenContext(screen);
@@ -235,6 +308,12 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
         <div className="jim-ctx">
           <i className="ti ti-eye" />
           <span>{ctx.title}</span>
+          {knowledgeSources.length > 0 && (
+            <div className="jim-sources" title={`Fontes: ${knowledgeSources.join(", ")}`}>
+              <i className="ti ti-database" />
+              {knowledgeSources.length}
+            </div>
+          )}
           <div className="jim-model-toggle" onClick={() => setUsesSonnet(!usesSonnet)} title={usesSonnet ? "Sonnet (análise profunda)" : "Haiku (rápido)"}>
             <i className={`ti ${usesSonnet ? "ti-brain" : "ti-bolt"}`} />
             {usesSonnet ? "Sonnet" : "Haiku"}
