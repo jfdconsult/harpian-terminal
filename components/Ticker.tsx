@@ -42,18 +42,25 @@ function TickerContent({ groups, go }: { groups: TickerGroup[]; go?: (id: Screen
   );
 }
 
+const REFRESH_MS = 5 * 60 * 1000; // 5 min — a API já cacheia 8h no servidor, isso só mantém a tela viva
+
 export default function Ticker({ go }: { go?: (id: ScreenId, param?: string) => void }) {
   const [groups, setGroups] = useState<TickerGroup[]>(TICKER_GROUPS);
 
   useEffect(() => {
-    fetch("/api/ticker")
-      .then((r) => r.json())
-      .then((j) => {
-        if (j.data && Array.isArray(j.data) && j.data.length > 0) {
-          setGroups(j.data);
-        }
-      })
-      .catch(() => {});
+    const load = () => {
+      fetch("/api/ticker")
+        .then((r) => r.json())
+        .then((j) => {
+          if (j.data && Array.isArray(j.data) && j.data.length > 0) {
+            setGroups(j.data);
+          }
+        })
+        .catch(() => {});
+    };
+    load();
+    const id = setInterval(load, REFRESH_MS);
+    return () => clearInterval(id);
   }, []);
 
   return (

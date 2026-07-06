@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { updateClient, portfoliosTotal } from "@/lib/clientStore";
 import { parsePortfolioCsv, downloadPortfolioTemplate } from "@/lib/csv";
 import type { Client, Account, Portfolio, ApiIntegration, ImportedPosition } from "@/lib/clients";
@@ -18,12 +18,17 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 const inputSt: React.CSSProperties = { width: "100%" };
 const label: React.CSSProperties = { display: "block", fontSize: 11, color: "var(--tx3)", marginBottom: 4, marginTop: 10 };
 
-export default function ClienteEditModal({ client, onClose, onSaved }: { client: Client; onClose: () => void; onSaved: (c: Client) => void }) {
-  const [tab, setTab] = useState<Tab>("perfil");
+export default function ClienteEditModal({ client, initialTab, focusPortfolioId, onClose, onSaved }: { client: Client; initialTab?: Tab; focusPortfolioId?: string; onClose: () => void; onSaved: (c: Client) => void }) {
+  const [tab, setTab] = useState<Tab>(initialTab || "perfil");
   const [form, setForm] = useState<Client>(() => JSON.parse(JSON.stringify(client)));
   const [csvError, setCsvError] = useState<string | null>(null);
   const [csvTargetPortfolio, setCsvTargetPortfolio] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const focusRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (focusPortfolioId && focusRef.current) focusRef.current.scrollIntoView({ block: "center" });
+  }, [focusPortfolioId]);
 
   const accounts = form.accounts || [];
   const portfolios = form.portfolios || [];
@@ -239,8 +244,13 @@ export default function ClienteEditModal({ client, onClose, onSaved }: { client:
               {portfolios.length === 0 && <div className="placeholder" style={{ padding: 24 }}><i className="ti ti-briefcase" /><b>Nenhum portfólio cadastrado</b><div className="muted mt">Um cliente pode ter vários — um por banco, por exemplo.</div></div>}
               {portfolios.map((p) => {
                 const total = p.positions.reduce((s, x) => s + x.qty * x.avgPrice, 0);
+                const isFocused = p.id === focusPortfolioId;
                 return (
-                  <div className="card" key={p.id} style={{ marginBottom: 12 }}>
+                  <div
+                    className="card" key={p.id}
+                    ref={isFocused ? focusRef : undefined}
+                    style={{ marginBottom: 12, borderColor: isFocused ? "rgba(201,160,44,.5)" : undefined, boxShadow: isFocused ? "0 0 0 1px rgba(201,160,44,.5)" : undefined }}
+                  >
                     <div className="flex between" style={{ alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
                       <input className="input" style={{ fontWeight: 600, width: 220 }} value={p.name} onChange={(e) => updatePortfolio(p.id, { name: e.target.value })} />
                       <select className="input" style={{ width: 200 }} value={p.accountId || ""} onChange={(e) => updatePortfolio(p.id, { accountId: e.target.value || undefined })}>

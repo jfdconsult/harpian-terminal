@@ -12,7 +12,15 @@ const ALLOC_COLORS = ["#4A90D9", "#C9A02C", "#2ECC71", "#F39C12", "#7d96b3"];
 export function ClientDetail({ client: clientProp, go, screen = "cliente" }: { client: Client; go: (id: ScreenId, param?: string) => void; screen?: ScreenId }) {
   const [client, setClient] = useState(clientProp);
   const [editing, setEditing] = useState(false);
+  const [editTab, setEditTab] = useState<"perfil" | "portfolios">("perfil");
+  const [focusPortfolioId, setFocusPortfolioId] = useState<string | undefined>(undefined);
   useEffect(() => setClient(clientProp), [clientProp]);
+
+  function openPortfolioEdit(portfolioId?: string) {
+    setEditTab("portfolios");
+    setFocusPortfolioId(portfolioId);
+    setEditing(true);
+  }
 
   const [migrate, setMigrate] = useState(0); // % migrado p/ HPC22
   const ganhoPct = (client.current / client.invested - 1) * 100;
@@ -68,7 +76,7 @@ export function ClientDetail({ client: clientProp, go, screen = "cliente" }: { c
         <div className="fhstat"><div className="l">Ganho</div><div className="v g">+{ganhoPct.toFixed(1).replace(".", ",")}%</div></div>
         <div className="fhstat"><div className="l">Desde</div><div className="v" style={{ fontSize: 14 }}>{client.since}</div></div>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-          <button className="btn ghost" onClick={() => setEditing(true)}><i className="ti ti-pencil" />Editar cliente</button>
+          <button className="btn ghost" onClick={() => { setEditTab("perfil"); setFocusPortfolioId(undefined); setEditing(true); }}><i className="ti ti-settings" />Editar cliente</button>
           <button className="btn" onClick={() => go("ordem", client.id)}><i className="ti ti-send" />Enviar ordem</button>
         </div>
       </div>
@@ -76,6 +84,8 @@ export function ClientDetail({ client: clientProp, go, screen = "cliente" }: { c
       {editing && (
         <ClienteEditModal
           client={client}
+          initialTab={editTab}
+          focusPortfolioId={focusPortfolioId}
           onClose={() => setEditing(false)}
           onSaved={(updated) => { setClient(updated); setEditing(false); }}
         />
@@ -158,34 +168,49 @@ export function ClientDetail({ client: clientProp, go, screen = "cliente" }: { c
         </div>
       </div>
 
-      {(client.portfolios?.length || 0) > 0 && (
-        <div className="card mt">
-          <h3><i className="ti ti-briefcase" />Portfólios ({client.portfolios!.length})</h3>
-          <div className="muted mb" style={{ fontSize: 11 }}>Clique num portfólio para ver o detalhamento completo — cada portfólio tem sua própria tela.</div>
-          <div className="grid g3">
-            {client.portfolios!.map((p) => {
-              const hasItems = (p.items?.length || 0) > 0;
-              const totalUsd = hasItems ? p.items!.reduce((s, x) => s + x.valorUsd, 0) : null;
-              const totalBrl = p.positions.reduce((s, x) => s + x.qty * x.avgPrice, 0);
-              const acc = client.accounts?.find((a) => a.id === p.accountId);
-              return (
-                <div
-                  key={p.id}
-                  onClick={() => go("portfolio-detalhe", `${client.id}:${p.id}`)}
-                  style={{ background: "var(--panel2)", border: "1px solid var(--line2)", borderRadius: 8, padding: 12, cursor: "pointer", transition: "border-color .15s" }}
-                >
-                  <div style={{ fontWeight: 600, color: "var(--tx)" }}>{p.name}</div>
-                  <div className="muted" style={{ fontSize: 11, marginTop: 2 }}>{acc ? acc.bank : "sem conta vinculada"}{p.modelLabel && ` · ${p.modelLabel}`}</div>
-                  <div style={{ fontSize: 15, color: "var(--gold)", fontWeight: 600, marginTop: 6 }}>
-                    {hasItems ? "US$ " + totalUsd!.toLocaleString("pt-BR", { maximumFractionDigits: 0 }) : brl(totalBrl)}
-                  </div>
-                  <div className="muted" style={{ fontSize: 11 }}>{hasItems ? p.items!.length : p.positions.length} {hasItems ? "produtos" : "posições"} <i className="ti ti-chevron-right" style={{ float: "right" }} /></div>
-                </div>
-              );
-            })}
-          </div>
+      <div className="card mt">
+        <div className="flex between" style={{ alignItems: "center" }}>
+          <h3 style={{ margin: 0 }}><i className="ti ti-briefcase" />Portfólios ({client.portfolios?.length || 0})</h3>
+          <button className="btn ghost" style={{ fontSize: 12 }} onClick={() => openPortfolioEdit()}><i className="ti ti-plus" />Adicionar portfólio</button>
         </div>
-      )}
+        {(client.portfolios?.length || 0) === 0 ? (
+          <div className="placeholder mt"><i className="ti ti-briefcase" /><b>Nenhum portfólio cadastrado</b></div>
+        ) : (
+          <>
+            <div className="muted mb mt" style={{ fontSize: 11 }}>Clique num portfólio para ver o detalhamento completo — cada portfólio tem sua própria tela. Use a engrenagem pra editar direto.</div>
+            <div className="grid g3">
+              {client.portfolios!.map((p) => {
+                const hasItems = (p.items?.length || 0) > 0;
+                const totalUsd = hasItems ? p.items!.reduce((s, x) => s + x.valorUsd, 0) : null;
+                const totalBrl = p.positions.reduce((s, x) => s + x.qty * x.avgPrice, 0);
+                const acc = client.accounts?.find((a) => a.id === p.accountId);
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => go("portfolio-detalhe", `${client.id}:${p.id}`)}
+                    style={{ background: "var(--panel2)", border: "1px solid var(--line2)", borderRadius: 8, padding: 12, cursor: "pointer", transition: "border-color .15s", position: "relative" }}
+                  >
+                    <button
+                      className="btn ghost"
+                      title="Editar portfólio"
+                      style={{ position: "absolute", top: 8, right: 8, padding: "3px 7px" }}
+                      onClick={(e) => { e.stopPropagation(); openPortfolioEdit(p.id); }}
+                    >
+                      <i className="ti ti-settings" />
+                    </button>
+                    <div style={{ fontWeight: 600, color: "var(--tx)", paddingRight: 24 }}>{p.name}</div>
+                    <div className="muted" style={{ fontSize: 11, marginTop: 2 }}>{acc ? acc.bank : "sem conta vinculada"}{p.modelLabel && ` · ${p.modelLabel}`}</div>
+                    <div style={{ fontSize: 15, color: "var(--gold)", fontWeight: 600, marginTop: 6 }}>
+                      {hasItems ? "US$ " + totalUsd!.toLocaleString("pt-BR", { maximumFractionDigits: 0 }) : brl(totalBrl)}
+                    </div>
+                    <div className="muted" style={{ fontSize: 11 }}>{hasItems ? p.items!.length : p.positions.length} {hasItems ? "produtos" : "posições"} <i className="ti ti-chevron-right" style={{ float: "right" }} /></div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
     </>
   );
 }

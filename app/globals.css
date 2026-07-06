@@ -23,7 +23,7 @@ a{color:inherit;text-decoration:none}
 /* sticky no topo — antes só o Topbar grudava; o ticker rolava pra fora de vista
    assim que a página tinha scroll (telas com tabelas longas, ex. Cotações). */
 .tkr-wrap{height:34px;background:rgba(4,9,16,0.98);border-bottom:1px solid var(--line);overflow:hidden;display:flex;align-items:center;flex-shrink:0;position:sticky;top:0;z-index:52}
-.tkr-track{display:flex;align-items:center;animation:tkrScroll 80s linear infinite;white-space:nowrap;will-change:transform}
+.tkr-track{display:flex;align-items:center;animation:tkrScroll 88s linear infinite;white-space:nowrap;will-change:transform}
 .tkr-track:hover{animation-play-state:paused}
 @keyframes tkrScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 .tkr-item{display:inline-flex;align-items:center;gap:5px;padding:0 16px;font-family:var(--mono);font-size:11px;letter-spacing:.05em;border-right:1px solid rgba(255,255,255,0.04)}
@@ -275,4 +275,6 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
 .jim.active{background:rgba(201,160,44,.15);border-color:rgba(201,160,44,.35);color:var(--gold)}
 
 @media(max-width:1100px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(2,1fr)}.jim-drawer{width:100%}}
-@media(prefers-reduced-motion:reduce){*{animation-duration:0s!important;transition-duration:0s!important}}
+/* .tkr-track fica de fora: o ticker é funcional (cotações/notícias rodando ao vivo),
+   não decorativo — não pode ser zerado pela preferência de "reduzir movimento". */
+@media(prefers-reduced-motion:reduce){*:not(.tkr-track){animation-duration:0s!important;transition-duration:0s!important}}

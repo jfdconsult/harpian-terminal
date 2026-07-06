@@ -121,12 +121,22 @@ function BenchmarkCrises({ b }: { b: Benchmarks }) {
   );
 }
 
-const GROWTH_PERIODS = [{ k: "5y", l: "5A" }, { k: "2016", l: "10A" }, { k: "2006", l: "20A" }, { k: "2000", l: "Completo" }];
+const GROWTH_PERIODS = [
+  { k: "ytd", l: "YTD" }, { k: "1y", l: "1A" }, { k: "5y", l: "5A" },
+  { k: "2016", l: "10A" }, { k: "2006", l: "20A" }, { k: "2000", l: "Completo" },
+];
+
+const CLIENT_GRAY = "#8FA0BD"; // sem investimento ainda (antes da data real de entrada)
+const CLIENT_GREEN = "#2ECC71"; // investido de verdade (var(--green) — hex fixo, o chart não resolve CSS var)
 
 interface GrowthResp {
   ok: boolean; years: number;
-  spx: { time: number; value: number }[]; core: { time: number; value: number }[]; client: { time: number; value: number }[] | null;
-  meta: { spxReturn: number; coreReturn: number; clientReturn: number | null; spxMaxDD: number; coreMaxDD: number; clientMaxDD: number | null; clientAnnualReturnEst: number | null };
+  spx: { time: number; value: number }[]; core: { time: number; value: number }[];
+  clientBefore: { time: number; value: number }[] | null; clientAfter: { time: number; value: number }[] | null;
+  meta: {
+    spxReturn: number; coreReturn: number; clientReturn: number | null; spxMaxDD: number; coreMaxDD: number; clientMaxDD: number | null;
+    clientAnnualReturnEst: number | null; investedSince: string | null; coveragePct: number | null;
+  };
 }
 
 // "A Consequência" do Terminal — acompanha em dólar o portfólio do cliente escolhido vs
@@ -151,8 +161,10 @@ function PortfolioGrowthCard() {
   }, [clientId, period]);
 
   const client = clients.find((c) => c.id === clientId);
+  const clientColor = data?.clientAfter?.length ? CLIENT_GREEN : CLIENT_GRAY;
   const series: GrowthSeries[] = [];
-  if (data?.client) series.push({ name: client?.name || "Cliente", color: "#8FA0BD", data: data.client, dashed: true });
+  if (data?.clientBefore?.length) series.push({ name: client?.name || "Cliente", color: CLIENT_GRAY, data: data.clientBefore, dashed: true });
+  if (data?.clientAfter?.length) series.push({ name: client?.name || "Cliente", color: CLIENT_GREEN, data: data.clientAfter });
   if (data?.spx) series.push({ name: "S&P 500", color: "#E74C3C", data: data.spx });
   if (data?.core) series.push({ name: "CORE22+ (ETP)", color: "#C9A02C", data: data.core });
 
@@ -169,24 +181,24 @@ function PortfolioGrowthCard() {
         </div>
       </div>
       <div className="muted mb" style={{ lineHeight: 1.6 }}>
-        $10.000 aplicados no início do período. A linha do cliente combina o retorno médio real do portfólio dele (dos produtos cadastrados) com o caminho real do S&amp;P — preserva as quedas/crises verdadeiras, calibrado pro retorno médio dele.
+        $10.000 aplicados na data real de entrada do cliente ({data?.meta.investedSince || client?.since || "—"}), cobrindo {data?.meta.coveragePct != null ? `${data.meta.coveragePct.toFixed(0)}%` : "—"} do portfólio dele com dado real cadastrado. Antes da entrada a linha fica <b style={{ color: CLIENT_GRAY }}>cinza</b> (sem investimento); a partir da entrada vira <b style={{ color: CLIENT_GREEN }}>verde</b> (investido de verdade).
       </div>
 
       {data?.meta && (
         <div className="grid g3 mb">
           <div className="card" style={{ padding: 12 }}>
             <div className="muted" style={{ fontSize: 10 }}>{client?.name || "Cliente"} (dólar)</div>
-            <div className={`big ${(data.meta.clientReturn ?? 0) >= 0 ? "g" : "r"}`} style={{ fontSize: 19 }}>{data.client ? pct(data.meta.clientReturn) : "—"}</div>
-            <div className="muted" style={{ fontSize: 10 }}>MaxDD {data.client ? pct(data.meta.clientMaxDD) : "—"}</div>
+            <div className="big" style={{ fontSize: 19, color: clientColor }}>{data.meta.clientReturn != null ? pct(data.meta.clientReturn) : "—"}</div>
+            <div className="muted" style={{ fontSize: 10 }}>MaxDD {data.meta.clientMaxDD != null ? pct(data.meta.clientMaxDD) : "—"}</div>
           </div>
           <div className="card" style={{ padding: 12 }}>
             <div className="muted" style={{ fontSize: 10 }}>S&amp;P 500</div>
-            <div className={`big ${data.meta.spxReturn >= 0 ? "g" : "r"}`} style={{ fontSize: 19 }}>{pct(data.meta.spxReturn)}</div>
+            <div className="big" style={{ fontSize: 19, color: "#E74C3C" }}>{pct(data.meta.spxReturn)}</div>
             <div className="muted" style={{ fontSize: 10 }}>MaxDD {pct(data.meta.spxMaxDD)}</div>
           </div>
           <div className="card" style={{ padding: 12, borderColor: "rgba(201,160,44,.3)" }}>
             <div className="muted" style={{ fontSize: 10 }}>CORE22+ (ETP)</div>
-            <div className={`big ${data.meta.coreReturn >= 0 ? "g" : "r"}`} style={{ fontSize: 19, color: "var(--gold)" }}>{pct(data.meta.coreReturn)}</div>
+            <div className="big" style={{ fontSize: 19, color: "var(--gold)" }}>{pct(data.meta.coreReturn)}</div>
             <div className="muted" style={{ fontSize: 10 }}>MaxDD {pct(data.meta.coreMaxDD)}</div>
           </div>
         </div>
@@ -200,7 +212,8 @@ function PortfolioGrowthCard() {
         <div className="placeholder"><i className="ti ti-cloud-off" /><b>Sem dado suficiente</b></div>
       )}
       <div className="legend" style={{ marginTop: 10 }}>
-        <i><b style={{ background: "#8FA0BD" }} />{client?.name || "Cliente"} (estimado)</i>
+        <i><b style={{ background: CLIENT_GRAY }} />{client?.name || "Cliente"} (sem investimento)</i>
+        <i><b style={{ background: CLIENT_GREEN }} />{client?.name || "Cliente"} (investido, real)</i>
         <i><b style={{ background: "#E74C3C" }} />S&amp;P 500 (real)</i>
         <i><b style={{ background: "#C9A02C" }} />CORE22+ (backtest oficial)</i>
         <span className="muted" style={{ marginLeft: "auto" }}>Escala logarítmica · base $10.000</span>
