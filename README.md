@@ -30,6 +30,11 @@ Variáveis de ambiente (`.env.local`):
   telas de Notícias/Social Radar (`lib/hqp.ts`).
 - `HARPIAN_SNAPSHOT_DIR` — pasta de saída do overnight Python (default aponta pro caminho local
   do João), usada por `app/api/snapshot` pra ler regime/composição/defesa reais.
+- `BLACK_LIBRARY_URL` — URL da Black Library (default `https://cpa-jd.fly.dev`). O JIM consulta
+  automaticamente em cada pergunta.
+- `JD_NEWS_URL` — URL do JD NEWS API (default `https://jd-news-api.fly.dev`). Inteligência macro
+  do dia injetada no contexto do JIM.
+- `BOOK_SEARCH_URL` — URL do serviço de busca em livros (default `http://localhost:8878`, opcional).
 
 ## 🤖 JIM — assistente de IA screen-aware
 
@@ -37,6 +42,19 @@ Regra de ouro: o JIM **nunca pergunta "o que você está vendo na tela"** — el
 reais de qualquer tela aberta e responde direto, com números reais. Cada tela publica o que está
 mostrando via `publishScreenData()` (`lib/jim-data.ts`); o JIM lê isso, saúda nomeando o item com
 dado ao vivo, e oferece 3 chips de perguntas prováveis daquele contexto específico.
+
+### Arquitetura em 4 camadas
+
+1. **Barramento de tela** (`lib/jim-data.ts`) — cada tela publica seus dados via `publishScreenData`.
+   O drawer assina via `subscribeScreenData` e reage em tempo real.
+2. **Conhecimento** (`lib/jim-knowledge.ts`) — 3 fontes consultadas em paralelo a cada pergunta:
+   - Black Library (base institucional Harpian, `POST /blacklibrary/consult`)
+   - JD NEWS (inteligência macro do dia, `GET /api/latest_news`)
+   - Busca em livros (345 livros Jim Simons, serviço na porta 8878, opcional)
+3. **Sessão persistente** (`lib/jim-sessions.ts` + `app/api/jim/sessions/route.ts`) — conversas
+   salvas server-side em JSON (`data/jim-sessions/`). Sobrevivem reload. Máx 200 msgs.
+4. **Chat API** (`app/api/jim/chat/route.ts`) — injeta tudo no system prompt + chama Anthropic.
+   Confidencialidade enforced no prompt. Campo `sources` na resposta informa quais fontes responderam.
 
 Arquitetura completa, decisões de design e o bug original que motivou isso:
 `hqp-platform/docs/architecture/HANDOFF_TERMINAL_JIM_04_05JUL.md`.
