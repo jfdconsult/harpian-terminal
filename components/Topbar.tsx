@@ -13,7 +13,7 @@ function Clock() {
   return <div className="clock">{t}</div>;
 }
 
-export default function Topbar({ go, jimOpen, onJimToggle }: { go: (id: ScreenId, param?: string) => void; jimOpen?: boolean; onJimToggle?: () => void }) {
+export default function Topbar({ go, jimOpen, onJimToggle, onSettingsToggle }: { go: (id: ScreenId, param?: string) => void; jimOpen?: boolean; onJimToggle?: () => void; onSettingsToggle?: () => void }) {
   return (
     <div className="topbar">
       <div className="brand" onClick={() => go("painel")}>
@@ -52,6 +52,7 @@ export default function Topbar({ go, jimOpen, onJimToggle }: { go: (id: ScreenId
 
       <div className="right">
         <div className={`jim${jimOpen ? " active" : ""}`} onClick={onJimToggle}><i className="ti ti-sparkles" />Jim AI</div>
+        <div className="jim" onClick={onSettingsToggle} title="Configurações"><i className="ti ti-settings" /></div>
         <div className="pillstate"><span className="dot" />RISK-ON · DEFESA ARMADA</div>
         <Clock />
       </div>

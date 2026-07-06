@@ -3,6 +3,9 @@ import { useState } from "react";
 import Ticker from "./Ticker";
 import Topbar from "./Topbar";
 import JimDrawer from "./JimDrawer";
+import SettingsDrawer from "./SettingsDrawer";
+import { ThemeProvider } from "@/lib/theme";
+import { I18nProvider } from "@/lib/i18n";
 import Painel from "./screens/Painel";
 import Fundo from "./screens/Fundo";
 import Cotacoes from "./screens/Cotacoes";
@@ -39,6 +42,7 @@ export default function Terminal() {
   const [chartArg, setChartArg] = useState<string | undefined>(undefined);
   const [portfolioArg, setPortfolioArg] = useState<string | undefined>(undefined);
   const [jimOpen, setJimOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const go = (id: ScreenId, param?: string) => {
     setScreen(id);
@@ -83,11 +87,16 @@ export default function Terminal() {
   }
 
   return (
+    <ThemeProvider>
+    <I18nProvider>
     <div className="app">
       <Ticker go={go} />
-      <Topbar go={go} jimOpen={jimOpen} onJimToggle={() => setJimOpen((v) => !v)} />
+      <Topbar go={go} jimOpen={jimOpen} onJimToggle={() => setJimOpen((v) => !v)} onSettingsToggle={() => setSettingsOpen((v) => !v)} />
       <div className="main">{renderScreen()}</div>
       <JimDrawer open={jimOpen} onClose={() => setJimOpen(false)} screen={screen} />
+      <SettingsDrawer open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
+    </I18nProvider>
+    </ThemeProvider>
   );
 }
