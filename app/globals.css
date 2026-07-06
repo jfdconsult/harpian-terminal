@@ -143,6 +143,8 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
 .card.ok{border-color:rgba(46,204,113,.3)}
 .card.warn{border-color:rgba(243,156,18,.3)}
 .card.danger{border-color:rgba(231,76,60,.3)}
+.clickable{cursor:pointer;transition:border-color .15s,box-shadow .2s,transform .2s}
+.clickable:hover{border-color:var(--gold);box-shadow:0 4px 16px rgba(0,0,0,.35),0 0 0 1px rgba(201,160,44,.18);transform:translateY(-2px)}
 
 /* loading pulse */
 .loading-pulse{animation:loadPulse 1.6s ease-in-out infinite}
