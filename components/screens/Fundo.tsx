@@ -454,6 +454,10 @@ export default function Fundo({ fundId, onSelectFund, go }: { fundId: string; on
             <h3><i className="ti ti-building-bank" />Arquitetura institucional</h3>
             <KVGrid rows={fund.architecture} />
           </div>
+          <div className="card" style={{ gridColumn: "1 / -1" }}>
+            <h3><i className="ti ti-engine" />Arquitetura de motores</h3>
+            <KVGrid rows={fund.engineArchitecture} />
+          </div>
           <div className="card">
             <h3><i className="ti ti-id" />Dados para compra</h3>
             <KVGrid rows={fund.purchaseData} />

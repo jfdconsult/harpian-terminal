@@ -34,6 +34,7 @@ export interface Fund {
   crisisNote: string;
   economics: KV[];
   architecture: KV[];
+  engineArchitecture: KV[];
   purchaseSteps: Step[];
   purchaseData: KV[];
   contacts: KV[];
@@ -113,6 +114,17 @@ const HPC22: Fund = {
     { k: "Listagem", v: "Vienna Stock Exchange" },
     { k: "Admin. e liquidação", v: "Lynk Capital Markets" },
     { k: "Distribuição", v: "Wisen (global, ex-EUA)" },
+  ],
+  engineArchitecture: [
+    { k: "Motor de ataque", v: "HC-US 3.1 CORE22+ — Momentum adaptativo por setor (S&P 500, 2 ações/setor)" },
+    { k: "Seleção de ataque", v: "DEMA-cascade smoothed ROC · Tau calibrado por setor (28-189 dias)" },
+    { k: "Motor de defesa", v: "HSA v6 — Proteção por pilar (COMPARTILHADO entre todos os portfólios)" },
+    { k: "Camada 1 (defesa)", v: "Temperatura por pilar — turbulência × 0,40 + trend break × 0,35 + jerk × 0,25" },
+    { k: "Camada 2 (defesa)", v: "Gate sistêmico — Cross-correlation (0,55 → 0,75) → fator g" },
+    { k: "Camada 3 (defesa)", v: "Re-entry monitor — EMA 20 + velocidade + sizing gradual" },
+    { k: "Regime", v: "Binário BULL / BEAR — StormGuard-Armor (SGA ≥ 0 = BULL, SGA < 0 = BEAR)" },
+    { k: "Balanceamento", v: "Regime-based switching (COMPARTILHADO) — ataque em BULL, defesa em BEAR" },
+    { k: "Rebalanceamento", v: "Mensal, sistemático" },
   ],
   purchaseSteps: [
     { n: 1, title: "Conta Lynk Markets", desc: "O MFO, gestor ou family office deve ter conta ativa na Lynk Markets. Onboarding: lynkmarkets.com." },
@@ -196,6 +208,18 @@ const HPC11: Fund = {
     { k: "NAV diário", v: "Bloomberg" },
     { k: "Listagem", v: "Vienna Stock Exchange" },
     { k: "Admin. e liquidação", v: "Lynk Capital Markets" },
+  ],
+  engineArchitecture: [
+    { k: "Motor de ataque", v: "HC-US I.G. — Investment Grade conservador (S&P 500, universo I.G.)" },
+    { k: "Seleção de ataque", v: "DEMA-cascade smoothed ROC · Tau calibrado por setor" },
+    { k: "Motor de defesa", v: "HSA v6 — Proteção por pilar (COMPARTILHADO entre todos os portfólios)" },
+    { k: "Camada 1 (defesa)", v: "Temperatura por pilar — turbulência × 0,40 + trend break × 0,35 + jerk × 0,25" },
+    { k: "Camada 2 (defesa)", v: "Gate sistêmico — Cross-correlation (0,55 → 0,75) → fator g" },
+    { k: "Camada 3 (defesa)", v: "Re-entry monitor — EMA 20 + velocidade + sizing gradual" },
+    { k: "Regime", v: "Binário BULL / BEAR — StormGuard-Armor (SGA ≥ 0 = BULL, SGA < 0 = BEAR)" },
+    { k: "Balanceamento", v: "Regime-based switching (COMPARTILHADO) — ataque em BULL, defesa em BEAR" },
+    { k: "Defesa especial", v: "ETFs defensivos + almofada 60/40 (conservador)" },
+    { k: "Rebalanceamento", v: "Mensal, sistemático" },
   ],
   purchaseSteps: [
     { n: 1, title: "Conta Lynk Markets", desc: "Conta ativa na Lynk Markets. Onboarding: lynkmarkets.com." },
@@ -290,6 +314,20 @@ const LCORE22: Fund = {
     { k: "Listagem", v: "Vienna Stock Exchange" },
     { k: "Admin. e liquidação", v: "Lynk Capital Markets" },
     { k: "Distribuição", v: "Wisen (global, ex-EUA)" },
+  ],
+  engineArchitecture: [
+    { k: "Motor de ataque", v: "AlphaDroid CORE22+ MAX — Réplica exata do motor de momento do Diogo (portfólio 829)" },
+    { k: "Seleção de ataque", v: "DEMA-cascade T13 (Tau curto) — smoothed ROC por setor, top-1 por sleeve" },
+    { k: "Universo de ataque", v: "22 sleeves × 12 ações = 264 ações · 11 GICS + Bonds + BigTech" },
+    { k: "Tau por setor", v: "Tech 28-36d · Comm 55d · ConsDisc 55d · Fin 55d · Health 103-189d · Ind 55d · Mat 55d · RE 55d · Energy 55d · Util 55d" },
+    { k: "Motor de defesa", v: "HSA v6 — Proteção por pilar (COMPARTILHADO entre todos os portfólios)" },
+    { k: "Camada 1 (defesa)", v: "Temperatura por pilar — turbulência × 0,40 + trend break × 0,35 + jerk × 0,25" },
+    { k: "Camada 2 (defesa)", v: "Gate sistêmico — Cross-correlation (0,55 → 0,75) → fator g" },
+    { k: "Camada 3 (defesa)", v: "Re-entry monitor — EMA 20 + velocidade + sizing gradual" },
+    { k: "Regime", v: "StormGuard-Armor (SGA ≥ 0 = BULL, SGA < 0 = BEAR) — 77% bull / 23% bear historicamente" },
+    { k: "Defesa ativada", v: "Nuclear Defensive: bonds 58%, health 21%, energy 20%" },
+    { k: "Balanceamento", v: "Regime-based switching (COMPARTILHADO) — ataque em BULL, defesa em BEAR" },
+    { k: "Rebalanceamento", v: "Mensal, sistemático, Tau calibrado por setor" },
   ],
   purchaseSteps: [
     { n: 1, title: "Conta Lynk Markets", desc: "Conta ativa na Lynk Markets. Onboarding: lynkmarkets.com." },
