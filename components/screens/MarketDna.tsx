@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { GOV_API } from "@/lib/data";
 import { publishScreenData } from "@/lib/jim-data";
 
 // ---------- Types ----------
@@ -142,8 +143,6 @@ function generateJimInsight(layers: IntelLayer[]): JimInsight {
 }
 
 // ---------- API Integration ----------
-const GOV_API = process.env.NEXT_PUBLIC_GOV_API || "http://localhost:8877";
-
 function fmtNum(v: number | null | undefined, dec = 1): string {
   if (v == null) return "—";
   return v.toFixed(dec);
@@ -567,7 +566,7 @@ export default function MarketDna() {
       .catch(() => setLoading(false));
   }, []);
 
-  const avgScore = Math.round(layers.reduce((s, l) => s + l.score, 0) / layers.length);
+  const avgScore = layers.length ? Math.round(layers.reduce((s, l) => s + l.score, 0) / layers.length) : 0;
   const liveCount = layers.filter((l) => l.status === "live").length;
   const partialCount = layers.filter((l) => l.status === "partial").length;
   const plannedCount = layers.filter((l) => l.status === "planned").length;

@@ -251,5 +251,28 @@ export const IO_DATA: InsiderOrder[] = [
   { date: "2026-06-21", insider: "Andy Jassy", role: "CEO", company: "Amazon.com", ticker: "AMZN", type: "Sale", shares: 20000, value: 3700000 },
 ];
 
+// ---------- COT Short Names ----------
+export const COT_SHORT_NAME: Record<string, string> = {
+  "S&P 500 CONSOLIDATED": "S&P 500",
+  "E-MINI S&P 500": "E-Mini S&P",
+  "NASDAQ-100 CONSOLIDATED": "NASDAQ 100",
+  "GOLD - COMMODITY EXCHANGE INC.": "Gold",
+  "SILVER - COMMODITY EXCHANGE INC.": "Silver",
+  "CRUDE OIL, LIGHT SWEET - NEW YORK MERCANTILE EXCHANGE": "Crude Oil WTI",
+  "NATURAL GAS - NEW YORK MERCANTILE EXCHANGE": "Natural Gas",
+  "U.S. TREASURY BONDS - CHICAGO BOARD OF TRADE": "US T-Bonds",
+  "10-YEAR U.S. TREASURY NOTES - CHICAGO BOARD OF TRADE": "10Y Treasury",
+  "2-YEAR U.S. TREASURY NOTES - CHICAGO BOARD OF TRADE": "2Y Treasury",
+  "JAPANESE YEN - CHICAGO MERCANTILE EXCHANGE": "Yen (JPY)",
+  "EURO FX - CHICAGO MERCANTILE EXCHANGE": "Euro (EUR)",
+  "BITCOIN - CHICAGO MERCANTILE EXCHANGE": "Bitcoin",
+  "VIX FUTURES - CBOE FUTURES EXCHANGE": "VIX",
+  "COPPER-GRADE #1 - COMMODITY EXCHANGE INC.": "Copper",
+};
+
+export function cotShortName(m: string): string {
+  return COT_SHORT_NAME[m] || m.split(" - ")[0].substring(0, 25);
+}
+
 // ---------- API gov-data ----------
 export const GOV_API = "http://localhost:8877";

@@ -5,13 +5,10 @@ import { ASSET_GROUPS, tvSymbol } from "@/lib/market";
 import { pctText, pctClass, num, numShort } from "@/lib/format";
 import { publishScreenData } from "@/lib/jim-data";
 import type { Studies } from "./AssetChart";
+import type { CandlesResp, AssetResp } from "@/lib/types";
 
 const AssetChart = dynamic(() => import("./AssetChart"), { ssr: false });
 const TradingViewWidget = dynamic(() => import("./TradingViewWidget"), { ssr: false });
-
-interface Candle { time: number; open: number; high: number; low: number; close: number }
-interface CandlesResp { symbol: string; name: string; candles: Candle[]; volume: { time: number; value: number; up: boolean }[]; compareLine?: { time: number; value: number }[] | null; compareName?: string | null; error?: boolean }
-interface AssetResp { name: string; price: number; dayPct: number | null; ytdPct: number | null; yPct: number | null; sharpe: number | null; maxDD: number | null; rsi: number | null; w52: { lo: number; hi: number } }
 
 const RANGES = [{ k: "3mo", l: "3M" }, { k: "6mo", l: "6M" }, { k: "1y", l: "1A" }, { k: "2y", l: "2A" }, { k: "5y", l: "5A" }];
 const INTERVALS = [{ k: "1d", l: "Diário" }, { k: "1wk", l: "Semanal" }];

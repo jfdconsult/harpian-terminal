@@ -23,7 +23,7 @@ export function ClientDetail({ client: clientProp, go, screen = "cliente" }: { c
   }
 
   const [migrate, setMigrate] = useState(0); // % migrado p/ HPC22
-  const ganhoPct = (client.current / client.invested - 1) * 100;
+  const ganhoPct = client.invested ? (client.current / client.invested - 1) * 100 : 0;
   const aligned = client.riskNumber <= client.mandate;
 
   const blendedRN = useMemo(

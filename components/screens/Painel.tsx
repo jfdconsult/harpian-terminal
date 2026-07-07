@@ -378,7 +378,7 @@ function CarteiraWidgetBody({ go, config }: { go: (id: ScreenId, param?: string)
   }, [portfolio]);
 
   if (!client) return <div className="muted">Nenhum cliente cadastrado.</div>;
-  const ganhoPct = (client.current / client.invested - 1) * 100;
+  const ganhoPct = client.invested ? (client.current / client.invested - 1) * 100 : 0;
 
   return (
     <>

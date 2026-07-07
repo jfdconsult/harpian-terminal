@@ -46,7 +46,7 @@ export async function yahooOHLC(symbol: string, range = "1y", interval = "1d"): 
   const s: OHLCSeries = { t: [], o: [], h: [], l: [], c: [], v: [] };
   for (let i = 0; i < rawT.length; i++) {
     if (q.close?.[i] != null && q.open?.[i] != null) {
-      s.t.push(rawT[i]); s.o.push(q.open[i]); s.h.push(q.high[i]); s.l.push(q.low[i]); s.c.push(q.close[i]); s.v.push(q.volume?.[i] || 0);
+      s.t.push(rawT[i]); s.o.push(q.open[i]); s.h.push(q.high?.[i] ?? q.open[i]); s.l.push(q.low?.[i] ?? q.open[i]); s.c.push(q.close[i]); s.v.push(q.volume?.[i] || 0);
     }
   }
   return { meta: res.meta || {}, s };
@@ -147,7 +147,10 @@ export function rsi(close: number[], period = 14): number | null {
   return 100 - 100 / (1 + rs);
 }
 export function w52(close: number[]) {
-  return { lo: Math.min(...close), hi: Math.max(...close) };
+  if (!close.length) return { lo: 0, hi: 0 };
+  let lo = close[0], hi = close[0];
+  for (let i = 1; i < close.length; i++) { if (close[i] < lo) lo = close[i]; if (close[i] > hi) hi = close[i]; }
+  return { lo, hi };
 }
 // Número de Risco (0–100) calibrado ao SPY≈27,6 (vol anual ~16%).
 export function riskNumber(close: number[]): number | null {

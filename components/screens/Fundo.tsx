@@ -343,7 +343,7 @@ export default function Fundo({ fundId, onSelectFund, go }: { fundId: string; on
           <div className="grid g2">
             <div className="card">
               <h3><i className="ti ti-list-details" />Dados do produto</h3>
-              <KVGrid rows={fund.productData.map((r) => r)} />
+              <KVGrid rows={fund.productData} />
             </div>
             <div className="card">
               <h3><i className="ti ti-award" />Governança & selos</h3>

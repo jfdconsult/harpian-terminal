@@ -40,7 +40,7 @@ export default function Ordem({ preselect }: { preselect?: string }) {
   const [clients, setClients] = useState(CLIENTS);   // inclui clientes novos (localStorage) no client-side
   useEffect(() => { setClients(allClients()); }, []);
 
-  const fund = FUNDS.find((f) => f.id === fundId)!;
+  const fund = FUNDS.find((f) => f.id === fundId) ?? FUNDS[0];
   const notes = fund.nav > 0 ? Math.floor(value / fund.nav) : 0;
   const errors: string[] = [];
   if (value < MIN) errors.push(`Mínimo de ${usd(MIN)}.`);

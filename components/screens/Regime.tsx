@@ -8,12 +8,9 @@ import { pctText, pctClass, numShort, num } from "@/lib/format";
 import { publishScreenData } from "@/lib/jim-data";
 import type { ScreenId } from "@/lib/nav";
 import type { Studies } from "./AssetChart";
+import type { CandlesResp, AssetResp } from "@/lib/types";
 
 const AssetChart = dynamic(() => import("./AssetChart"), { ssr: false });
-
-interface Candle { time: number; open: number; high: number; low: number; close: number }
-interface CandlesResp { symbol: string; name: string; candles: Candle[]; volume: { time: number; value: number; up: boolean }[]; error?: boolean }
-interface AssetResp { name: string; price: number; dayPct: number | null; ytdPct: number | null; yPct: number | null; sharpe: number | null; maxDD: number | null; rsi: number | null; w52: { lo: number; hi: number } }
 
 interface DnaLayer { name: string; status: string; data?: Record<string, unknown> }
 interface DnaResponse { layers: DnaLayer[]; timestamp: string }
@@ -88,7 +85,6 @@ function generateJimMarketAnalysis(regime: RegimeState, asset: AssetResp | null,
   parts.push(`O regime de mercado está em **${regLabel}**. ${REGIME_DESC[regime]}.`);
 
   if (asset) {
-    const dir = (asset.dayPct ?? 0) >= 0 ? "alta" : "queda";
     parts.push(`O S&P 500 opera a ${numShort(asset.price)} (${pctText(asset.dayPct)} hoje, ${pctText(asset.ytdPct)} no ano). RSI em ${num(asset.rsi, 0)} — ${(asset.rsi ?? 50) > 70 ? "sobrecomprado, atenção" : (asset.rsi ?? 50) < 30 ? "sobrevendido, possível reversão" : "zona neutra"}.`);
     if (asset.maxDD) parts.push(`Drawdown máximo de ${pctText(asset.maxDD)} nos últimos 12 meses, Sharpe ${num(asset.sharpe, 2)}.`);
   }

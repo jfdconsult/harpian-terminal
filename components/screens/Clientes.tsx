@@ -118,7 +118,7 @@ export default function Clientes({ go }: { go: (id: ScreenId, param?: string) =>
             </tr></thead>
             <tbody>
               {clients.map((c) => {
-                const ganhoPct = (c.current / c.invested - 1) * 100;
+                const ganhoPct = c.invested ? (c.current / c.invested - 1) * 100 : 0;
                 const aligned = c.riskNumber <= c.mandate;
                 return (
                   <tr key={c.id} style={{ cursor: "pointer" }} onClick={() => go("cliente", c.id)}>

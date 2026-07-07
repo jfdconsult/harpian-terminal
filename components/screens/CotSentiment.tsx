@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { GOV_API, fmtN } from "@/lib/data";
+import { GOV_API, fmtN, cotShortName } from "@/lib/data";
 import { publishScreenData } from "@/lib/jim-data";
 
 // ---------- Types ----------
@@ -42,24 +42,6 @@ interface CotIndexData {
 }
 
 // ---------- Helpers ----------
-const SHORT_NAME: Record<string, string> = {
-  "S&P 500 CONSOLIDATED": "S&P 500",
-  "E-MINI S&P 500": "E-Mini S&P",
-  "NASDAQ-100 CONSOLIDATED": "NASDAQ 100",
-  "GOLD - COMMODITY EXCHANGE INC.": "Gold",
-  "SILVER - COMMODITY EXCHANGE INC.": "Silver",
-  "CRUDE OIL, LIGHT SWEET - NEW YORK MERCANTILE EXCHANGE": "Crude Oil WTI",
-  "NATURAL GAS - NEW YORK MERCANTILE EXCHANGE": "Natural Gas",
-  "U.S. TREASURY BONDS - CHICAGO BOARD OF TRADE": "US T-Bonds",
-  "10-YEAR U.S. TREASURY NOTES - CHICAGO BOARD OF TRADE": "10Y Treasury",
-  "2-YEAR U.S. TREASURY NOTES - CHICAGO BOARD OF TRADE": "2Y Treasury",
-  "JAPANESE YEN - CHICAGO MERCANTILE EXCHANGE": "Yen (JPY)",
-  "EURO FX - CHICAGO MERCANTILE EXCHANGE": "Euro (EUR)",
-  "BITCOIN - CHICAGO MERCANTILE EXCHANGE": "Bitcoin",
-  "VIX FUTURES - CBOE FUTURES EXCHANGE": "VIX",
-  "COPPER-GRADE #1 - COMMODITY EXCHANGE INC.": "Copper",
-};
-
 const ASSET_CLASS: Record<string, string> = {
   "S&P 500": "Equity", "E-Mini S&P": "Equity", "NASDAQ 100": "Equity",
   Gold: "Metal", Silver: "Metal", Copper: "Metal",
@@ -73,10 +55,6 @@ const CLASS_COLOR: Record<string, string> = {
   Equity: "#4A90D9", Metal: "#C9A02C", Energy: "#E67E22",
   Rates: "#7B68EE", FX: "#2ECC71", Crypto: "#F39C12", Volatility: "#E74C3C",
 };
-
-function shortName(m: string): string {
-  return SHORT_NAME[m] || m.split(" - ")[0].substring(0, 20);
-}
 
 function cotIndex(current: number, low: number, high: number): number {
   if (high === low) return 50;
@@ -114,7 +92,7 @@ function computeCotData(legacy: LegacyRow[]): CotIndexData[] {
     const sig = cotSignal(idx);
 
     result.push({
-      market: shortName(market),
+      market: cotShortName(market),
       index: idx,
       specNet: latest.spec_net,
       commNet: latest.comm_net,

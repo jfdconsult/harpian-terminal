@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { GOV_API, fmtN } from "@/lib/data";
+import { GOV_API, fmtN, cotShortName } from "@/lib/data";
 import { publishScreenData } from "@/lib/jim-data";
 
 interface CotRow {
@@ -15,28 +15,6 @@ interface CotRow {
   open_interest: number;
   spec_net_pct_oi?: number;
   comm_net_pct_oi?: number;
-}
-
-const SHORT_NAME: Record<string, string> = {
-  "S&P 500 CONSOLIDATED": "S&P 500",
-  "E-MINI S&P 500": "E-Mini S&P",
-  "NASDAQ-100 CONSOLIDATED": "NASDAQ 100",
-  "GOLD - COMMODITY EXCHANGE INC.": "Gold",
-  "SILVER - COMMODITY EXCHANGE INC.": "Silver",
-  "CRUDE OIL, LIGHT SWEET - NEW YORK MERCANTILE EXCHANGE": "Crude Oil WTI",
-  "NATURAL GAS - NEW YORK MERCANTILE EXCHANGE": "Natural Gas",
-  "U.S. TREASURY BONDS - CHICAGO BOARD OF TRADE": "US T-Bonds",
-  "10-YEAR U.S. TREASURY NOTES - CHICAGO BOARD OF TRADE": "10Y Treasury",
-  "2-YEAR U.S. TREASURY NOTES - CHICAGO BOARD OF TRADE": "2Y Treasury",
-  "JAPANESE YEN - CHICAGO MERCANTILE EXCHANGE": "Yen (JPY)",
-  "EURO FX - CHICAGO MERCANTILE EXCHANGE": "Euro (EUR)",
-  "BITCOIN - CHICAGO MERCANTILE EXCHANGE": "Bitcoin",
-  "VIX FUTURES - CBOE FUTURES EXCHANGE": "VIX",
-  "COPPER-GRADE #1 - COMMODITY EXCHANGE INC.": "Copper",
-};
-
-function shortName(m: string): string {
-  return SHORT_NAME[m] || m.split(" - ")[0].substring(0, 25);
 }
 
 const WEEKS_OPTIONS = [
@@ -76,9 +54,9 @@ export default function CotLegacy() {
     if (filtered.length === 0) return;
     publishScreenData(
       "cot-legacy",
-      `Dados brutos CFTC Legacy (janela ${weeks} semanas${marketFilter ? `, mercado ${shortName(marketFilter)}` : ", todos os mercados"}). Cada linha = data, mercado, Spec Net, Comm Net (e % do Open Interest), longs/shorts por grupo e Open Interest.`,
+      `Dados brutos CFTC Legacy (janela ${weeks} semanas${marketFilter ? `, mercado ${cotShortName(marketFilter)}` : ", todos os mercados"}). Cada linha = data, mercado, Spec Net, Comm Net (e % do Open Interest), longs/shorts por grupo e Open Interest.`,
       filtered.slice(0, 60).map((x) => ({
-        data: x.date, mercado: shortName(x.market || ""),
+        data: x.date, mercado: cotShortName(x.market || ""),
         specNet: x.spec_net ?? (x.spec_long - x.spec_short),
         commNet: x.comm_net ?? (x.comm_long - x.comm_short),
         openInterest: x.open_interest,
@@ -123,7 +101,7 @@ export default function CotLegacy() {
           <span className="flabel">Mercado:</span>
           <select className="fsel" value={marketFilter} onChange={(e) => setMarketFilter(e.target.value)} style={{ fontSize: 12, padding: "6px 10px", minWidth: 180 }}>
             <option value="">Todos os mercados ({markets.length})</option>
-            {markets.map((m) => <option key={m} value={m}>{shortName(m)}</option>)}
+            {markets.map((m) => <option key={m} value={m}>{cotShortName(m)}</option>)}
           </select>
         </div>
         <span className="muted" style={{ fontSize: 10, marginLeft: "auto" }}>{filtered.length} registros</span>
@@ -159,7 +137,7 @@ export default function CotLegacy() {
                 return (
                   <tr key={i}>
                     <td style={{ color: "var(--tx3)", fontFamily: "var(--mono)", fontSize: 11 }}>{x.date || "—"}</td>
-                    <td style={{ color: "var(--tx)", fontWeight: 600, fontSize: 12 }}>{shortName(x.market || "")}</td>
+                    <td style={{ color: "var(--tx)", fontWeight: 600, fontSize: 12 }}>{cotShortName(x.market || "")}</td>
                     <td className="num" style={{ color: specNet >= 0 ? "var(--green)" : "var(--red)", fontWeight: 600 }}>{specNet >= 0 ? "+" : ""}{fmtN(specNet)}</td>
                     <td className="num" style={{ color: specNet >= 0 ? "var(--green)" : "var(--red)", fontSize: 10 }}>{specPct >= 0 ? "+" : ""}{specPct.toFixed(1)}%</td>
                     <td className="num" style={{ color: commNet >= 0 ? "#C9A02C" : "#E67E22", fontWeight: 600 }}>{commNet >= 0 ? "+" : ""}{fmtN(commNet)}</td>
