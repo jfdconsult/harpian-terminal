@@ -96,6 +96,7 @@ Menu structure (from nav.ts):
 - `lib/clientStore.ts` — Client local store
 - `lib/csv.ts` — CSV parsing
 - `lib/favorites.ts` — User favorites persistence
+- `lib/types.ts` — Shared TypeScript interfaces (Candle, CandlesResp, AssetResp)
 - `lib/feeds.ts` — News/data feed helpers
 - `lib/format.ts` — Number/date formatting
 - `lib/indicators.ts` — Technical indicators
