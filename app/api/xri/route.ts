@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
-import { readFileSync } from "fs";
-import { join } from "path";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Output folder for the XRI engine (sibling repo harpian-xri, xri-daily routine). Configurable via env.
-const XRI_DIR = process.env.HARPIAN_XRI_SNAPSHOT_DIR || "C:\\dev\\harpian-xri\\data\\snapshots";
+// xri-serve — same internal micro-service the Cockpit calls (see lib/xri.ts in
+// harpian-cockpit-next), reached here server-side so the API key never goes
+// to the browser. Defaults to localhost for local dev (run `xri-serve` from
+// the harpian-xri repo — no key needed there, xri-serve only enforces the
+// key when XRI_API_KEY is set on its own side).
+const XRI_SERVE_URL = process.env.XRI_API_URL || "http://localhost:8879";
+const XRI_SERVE_KEY = process.env.XRI_API_KEY;
 
 // ── CONFIDENTIALITY ─────────────────────────────────────────────────────────
 // Same principle as app/api/snapshot/route.ts: this handler runs on the SERVER
@@ -63,13 +66,26 @@ interface XriRawValidation {
   anchor_events: { summary: { events_covered: number; events_hit_alert: number } };
 }
 
-function readJson<T>(dir: string, filename: string): T {
-  return JSON.parse(readFileSync(join(dir, filename), "utf-8")) as T;
+interface XriFullResponse {
+  ok: boolean;
+  snapshot?: XriRawSnapshot;
+  validation?: XriRawValidation;
+}
+
+async function fetchXriFull(): Promise<XriFullResponse> {
+  const r = await fetch(`${XRI_SERVE_URL}/xri/full`, {
+    cache: "no-store",
+    headers: XRI_SERVE_KEY ? { "X-API-Key": XRI_SERVE_KEY } : undefined,
+  });
+  if (!r.ok) throw new Error(`xri-serve responded ${r.status}`);
+  return (await r.json()) as XriFullResponse;
 }
 
 export async function GET() {
   try {
-    const snap = readJson<XriRawSnapshot>(XRI_DIR, "xri_snapshot_latest.json");
+    const full = await fetchXriFull();
+    if (!full.ok || !full.snapshot) throw new Error("xri-serve has no snapshot yet");
+    const snap = full.snapshot;
 
     const drivers = Object.entries(snap.contribution_by_country || {})
       .filter(([k]) => k !== "us")
@@ -79,9 +95,11 @@ export async function GET() {
 
     let validation: { years: number; events_covered: number; events_hit: number } | null = null;
     try {
-      const v = readJson<XriRawValidation>(XRI_DIR, "xri_validation_latest.json");
-      const years = new Date(v.reconstruction.end).getFullYear() - new Date(v.reconstruction.start).getFullYear();
-      validation = { years, events_covered: v.anchor_events.summary.events_covered, events_hit: v.anchor_events.summary.events_hit_alert };
+      const v = full.validation;
+      if (v) {
+        const years = new Date(v.reconstruction.end).getFullYear() - new Date(v.reconstruction.start).getFullYear();
+        validation = { years, events_covered: v.anchor_events.summary.events_covered, events_hit: v.anchor_events.summary.events_hit_alert };
+      }
     } catch { /* validation is optional — proceed without it */ }
 
     // Named channels (ingredients): each one's normalized share of today's

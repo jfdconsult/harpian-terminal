@@ -19,6 +19,7 @@ import Risco from "./screens/Risco";
 import Clientes from "./screens/Clientes";
 import Cliente from "./screens/Cliente";
 import Carteira from "./screens/Carteira";
+import ClienteRisco from "./screens/ClienteRisco";
 import PortfolioDetail from "./screens/PortfolioDetail";
 import Alertas from "./screens/Alertas";
 import Ordem from "./screens/Ordem";
@@ -54,7 +55,7 @@ export default function Terminal() {
   const go = (id: ScreenId, param?: string) => {
     setScreen(id);
     if (id === "fundo" && param) setFundId(param);
-    if ((id === "cliente" || id === "carteira") && param) setClientId(param);
+    if ((id === "cliente" || id === "carteira" || id === "cliente-risco") && param) setClientId(param);
     if (id === "ordem") setOrderArg(param);
     if (id === "acoes" && param) setChartArg(param);
     if (id === "portfolio-detalhe" && param) setPortfolioArg(param);
@@ -81,6 +82,7 @@ export default function Terminal() {
       case "noticias": return <Noticias go={go} />;
       case "risco": return <Risco />;
       case "carteira": return <Carteira clientId={clientId} go={go} />;
+      case "cliente-risco": return <ClienteRisco clientId={clientId} go={go} />;
       case "portfolio-detalhe": return <PortfolioDetail arg={portfolioArg} go={go} />;
       case "clientes": return <Clientes go={go} />;
       case "cliente": return <Cliente clientId={clientId} go={go} />;

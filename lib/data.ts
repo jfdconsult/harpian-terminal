@@ -264,4 +264,4 @@ export function cotShortName(m: string): string {
 }
 
 // ---------- API gov-data ----------
-export const GOV_API = "http://localhost:8877";
+export const GOV_API = process.env.NEXT_PUBLIC_GOV_API_URL || "http://localhost:8877";

@@ -52,3 +52,6 @@ devserver*.log
 
 # stray malformed directory from an old path-as-name bug
 C*dev*harpian-terminal-next/
+
+.vercel
+.env*.local

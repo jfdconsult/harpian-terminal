@@ -1,10 +1,11 @@
 "use client";
 import { useState } from "react";
+import { useParams } from "next/navigation";
 
 // Investor risk profile questionnaire (suitability) — the client opens it via the link the
-// manager sends. Calculates the profile (Conservative/Moderate/Aggressive) from the answers.
-// Phase 2: write the result back to the client record via the MFO API. Today it shows the
-// result to the client (functional) — the manager confirms it in the Terminal.
+// manager sends. Calculates the profile (Conservative/Moderate/Aggressive) from the answers
+// and saves it via /api/questionnaire (see lib/questionnaire-store.ts) so the advisor can see
+// it in the Terminal's "Client risk" screen without the client having to report it verbally.
 const PERGUNTAS = [
   { q: "What is the main objective of this investment?", opts: [
     { t: "Preserve capital, with minimal fluctuation", v: 1 },
@@ -41,12 +42,28 @@ function perfil(score: number): { nome: string; cor: string; desc: string } {
 }
 
 export default function Questionario() {
+  const params = useParams();
+  const clientId = String(params?.id || "");
   const [respostas, setRespostas] = useState<Record<number, number>>({});
   const [enviado, setEnviado] = useState(false);
+  const [salvando, setSalvando] = useState(false);
 
   const completo = Object.keys(respostas).length === PERGUNTAS.length;
   const score = Object.values(respostas).reduce((s, v) => s + v, 0);
   const p = perfil(score);
+
+  function handleSubmit() {
+    setEnviado(true);
+    setSalvando(true);
+    const answers = PERGUNTAS.map((_, i) => respostas[i]);
+    fetch("/api/questionnaire", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ clientId, answers }),
+    })
+      .catch(() => {})
+      .finally(() => setSalvando(false));
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a1628", color: "#e8eef5", display: "flex", justifyContent: "center", padding: "40px 20px", fontFamily: "system-ui, sans-serif" }}>
@@ -77,7 +94,7 @@ export default function Questionario() {
                 </div>
               </div>
             ))}
-            <button disabled={!completo} onClick={() => setEnviado(true)}
+            <button disabled={!completo} onClick={handleSubmit}
               style={{ width: "100%", marginTop: 20, padding: 14, borderRadius: 9, border: "none", fontSize: 15, fontWeight: 700,
                 cursor: completo ? "pointer" : "not-allowed", background: completo ? "#c9a84c" : "#2a3a52", color: completo ? "#000" : "#5a6b82" }}>
               {completo ? "See my profile" : `Answer the ${PERGUNTAS.length} questions`}

@@ -68,6 +68,11 @@ const SCREEN_MAP: Record<ScreenId, Omit<ScreenContext, "id">> = {
     description: "Detailed client portfolio: positions, weights, performance, Risk Number suitability, and rebalancing suggestions.",
     dataAvailable: ["positions", "weights", "performance", "suitability"],
   },
+  "cliente-risco": {
+    title: "Client Risk",
+    description: "Suitability questionnaire: whether the client answered it, their self-declared risk profile, and whether it matches the profile on file and the portfolio's Risk Number vs. mandate.",
+    dataAvailable: ["questionnaire status", "declared profile", "profile on file", "Risk Number vs mandate"],
+  },
   "portfolio-detalhe": {
     title: "Portfolio Breakdown",
     description: "A specific client portfolio, product by product: issuer, category, sub-category, geography, allocation %, value, risk profile, estimated return and volatility.",
@@ -186,6 +191,7 @@ const SCREEN_SUGGESTIONS: Record<ScreenId, string[]> = {
   clientes: ["Which client is out of mandate?", "Who has the largest AUM?", "Summarize the client base."],
   cliente: ["Is this client suited to their profile?", "What's their Risk Number?", "What should I suggest to them now?"],
   carteira: ["Is this portfolio suitable?", "Which position weighs most on risk?", "Does it need rebalancing?"],
+  "cliente-risco": ["Did the client answer the questionnaire?", "Does the declared profile match what's on file?", "Is the Risk Number within mandate?"],
   "portfolio-detalhe": ["Is this portfolio well diversified?", "What's the biggest risk concentration here?", "How does this portfolio compare to the client's mandate?"],
   ordem: ["What do these orders do?", "Why these changes today?", "What's the impact on the portfolio?"],
   importar: ["How do I import a portfolio?", "Which formats are accepted?", "Can I connect to custody?"],

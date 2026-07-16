@@ -11,6 +11,7 @@ export type ScreenId =
   | "cliente"
   | "ordem"
   | "carteira"
+  | "cliente-risco"
   | "portfolio-detalhe"
   | "regime"
   | "xri"
@@ -138,7 +139,7 @@ export const MENUS: Menu[] = [
         items: [
           { id: "risco", label: "Comparison · 4 levels", icon: "ti-scale", tag: "new" },
           { id: "carteira", label: "Portfolio risk", icon: "ti-wallet" },
-          { id: "carteira", label: "Client risk", icon: "ti-user-heart" },
+          { id: "cliente-risco", label: "Client risk", icon: "ti-user-heart" },
         ],
       },
     ],
