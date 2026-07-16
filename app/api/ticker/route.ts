@@ -27,7 +27,7 @@ const SYMBOLS: { div: string; items: { lbl: string; sym: string; prefix?: string
     ],
   },
   {
-    div: "CÂMBIO",
+    div: "FX",
     items: [
       { lbl: "USD/BRL", sym: "BRL=X" },
       { lbl: "EUR/USD", sym: "EURUSD=X" },
@@ -35,7 +35,7 @@ const SYMBOLS: { div: string; items: { lbl: string; sym: string; prefix?: string
     ],
   },
   {
-    div: "CRIPTO",
+    div: "CRYPTO",
     items: [
       { lbl: "BTC", sym: "BTC-USD", prefix: "$" },
       { lbl: "ETH", sym: "ETH-USD", prefix: "$" },
@@ -54,7 +54,7 @@ const SYMBOLS: { div: string; items: { lbl: string; sym: string; prefix?: string
     ],
   },
   {
-    div: "AÇÕES US",
+    div: "US STOCKS",
     items: [
       { lbl: "NVDA", sym: "NVDA", prefix: "$" },
       { lbl: "MSFT", sym: "MSFT", prefix: "$" },
@@ -73,8 +73,8 @@ const SYMBOLS: { div: string; items: { lbl: string; sym: string; prefix?: string
     ],
   },
   {
-    // 20 maiores/mais líquidas do Ibovespa.
-    div: "AÇÕES BRASIL",
+    // Top 20 largest/most liquid Ibovespa constituents.
+    div: "BRAZIL STOCKS",
     items: [
       { lbl: "PETR4", sym: "PETR4.SA" },
       { lbl: "VALE3", sym: "VALE3.SA" },
@@ -137,8 +137,8 @@ async function fetchAll(origin: string): Promise<TickerGroup[]> {
     if (items.length) groups.push({ div: g.div, items });
   }
 
-  // Suas posições — top holdings reais do fundo (leitura cliente-safe do overnight,
-  // nunca o motor/sinal). Cotação ao vivo do Yahoo por cima.
+  // Your positions — real top holdings of the fund (client-safe read from the overnight
+  // job, never the engine/signal). Live quote from Yahoo layered on top.
   try {
     const snap = await fetch(`${origin}/api/snapshot`, { cache: "no-store" }).then((r) => r.json());
     const profile = snap?.profiles?.ADVANCE || snap?.profiles?.BALANCE || snap?.profiles?.CONSERVATIVE;
@@ -149,9 +149,9 @@ async function fetchAll(origin: string): Promise<TickerGroup[]> {
       );
       const items: TickerItem[] = [];
       for (const r of results) if (r.status === "fulfilled") items.push(r.value);
-      if (items.length) groups.push({ div: "SUAS POSIÇÕES", items });
+      if (items.length) groups.push({ div: "YOUR POSITIONS", items });
     }
-  } catch { /* overnight offline — segue sem essa faixa */ }
+  } catch { /* overnight job offline — continue without this row */ }
 
   // Harpian funds (static for now)
   groups.push({
@@ -162,7 +162,7 @@ async function fetchAll(origin: string): Promise<TickerGroup[]> {
     ],
   });
 
-  // Notícias reais (RSS financeiro via backend HQP) — cada item linca a matéria original.
+  // Real news (financial RSS via HQP backend) — each item links to the original story.
   try {
     const news = await hqpGet<{ headlines: { headline: string; source_label: string; url: string }[] }>("/v1/news");
     const items: TickerItem[] = (news.headlines || []).slice(0, 8).map((h) => ({
@@ -171,8 +171,8 @@ async function fetchAll(origin: string): Promise<TickerGroup[]> {
       dir: "go",
       href: h.url,
     }));
-    if (items.length) groups.push({ div: "NOTÍCIAS", items });
-  } catch { /* backend de notícias offline — segue sem essa faixa */ }
+    if (items.length) groups.push({ div: "NEWS", items });
+  } catch { /* news backend offline — continue without this row */ }
 
   return groups;
 }

@@ -4,7 +4,7 @@ import { yahooOHLC } from "@/lib/yahoo";
 export const dynamic = "force-dynamic";
 
 // GET /api/candles?symbol=NVDA&range=1y&interval=1d&compare=SPY
-// → OHLC + volume + (opcional) linha de comparação rebaseada ao nível do ativo.
+// → OHLC + volume + (optional) comparison line rebased to the asset's level.
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const symbol = (sp.get("symbol") || "NVDA").toUpperCase();

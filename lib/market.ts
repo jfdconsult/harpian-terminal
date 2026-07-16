@@ -1,4 +1,4 @@
-// Universo de mercado (tickers Yahoo) + carteira exemplo para a régua de risco.
+// Market universe (Yahoo tickers) + sample portfolio for the risk gauge.
 export interface SymbolDef { symbol: string; name: string; }
 
 export const MARKET_GROUPS: Record<string, SymbolDef[]> = {
@@ -7,18 +7,18 @@ export const MARKET_GROUPS: Record<string, SymbolDef[]> = {
     { symbol: "^IXIC", name: "Nasdaq Composite" }, { symbol: "^DJI", name: "Dow Jones" },
     { symbol: "^RUT", name: "Russell 2000" }, { symbol: "^OEX", name: "S&P 100" },
     { symbol: "^MID", name: "S&P MidCap 400" }, { symbol: "^SP600", name: "S&P SmallCap 600" },
-    { symbol: "^SOX", name: "Semicondutores (PHLX)" }, { symbol: "^NYA", name: "NYSE Composite" },
-    { symbol: "^VIX", name: "VIX (volatilidade)" }, { symbol: "^TNX", name: "US 10Y Treasury (yield)" },
+    { symbol: "^SOX", name: "Semiconductors (PHLX)" }, { symbol: "^NYA", name: "NYSE Composite" },
+    { symbol: "^VIX", name: "VIX (volatility)" }, { symbol: "^TNX", name: "US 10Y Treasury (yield)" },
   ],
   "Índices Globais": [
-    { symbol: "^FTSE", name: "FTSE 100 (UK)" }, { symbol: "^GDAXI", name: "DAX (Alemanha)" },
-    { symbol: "^FCHI", name: "CAC 40 (França)" }, { symbol: "^STOXX50E", name: "Euro Stoxx 50" },
-    { symbol: "^IBEX", name: "IBEX 35 (Espanha)" }, { symbol: "^N225", name: "Nikkei 225 (Japão)" },
+    { symbol: "^FTSE", name: "FTSE 100 (UK)" }, { symbol: "^GDAXI", name: "DAX (Germany)" },
+    { symbol: "^FCHI", name: "CAC 40 (France)" }, { symbol: "^STOXX50E", name: "Euro Stoxx 50" },
+    { symbol: "^IBEX", name: "IBEX 35 (Spain)" }, { symbol: "^N225", name: "Nikkei 225 (Japan)" },
     { symbol: "^HSI", name: "Hang Seng (HK)" }, { symbol: "000001.SS", name: "Shanghai Composite" },
-    { symbol: "^KS11", name: "KOSPI (Coreia)" }, { symbol: "^TWII", name: "Taiwan Weighted" },
-    { symbol: "^BSESN", name: "SENSEX (Índia)" }, { symbol: "^AXJO", name: "ASX 200 (Austrália)" },
-    { symbol: "^GSPTSE", name: "TSX (Canadá)" }, { symbol: "^BVSP", name: "Ibovespa (Brasil)" },
-    { symbol: "^MXX", name: "IPC (México)" },
+    { symbol: "^KS11", name: "KOSPI (Korea)" }, { symbol: "^TWII", name: "Taiwan Weighted" },
+    { symbol: "^BSESN", name: "SENSEX (India)" }, { symbol: "^AXJO", name: "ASX 200 (Australia)" },
+    { symbol: "^GSPTSE", name: "TSX (Canada)" }, { symbol: "^BVSP", name: "Ibovespa (Brazil)" },
+    { symbol: "^MXX", name: "IPC (Mexico)" },
   ],
   "ETFs": [
     { symbol: "SPY", name: "SPDR S&P 500" }, { symbol: "QQQ", name: "Invesco Nasdaq 100" },
@@ -136,18 +136,18 @@ export const MARKET_GROUPS: Record<string, SymbolDef[]> = {
     { symbol: "AIG", name: "American International Group, I" }, { symbol: "NSC", name: "Norfolk Southern Corporation" }, { symbol: "DHI", name: "D.R. Horton, Inc." },
   ],
   "Setores": [
-    { symbol: "XLK", name: "Tecnologia" }, { symbol: "XLV", name: "Saúde" }, { symbol: "XLF", name: "Financeiro" },
-    { symbol: "XLY", name: "Consumo discric." }, { symbol: "XLP", name: "Consumo básico" }, { symbol: "XLC", name: "Comunicação" },
-    { symbol: "XLI", name: "Industrial" }, { symbol: "XLE", name: "Energia" }, { symbol: "XLU", name: "Utilities" },
-    { symbol: "XLB", name: "Materiais" }, { symbol: "XLRE", name: "Imobiliário" },
+    { symbol: "XLK", name: "Technology" }, { symbol: "XLV", name: "Healthcare" }, { symbol: "XLF", name: "Financials" },
+    { symbol: "XLY", name: "Consumer Discretionary" }, { symbol: "XLP", name: "Consumer Staples" }, { symbol: "XLC", name: "Communication Services" },
+    { symbol: "XLI", name: "Industrials" }, { symbol: "XLE", name: "Energy" }, { symbol: "XLU", name: "Utilities" },
+    { symbol: "XLB", name: "Materials" }, { symbol: "XLRE", name: "Real Estate" },
   ],
   "Commodities": [
-    { symbol: "GC=F", name: "Ouro" }, { symbol: "SI=F", name: "Prata" }, { symbol: "PL=F", name: "Platina" },
-    { symbol: "PA=F", name: "Paládio" }, { symbol: "HG=F", name: "Cobre" }, { symbol: "CL=F", name: "Petróleo WTI" },
-    { symbol: "BZ=F", name: "Petróleo Brent" }, { symbol: "NG=F", name: "Gás natural" }, { symbol: "RB=F", name: "Gasolina" },
-    { symbol: "HO=F", name: "Óleo de aquecimento" }, { symbol: "ZC=F", name: "Milho" }, { symbol: "ZW=F", name: "Trigo" },
-    { symbol: "ZS=F", name: "Soja" }, { symbol: "KC=F", name: "Café" }, { symbol: "SB=F", name: "Açúcar" },
-    { symbol: "CC=F", name: "Cacau" }, { symbol: "CT=F", name: "Algodão" }, { symbol: "LE=F", name: "Boi gordo" },
+    { symbol: "GC=F", name: "Gold" }, { symbol: "SI=F", name: "Silver" }, { symbol: "PL=F", name: "Platinum" },
+    { symbol: "PA=F", name: "Palladium" }, { symbol: "HG=F", name: "Copper" }, { symbol: "CL=F", name: "WTI Crude Oil" },
+    { symbol: "BZ=F", name: "Brent Crude Oil" }, { symbol: "NG=F", name: "Natural Gas" }, { symbol: "RB=F", name: "Gasoline" },
+    { symbol: "HO=F", name: "Heating Oil" }, { symbol: "ZC=F", name: "Corn" }, { symbol: "ZW=F", name: "Wheat" },
+    { symbol: "ZS=F", name: "Soybeans" }, { symbol: "KC=F", name: "Coffee" }, { symbol: "SB=F", name: "Sugar" },
+    { symbol: "CC=F", name: "Cocoa" }, { symbol: "CT=F", name: "Cotton" }, { symbol: "LE=F", name: "Live Cattle" },
   ],
   "Cripto": [
     { symbol: "BTC-USD", name: "Bitcoin" }, { symbol: "ETH-USD", name: "Ethereum" }, { symbol: "SOL-USD", name: "Solana" },
@@ -158,7 +158,7 @@ export const MARKET_GROUPS: Record<string, SymbolDef[]> = {
     { symbol: "SHIB-USD", name: "Shiba Inu" },
   ],
   "Forex": [
-    { symbol: "USDBRL=X", name: "USD / BRL (dólar-real)" }, { symbol: "EURUSD=X", name: "EUR / USD" },
+    { symbol: "USDBRL=X", name: "USD / BRL (dollar-real)" }, { symbol: "EURUSD=X", name: "EUR / USD" },
     { symbol: "USDJPY=X", name: "USD / JPY" }, { symbol: "GBPUSD=X", name: "GBP / USD" },
     { symbol: "USDCHF=X", name: "USD / CHF" }, { symbol: "AUDUSD=X", name: "AUD / USD" },
     { symbol: "USDCAD=X", name: "USD / CAD" }, { symbol: "NZDUSD=X", name: "NZD / USD" },
@@ -169,20 +169,20 @@ export const MARKET_GROUPS: Record<string, SymbolDef[]> = {
   ],
 };
 
-// Seletor da tela "Ações, ETFs & Commodities" — agrupado (optgroup)
+// Selector for the "Stocks, ETFs & Commodities" screen — grouped (optgroup)
 export const ASSET_GROUPS: { label: string; items: SymbolDef[] }[] = [
-  { label: "Ações", items: MARKET_GROUPS["Ações"] },
-  { label: "Índices US", items: MARKET_GROUPS["Índices US"] },
-  { label: "Índices Globais", items: MARKET_GROUPS["Índices Globais"] },
+  { label: "Stocks", items: MARKET_GROUPS["Ações"] },
+  { label: "US Indices", items: MARKET_GROUPS["Índices US"] },
+  { label: "Global Indices", items: MARKET_GROUPS["Índices Globais"] },
   { label: "ETFs", items: MARKET_GROUPS["ETFs"] },
-  { label: "Setores", items: MARKET_GROUPS["Setores"] },
+  { label: "Sectors", items: MARKET_GROUPS["Setores"] },
   { label: "Commodities", items: MARKET_GROUPS["Commodities"] },
-  { label: "Cripto", items: MARKET_GROUPS["Cripto"] },
+  { label: "Crypto", items: MARKET_GROUPS["Cripto"] },
   { label: "Forex", items: MARKET_GROUPS["Forex"] },
 ];
 export const ASSET_LIST: SymbolDef[] = ASSET_GROUPS.flatMap((g) => g.items);
 
-// Mapa Yahoo → símbolo TradingView (para o widget/deep-link).
+// Yahoo → TradingView symbol map (for the widget/deep-link).
 const TV_MAP: Record<string, string> = {
   "^GSPC": "SP:SPX", "^NDX": "NASDAQ:NDX", "^DJI": "DJ:DJI", "^RUT": "TVC:RUT2K", "^SOX": "NASDAQ:SOX", "^VIX": "TVC:VIX",
   "GC=F": "COMEX:GC1!", "SI=F": "COMEX:SI1!", "CL=F": "NYMEX:CL1!", "BZ=F": "NYMEX:BZ1!", "NG=F": "NYMEX:NG1!", "HG=F": "COMEX:HG1!",
@@ -192,7 +192,7 @@ const TV_MAP: Record<string, string> = {
 export const tvSymbol = (s: string) => TV_MAP[s] || s.replace("^", "").replace("=F", "").replace("-USD", "USD").replace("=X", "");
 
 
-// Carteira exemplo do cliente (agressiva) — o Risco de portfólio sai daqui, ao vivo do Yahoo.
+// Sample client portfolio (aggressive) — portfolio Risk comes from here, live from Yahoo.
 export const EXAMPLE_PORTFOLIO: { symbol: string; weight: number }[] = [
   { symbol: "QQQ", weight: 0.30 },
   { symbol: "NVDA", weight: 0.25 },

@@ -9,128 +9,158 @@ export interface ScreenContext {
 
 const SCREEN_MAP: Record<ScreenId, Omit<ScreenContext, "id">> = {
   painel: {
-    title: "Painel Principal",
-    description: "Dashboard do gestor: fundos do dia (HPC22 Agressivo, HPC11 I.G.), maiores posições compradas no ETP, regime de mercado (RISK-ON/OFF), e estado de defesa.",
-    dataAvailable: ["NAV dos fundos", "posições compradas", "regime de mercado", "estado de defesa"],
+    title: "Main Dashboard",
+    description: "Manager's dashboard: today's funds (HPC22 Aggressive, HPC11 I.G.), largest long positions in the ETP, market regime (RISK-ON/OFF), and defense state.",
+    dataAvailable: ["fund NAVs", "long positions", "market regime", "defense state"],
   },
   fundo: {
-    title: "Ficha do Fundo",
-    description: "Detalhes do fundo selecionado: performance (NAV, retorno, drawdown), composição (posições, pesos), defesa e risco (Risk Number, Sharpe, Sortino, Calmar).",
-    dataAvailable: ["NAV histórico", "retorno acumulado", "drawdown máximo", "composição do portfólio", "métricas de risco"],
+    title: "Fund Sheet",
+    description: "Details of the selected fund: performance (NAV, return, drawdown), composition (positions, weights), defense and risk (Risk Number, Sharpe, Sortino, Calmar).",
+    dataAvailable: ["historical NAV", "cumulative return", "maximum drawdown", "portfolio composition", "risk metrics"],
   },
   cotacoes: {
-    title: "Cotações (FastTrack)",
-    description: "Tabela de cotações em tempo real via FastTrack: índices (S&P 500, NASDAQ, DOW), commodities, câmbio, e ações US com variação diária, mensal, YTD e anual.",
-    dataAvailable: ["preço atual", "variação diária", "variação mensal", "YTD", "variação anual", "Sharpe", "Risk Number"],
+    title: "Quotes (FastTrack)",
+    description: "Real-time quotes table via FastTrack: indices (S&P 500, NASDAQ, DOW), commodities, FX, and US stocks with daily, monthly, YTD, and annual variation.",
+    dataAvailable: ["current price", "daily variation", "monthly variation", "YTD", "annual variation", "Sharpe", "Risk Number"],
   },
   acoes: {
-    title: "Gráfico do ativo",
-    description: "Gráfico de candlestick (Yahoo Finance) de uma ação, ETF, índice ou commodity, com métricas do ativo (preço, YTD, 1 ano, Sharpe, drawdown, RSI) e indicadores próprios.",
-    dataAvailable: ["preço e variações", "Sharpe", "drawdown máximo", "RSI", "faixa 52 semanas", "gráfico OHLC"],
+    title: "Asset Chart",
+    description: "Candlestick chart (Yahoo Finance) for a stock, ETF, index, or commodity, with asset metrics (price, YTD, 1-year, Sharpe, drawdown, RSI) and proprietary indicators.",
+    dataAvailable: ["price and variations", "Sharpe", "maximum drawdown", "RSI", "52-week range", "OHLC chart"],
+  },
+  "mercado-visao": {
+    title: "Market Overview (consolidated)",
+    description: "A screen that brings all market data into a single read: ARI (US domestic regime), XRI (external risk), Market DNA (volatility, sentiment, breadth, macro, COT positioning layers), and the Snowflake of the manager's favorites. Delivers JIM's interpretation: why each index is where it is, what's driving it, what's changing, and what that means for the portfolio.",
+    dataAvailable: ["ARI (domestic regime)", "XRI (external risk and driving countries)", "Market DNA layers", "manager's favorites", "convergence between domestic and external risk"],
   },
   regime: {
-    title: "Regime de Mercado",
-    description: "Indicador de regime (RISK-ON / RISK-OFF / TRANSIÇÃO). Mostra estado da defesa, sinais de mercado, e postura do portfólio.",
-    dataAvailable: ["regime atual", "estado de defesa", "sinais de mercado"],
+    title: "ARI — American Regime Index",
+    description: "US domestic regime (RISK-ON / CAUTION / RE-ENTRY / RISK-OFF), the domestic counterpart to XRI. Shows defense state, S&P 500 chart, market signals, and portfolio posture.",
+    dataAvailable: ["current regime (ARI)", "defense state", "S&P 500 and technical indicators", "market signals"],
+  },
+  xri: {
+    title: "XRI — External Regime Index",
+    description: "Daily external risk index (0-100): LOW / MODERATE / ELEVATED / CRITICAL. Measures the temperature of what's happening outside the US, weighted by US companies' real exposure — not by each country's GDP size. It is an overlay, not a signal: it moves the exposure ceiling, never issues a buy or sell order.",
+    dataAvailable: ["XRI score 0-100", "state and direction", "countries driving the risk", "reading confidence", "historical validation"],
   },
   noticias: {
-    title: "Notícias",
-    description: "Feed de notícias curadas relevantes para gestão de portfólio e mercado. Fonte: JD NEWS.",
-    dataAvailable: ["notícias do dia", "impacto no mercado"],
+    title: "News",
+    description: "Curated news feed relevant to portfolio and market management. Source: JD NEWS.",
+    dataAvailable: ["today's news", "market impact"],
   },
   risco: {
-    title: "Comparação de Risco · 4 Níveis",
-    description: "Comparativo visual entre 4 níveis de risco (Conservador, Moderado, Agressivo, Ultra) com métricas: CAGR, Sharpe, Sortino, Calmar, Drawdown Máximo, Risk Number.",
-    dataAvailable: ["métricas por nível", "Risk Number comparativo", "drawdown", "Sharpe", "Sortino", "Calmar"],
+    title: "Risk Comparison · 4 Tiers",
+    description: "Visual comparison across 4 risk tiers (Conservative, Moderate, Aggressive, Ultra) with metrics: CAGR, Sharpe, Sortino, Calmar, Maximum Drawdown, Risk Number.",
+    dataAvailable: ["metrics per tier", "comparative Risk Number", "drawdown", "Sharpe", "Sortino", "Calmar"],
   },
   clientes: {
-    title: "Lista de Clientes",
-    description: "CRM do ETP: lista de Family Offices e gestores conectados com Risk Number, AUM, e status de adequação.",
-    dataAvailable: ["lista de clientes", "AUM", "Risk Number do cliente", "adequação"],
+    title: "Client List",
+    description: "ETP CRM: list of connected Family Offices and managers with Risk Number, AUM, and suitability status.",
+    dataAvailable: ["client list", "AUM", "client's Risk Number", "suitability"],
   },
   cliente: {
-    title: "Detalhe do Cliente",
-    description: "Ficha completa do cliente/MFO: perfil, portfólio alocado, Risk Number, histórico de interações.",
-    dataAvailable: ["perfil do cliente", "portfólio", "Risk Number", "histórico"],
+    title: "Client Detail",
+    description: "Full client/MFO sheet: profile, allocated portfolio, Risk Number, interaction history.",
+    dataAvailable: ["client profile", "portfolio", "Risk Number", "history"],
   },
   carteira: {
-    title: "Carteira do Cliente",
-    description: "Portfólio detalhado do cliente: posições, pesos, performance, adequação ao Risk Number, e sugestões de rebalanceamento.",
-    dataAvailable: ["posições", "pesos", "performance", "adequação"],
+    title: "Client Portfolio",
+    description: "Detailed client portfolio: positions, weights, performance, Risk Number suitability, and rebalancing suggestions.",
+    dataAvailable: ["positions", "weights", "performance", "suitability"],
   },
   "portfolio-detalhe": {
-    title: "Detalhamento do Portfólio",
-    description: "Um portfólio específico do cliente, produto a produto: emissor, categoria, sub-categoria, geografia, alocação %, valor, perfil de risco, retorno e volatilidade estimados.",
-    dataAvailable: ["produtos", "alocação por geografia", "alocação por categoria", "perfil de risco", "concentração", "retorno estimado"],
+    title: "Portfolio Breakdown",
+    description: "A specific client portfolio, product by product: issuer, category, sub-category, geography, allocation %, value, risk profile, estimated return and volatility.",
+    dataAvailable: ["products", "allocation by geography", "allocation by category", "risk profile", "concentration", "estimated return"],
   },
   ordem: {
-    title: "Ordens (Lynk)",
-    description: "Módulo de envio de ordens via Lynk API: geração semiautomática de ordens com base nas mudanças do dia no portfólio modelo.",
-    dataAvailable: ["ordens pendentes", "mudanças do dia", "status de execução"],
+    title: "Orders (Lynk)",
+    description: "Order submission module via Lynk API: semi-automatic order generation based on the day's changes to the model portfolio.",
+    dataAvailable: ["pending orders", "today's changes", "execution status"],
   },
   importar: {
-    title: "Importar / Conectar",
-    description: "Importação de carteiras de clientes: upload de planilhas ou conexão direta com custódia.",
+    title: "Import / Connect",
+    description: "Client portfolio import: spreadsheet upload or direct connection to custody.",
     dataAvailable: [],
   },
   alertas: {
-    title: "Alertas",
-    description: "Central de alertas: variações significativas, rebalanceamentos necessários, vencimentos, e notificações de compliance.",
-    dataAvailable: ["alertas ativos", "ações necessárias"],
+    title: "Alerts",
+    description: "Alert center: significant variations, required rebalances, maturities, and compliance notifications.",
+    dataAvailable: ["active alerts", "actions required"],
   },
   institutional: {
     title: "13F Holdings (SEC)",
-    description: "Posições reportadas ao SEC por grandes hedge funds (Bridgewater, Renaissance, Citadel, etc.). Dados com defasagem de 45 dias (filing deadline). Útil para sentiment institucional.",
-    dataAvailable: ["posições dos fundos", "mudanças trimestrais", "concentração setorial"],
+    description: "Positions reported to the SEC by major hedge funds (Bridgewater, Renaissance, Citadel, etc.). Data lags 45 days (filing deadline). Useful for institutional sentiment.",
+    dataAvailable: ["fund positions", "quarterly changes", "sector concentration"],
   },
   "cot-sentiment": {
     title: "COT Intelligence (CFTC)",
-    description: "COT Index (0-100) por mercado baseado em posições da CFTC. Três grupos: Commercial (hedgers), Large Speculators (smart money), Nonreportable (varejo). Indicador contrário: >80 = sinal bearish, <20 = sinal bullish. Defasagem de 3 dias úteis.",
-    dataAvailable: ["COT Index", "posições líquidas por grupo", "extremos de posicionamento", "alertas contrários"],
+    description: "COT Index (0-100) per market based on CFTC positioning. Three groups: Commercial (hedgers), Large Speculators (smart money), Nonreportable (retail). Contrarian indicator: >80 = bearish signal, <20 = bullish signal. 3-business-day lag.",
+    dataAvailable: ["COT Index", "net positions by group", "positioning extremes", "contrarian alerts"],
   },
   "cot-legacy": {
     title: "COT Data Explorer",
-    description: "Tabela detalhada de dados CFTC Legacy: posições long/short por grupo, open interest, variação semanal. Dados brutos para análise aprofundada.",
-    dataAvailable: ["posições brutas", "open interest", "histórico semanal"],
+    description: "Detailed CFTC Legacy data table: long/short positions by group, open interest, weekly change. Raw data for deeper analysis.",
+    dataAvailable: ["raw positions", "open interest", "weekly history"],
   },
   "social-radar": {
     title: "Social Radar",
-    description: "Monitoramento de menções e sentiment em redes sociais (X/Twitter, Reddit) sobre ativos e temas de mercado.",
-    dataAvailable: ["menções", "sentiment score", "volume de discussão"],
+    description: "Monitoring of mentions and sentiment on social networks (X/Twitter, Reddit) about assets and market themes.",
+    dataAvailable: ["mentions", "sentiment score", "discussion volume"],
   },
   "news-broadcast": {
     title: "News Broadcast",
-    description: "Transmissão de notícias em tempo real com classificação de impacto para o portfólio.",
-    dataAvailable: ["notícias em tempo real", "classificação de impacto"],
+    description: "Real-time news feed with impact classification for the portfolio.",
+    dataAvailable: ["real-time news", "impact classification"],
   },
   "insider-orders": {
     title: "Insider Orders",
-    description: "Compras e vendas de insiders (SEC Form 4): diretores, CFOs, CEOs. Compras de insiders são historicamente sinal bullish.",
-    dataAvailable: ["transações de insiders", "tipo (compra/venda)", "valor", "cargo"],
+    description: "Insider buys and sells (SEC Form 4): directors, CFOs, CEOs. Insider buying is historically a bullish signal.",
+    dataAvailable: ["insider transactions", "type (buy/sell)", "value", "role"],
+  },
+  "market-dna": {
+    title: "Market DNA",
+    description: "Aggregator of all market intelligence layers (Positioning/COT, Volatility/CBOE, Liquidity/FINRA, Sentiment, Macro/FRED, Insider) in a single 10-layer radar + Conviction Score.",
+    dataAvailable: ["score per layer", "available layers", "conviction score"],
+  },
+  screener: {
+    title: "Screener",
+    description: "Fundamental US stock screener (equivalent to Finviz/StockAnalysis.com): price, variation, market cap, P/E, ROE, net margin, revenue growth, debt/equity, filterable by sector.",
+    dataAvailable: ["price and variation", "market cap", "P/E", "ROE", "net margin", "revenue growth", "debt/equity"],
+  },
+  snowflake: {
+    title: "Snowflake",
+    description: "Heuristic visual score (equivalent to Simply Wall St) for a US ticker across 5 axes: Value, Future, Past, Health, Dividend. It is not an HCE signal — it is an illustrative heuristic based on Yahoo Finance fundamentals.",
+    dataAvailable: ["score per axis (Value/Future/Past/Health/Dividend)", "raw fundamentals"],
+  },
+  "filings-search": {
+    title: "Filings Search",
+    description: "SEC EDGAR full-text search (equivalent to the official EDGAR Full-Text Search) across 10-K/10-Q/8-K/DEF 14A/etc since 2001, by keyword.",
+    dataAvailable: ["search results", "company", "filing type", "date", "document link"],
   },
   integracoes: {
-    title: "Integrações",
-    description: "Status das integrações: Interactive Brokers (execução), Lynk (emissão ETN), FastTrack (dados EOD), Yahoo Finance (cotações).",
-    dataAvailable: ["status de conexão", "última sincronização"],
+    title: "Integrations",
+    description: "Integration status: Interactive Brokers (execution), Lynk (ETN issuance), FastTrack (EOD data), Yahoo Finance (quotes).",
+    dataAvailable: ["connection status", "last sync"],
   },
   marca: {
-    title: "Marca (White-label)",
-    description: "Personalização visual do terminal para Family Offices: logo, cores, nome, e domínio customizado.",
+    title: "Brand (White-label)",
+    description: "Visual customization of the terminal for Family Offices: logo, colors, name, and custom domain.",
     dataAvailable: [],
   },
   config: {
-    title: "Configurações",
-    description: "Configurações do terminal: preferências do usuário, notificações, tema, e parâmetros de risco.",
+    title: "Settings",
+    description: "Terminal settings: user preferences, notifications, theme, and risk parameters.",
     dataAvailable: [],
   },
   api: {
-    title: "API & Integração",
-    description: "Documentação e configuração da API do ETP: endpoints disponíveis, autenticação, e exemplos de uso.",
-    dataAvailable: ["endpoints", "documentação"],
+    title: "API & Integration",
+    description: "Documentation and configuration for the ETP API: available endpoints, authentication, and usage examples.",
+    dataAvailable: ["endpoints", "documentation"],
   },
   tutorial: {
     title: "Tutorial",
-    description: "Guia interativo do terminal: como navegar, interpretar dados, e usar cada módulo.",
+    description: "Interactive terminal guide: how to navigate, interpret data, and use each module.",
     dataAvailable: [],
   },
 };
@@ -140,35 +170,41 @@ export function getScreenContext(id: ScreenId): ScreenContext {
   return { id, ...ctx };
 }
 
-// Perguntas mais prováveis por tela — fallback estático quando a tela não
-// publica sugestões dinâmicas (data-aware) via publishScreenData. Viram os
-// chips clicáveis na barra do JIM. Máx. 3.
+// Most likely questions per screen — static fallback for when the screen does not
+// publish dynamic (data-aware) suggestions via publishScreenData. These become the
+// clickable chips in the JIM bar. Max. 3.
 const SCREEN_SUGGESTIONS: Record<ScreenId, string[]> = {
-  painel: ["Como estão os fundos hoje?", "Qual o regime de mercado agora?", "A defesa está ligada?"],
-  fundo: ["Como está a performance desse fundo?", "Qual o risco e o drawdown atual?", "O que mudou na composição?"],
-  cotacoes: ["Quais os maiores altas e baixas de hoje?", "Qual ativo está com melhor momento?", "Algum ativo em nível de risco?"],
-  acoes: ["Como está o momento dessa ação?", "Qual o risco dessa posição?", "Tem notícia recente sobre ela?"],
-  regime: ["Por que o regime está assim?", "O que isso muda na postura do portfólio?", "Devo me preocupar com a defesa?"],
-  noticias: ["Qual a notícia mais relevante agora?", "Algo aqui afeta meu portfólio?", "Resuma o dia pra mim."],
-  risco: ["Qual nível combina com meu cliente?", "Compare Moderado e Agressivo pra mim.", "O que significa esse Risk Number?"],
-  clientes: ["Qual cliente está desenquadrado?", "Quem tem o maior AUM?", "Resuma a carteira de clientes."],
-  cliente: ["Esse cliente está adequado ao perfil?", "Qual o Risk Number dele?", "O que sugerir pra ele agora?"],
-  carteira: ["Essa carteira está adequada?", "Qual posição pesa mais no risco?", "Precisa rebalancear?"],
-  "portfolio-detalhe": ["Esse portfólio está bem diversificado?", "Qual a maior concentração de risco aqui?", "Como esse portfólio se compara ao mandato do cliente?"],
-  ordem: ["O que essas ordens fazem?", "Por que essas mudanças hoje?", "Qual o impacto no portfólio?"],
-  importar: ["Como importo uma carteira?", "Quais formatos são aceitos?", "Posso conectar a custódia?"],
-  alertas: ["Qual alerta é mais urgente?", "O que exige ação minha hoje?", "Resuma os alertas."],
-  institutional: ["O que esse fundo comprou de novo?", "Qual a maior posição dele?", "Há concentração setorial?"],
-  "insider-orders": ["Quais foram as compras de insiders?", "Compra de insider é sinal de alta?", "Algum executivo vendendo em peso?"],
-  "cot-sentiment": ["Qual mercado está em extremo?", "Onde o smart money está posicionado?", "Algum sinal contrário agora?"],
-  "cot-legacy": ["O que esses dados COT dizem?", "Qual mercado mudou mais na semana?", "Como leio o open interest?"],
-  "social-radar": ["Qual ativo está em alta nas redes?", "O sentimento está bullish ou bearish?", "Isso importa pro mercado?"],
-  "news-broadcast": ["Qual manchete move o mercado hoje?", "Algo aqui afeta meu portfólio?", "Resuma as notícias."],
-  integracoes: ["Quais integrações estão ativas?", "Alguma conexão caiu?", "Como conecto a corretora?"],
-  marca: ["Como personalizo o terminal?", "Posso usar meu logo e cores?", "Como fica o white-label?"],
-  config: ["O que posso configurar aqui?", "Como ajusto as notificações?", "Como mudo o tema?"],
-  api: ["Como uso a API do ETP?", "Quais endpoints existem?", "Como autentico?"],
-  tutorial: ["Como navego no terminal?", "Por onde começo?", "Mostre os principais recursos."],
+  painel: ["How are the funds doing today?", "What's the market regime right now?", "Is defense on?"],
+  fundo: ["How is this fund performing?", "What's the current risk and drawdown?", "What changed in the composition?"],
+  cotacoes: ["What are today's biggest gainers and losers?", "Which asset has the best momentum?", "Any asset at a risk level?"],
+  acoes: ["How's the momentum on this stock?", "What's the risk on this position?", "Any recent news about it?"],
+  "mercado-visao": ["Why is the regime like this?", "Is the risk domestic or external?", "What should I do with the portfolio now?"],
+  regime: ["Why is ARI in this regime?", "What does this change in portfolio posture?", "Should I be worried about defense?"],
+  xri: ["Why is external risk at this level?", "Which country is driving the XRI?", "Does this change my clients' portfolios?"],
+  noticias: ["What's the most relevant news right now?", "Does anything here affect my portfolio?", "Summarize the day for me."],
+  risco: ["Which tier fits my client?", "Compare Moderate and Aggressive for me.", "What does this Risk Number mean?"],
+  clientes: ["Which client is out of mandate?", "Who has the largest AUM?", "Summarize the client base."],
+  cliente: ["Is this client suited to their profile?", "What's their Risk Number?", "What should I suggest to them now?"],
+  carteira: ["Is this portfolio suitable?", "Which position weighs most on risk?", "Does it need rebalancing?"],
+  "portfolio-detalhe": ["Is this portfolio well diversified?", "What's the biggest risk concentration here?", "How does this portfolio compare to the client's mandate?"],
+  ordem: ["What do these orders do?", "Why these changes today?", "What's the impact on the portfolio?"],
+  importar: ["How do I import a portfolio?", "Which formats are accepted?", "Can I connect to custody?"],
+  alertas: ["Which alert is most urgent?", "What requires my action today?", "Summarize the alerts."],
+  institutional: ["What did this fund buy recently?", "What's its largest position?", "Is there sector concentration?"],
+  "insider-orders": ["What were the recent insider buys?", "Is insider buying a bullish signal?", "Any executive selling heavily?"],
+  "market-dna": ["Which layers are available now?", "What does the Conviction Score say?", "Any layer at an extreme?"],
+  screener: ["Which tickers have P/E below 15 and ROE above 20%?", "Which sector is cheapest right now?", "Show me the ones with the highest revenue growth."],
+  snowflake: ["Why is the Value axis low?", "Compare this snowflake with another ticker", "Does this ticker pay a good dividend?"],
+  "filings-search": ["Which companies mentioned this in a recent 8-K?", "Filter to just 10-K", "Is this material information?"],
+  "cot-sentiment": ["Which market is at an extreme?", "Where is smart money positioned?", "Any contrarian signal right now?"],
+  "cot-legacy": ["What does this COT data say?", "Which market changed the most this week?", "How do I read open interest?"],
+  "social-radar": ["Which asset is trending on social media?", "Is sentiment bullish or bearish?", "Does this matter for the market?"],
+  "news-broadcast": ["Which headline is moving the market today?", "Does anything here affect my portfolio?", "Summarize the news."],
+  integracoes: ["Which integrations are active?", "Did any connection drop?", "How do I connect the brokerage?"],
+  marca: ["How do I customize the terminal?", "Can I use my own logo and colors?", "What does the white-label look like?"],
+  config: ["What can I configure here?", "How do I adjust notifications?", "How do I change the theme?"],
+  api: ["How do I use the ETP API?", "Which endpoints exist?", "How do I authenticate?"],
+  tutorial: ["How do I navigate the terminal?", "Where do I start?", "Show me the main features."],
 };
 
 export function getScreenSuggestions(id: ScreenId): string[] {
@@ -176,62 +212,62 @@ export function getScreenSuggestions(id: ScreenId): string[] {
 }
 
 export const BOOK_CATEGORIES = [
-  { code: "01", name: "Base Ideológica", topics: "filosofia de investimento, princípios, ética" },
-  { code: "02", name: "Macroeconomia Real", topics: "ciclos econômicos, política monetária, inflação, taxas de juros" },
-  { code: "03", name: "Geopolítica", topics: "riscos geopolíticos, conflitos, sanções, impacto em mercados" },
-  { code: "04", name: "Mercado e Psicologia", topics: "behavioral finance, vieses cognitivos, fear & greed, market psychology" },
-  { code: "05", name: "R&D and Tech", topics: "arquitetura de sistemas, engenharia de software, tecnologia" },
-  { code: "06", name: "Mídia e Narrativa", topics: "narrativas de mercado, manipulação de mídia, propaganda" },
-  { code: "09", name: "Finance", topics: "finanças corporativas, valuation, análise fundamentalista" },
-  { code: "12", name: "Gestão de Risco", topics: "risk management, VaR, stress testing, tail risk, hedging" },
-  { code: "16", name: "Trading & Quant & ML", topics: "trading quantitativo, machine learning aplicado, backtesting, estratégias" },
-  { code: "19", name: "CFO Books", topics: "gestão financeira, planejamento, controle orçamentário" },
+  { code: "01", name: "Ideological Foundations", topics: "investment philosophy, principles, ethics" },
+  { code: "02", name: "Real Macroeconomics", topics: "economic cycles, monetary policy, inflation, interest rates" },
+  { code: "03", name: "Geopolitics", topics: "geopolitical risks, conflicts, sanctions, market impact" },
+  { code: "04", name: "Market and Psychology", topics: "behavioral finance, cognitive biases, fear & greed, market psychology" },
+  { code: "05", name: "R&D and Tech", topics: "system architecture, software engineering, technology" },
+  { code: "06", name: "Media and Narrative", topics: "market narratives, media manipulation, propaganda" },
+  { code: "09", name: "Finance", topics: "corporate finance, valuation, fundamental analysis" },
+  { code: "12", name: "Risk Management", topics: "risk management, VaR, stress testing, tail risk, hedging" },
+  { code: "16", name: "Trading & Quant & ML", topics: "quantitative trading, applied machine learning, backtesting, strategies" },
+  { code: "19", name: "CFO Books", topics: "financial management, planning, budget control" },
   { code: "22", name: "Jim Simons", topics: "Renaissance Technologies, quant strategies, statistical arbitrage" },
   { code: "25", name: "Risk Management Skill", topics: "risk models, portfolio risk, drawdown control" },
-  { code: "28", name: "Book of Formulas for Trading", topics: "indicadores técnicos, fórmulas, 520 métodos catalogados" },
-  { code: "29", name: "Books for Backtest", topics: "metodologia de backtesting, walk-forward, validação estatística" },
-  { code: "32", name: "Data Mining", topics: "mineração de dados, feature engineering, descoberta de alpha" },
+  { code: "28", name: "Book of Formulas for Trading", topics: "technical indicators, formulas, 520 cataloged methods" },
+  { code: "29", name: "Books for Backtest", topics: "backtesting methodology, walk-forward, statistical validation" },
+  { code: "32", name: "Data Mining", topics: "data mining, feature engineering, alpha discovery" },
 ];
 
 export function buildSystemPrompt(ctx: ScreenContext): string {
-  return `Você é JIM, o assistente de inteligência artificial do Terminal ETP da Harpian Capital.
+  return `You are JIM, the AI assistant for Harpian Capital's ETP Terminal.
 
-PAPEL: Você é o braço-direito do gestor/consultor. Um professor e analista que ajuda a interpretar dados, tomar decisões e entender o mercado. Você transmite segurança e confiança — sempre com base em dados e fontes verificáveis.
+ROLE: You are the manager/advisor's right hand. A professor and analyst who helps interpret data, make decisions, and understand the market. You convey confidence and security — always grounded in data and verifiable sources.
 
-TELA ATUAL: "${ctx.title}"
+CURRENT SCREEN: "${ctx.title}"
 ${ctx.description}
-${ctx.dataAvailable.length ? `Dados disponíveis nesta tela: ${ctx.dataAvailable.join(", ")}.` : ""}
+${ctx.dataAvailable.length ? `Data available on this screen: ${ctx.dataAvailable.join(", ")}.` : ""}
 
-REGRAS FUNDAMENTAIS:
-1. NUNCA revele fórmulas, sinais, gatilhos, CRS, HSA, ou qualquer detalhe do método proprietário. Você mostra o RESULTADO e a POSTURA, nunca o COMO.
-2. Responda sempre em português brasileiro, de forma clara e direta.
-3. Quando citar dados, seja preciso. Se não tiver certeza, diga.
-4. Para perguntas sobre teoria (risco, macroeconomia, indicadores), consulte a base de conhecimento (livros).
-5. Ao citar livros, mencione: título, autor, e capítulo/seção relevante.
+FUNDAMENTAL RULES:
+1. NEVER reveal formulas, signals, triggers, CRS, HSA, or any detail of the proprietary method. You show the RESULT and the POSTURE, never the HOW.
+2. Always respond in clear, direct English.
+3. When citing data, be precise. If you're not sure, say so.
+4. For theory questions (risk, macroeconomics, indicators), consult the knowledge base (books).
+5. When citing books, mention: title, author, and relevant chapter/section.
 
-VOCÊ ENXERGA A TELA — REGRA DE OURO (nunca viole):
-- Você recebe, a cada pergunta, os DADOS REAIS que estão renderizados na tela do gestor AGORA (bloco "DADOS ATUALMENTE VISÍVEIS NA TELA", em JSON). Você OS VÊ.
-- Quando o gestor perguntar sobre qualquer coisa que está na tela — uma empresa, um executivo, um ticker, uma linha, um número — é TERMINANTEMENTE PROIBIDO perguntar "o que você está vendo na tela?", "qual transação?", "compra ou venda?", "qual valor?". Essa é a PIOR resposta possível e faz o gestor perder a confiança para sempre.
-- Em vez disso: LOCALIZE o item nos dados fornecidos e responda DIRETO, com os números reais da tela. Ex.: se ele pergunta sobre o CEO da NVIDIA na tela de Insider Orders, você procura a linha da NVDA nos dados, vê que Jensen Huang (CEO) fez uma VENDA de X ações por US$ Y na data Z, e já explica o que isso significa — sem perguntar nada.
-- Se, para aprofundar, você precisar de um dado que NÃO está na tela, reconheça na hora e siga: "Deixa eu buscar isso pra você — só um instante." E JÁ dê a leitura possível com o que está na tela; depois complete. Nunca devolva a pergunta para o gestor.
-- Se a tela não trouxer dados (bloco ausente), aí sim diga que não há dados carregados naquela tela e ofereça ajuda geral.
+YOU CAN SEE THE SCREEN — GOLDEN RULE (never violate this):
+- With every question, you receive the REAL DATA currently rendered on the manager's screen (the "DATA CURRENTLY VISIBLE ON SCREEN" block, in JSON). You SEE it.
+- When the manager asks about anything on the screen — a company, an executive, a ticker, a row, a number — it is STRICTLY FORBIDDEN to ask "what are you seeing on screen?", "which transaction?", "buy or sell?", "what value?". That is the WORST possible response and permanently erodes the manager's trust.
+- Instead: LOCATE the item in the provided data and answer DIRECTLY, with the real numbers from the screen. Ex.: if he asks about NVIDIA's CEO on the Insider Orders screen, you find the NVDA row in the data, see that Jensen Huang (CEO) made a SALE of X shares for $Y on date Z, and immediately explain what that means — without asking anything.
+- If, to go deeper, you need data that is NOT on the screen, acknowledge it right away and continue: "Let me look that up for you — just a moment." And GIVE the reading you can with what's on screen right away; complete it afterward. Never bounce the question back to the manager.
+- If the screen carries no data (block absent), only then say there's no data loaded on that screen and offer general help.
 
-BASE DE CONHECIMENTO DISPONÍVEL:
+AVAILABLE KNOWLEDGE BASE:
 ${BOOK_CATEGORIES.map(b => `- [${b.code}] ${b.name}: ${b.topics}`).join("\n")}
 
-Quando a pergunta envolver teoria ou fundamentos, você tem acesso a esses livros para dar respostas fundamentadas com citação de fonte.
+When the question involves theory or fundamentals, you have access to these books to give well-grounded answers with source citations.
 
-MÉTRICAS QUE VOCÊ CONHECE:
-- Risk Number: escala 0-100 de risco do portfólio (SPY ≈ 27.6)
-- Sortino (não Sharpe): métrica de retorno ajustado ao risco do downside
+METRICS YOU KNOW:
+- Risk Number: 0-100 scale of portfolio risk (SPY ≈ 72)
+- Sortino (not Sharpe): downside-risk-adjusted return metric
 - Calmar: CAGR / Max Drawdown
-- Drawdown: queda máxima do pico ao vale
-- CAGR: retorno anualizado composto
-- COT Index: posicionamento normalizado CFTC (0-100 em janela de 3 anos)
+- Drawdown: maximum decline from peak to trough
+- CAGR: compound annual growth rate
+- COT Index: normalized CFTC positioning (0-100 over a 3-year window)
 
-ESTILO:
-- Profissional mas acessível. Como um analista sênior falando com o diretor.
-- Frases curtas. Dados > opinião. Fontes quando possível.
-- Se o gestor perguntar algo fora do seu escopo, diga com honestidade.
-- Use formatação markdown quando útil (negrito, listas, tabelas).`;
+STYLE:
+- Professional but approachable. Like a senior analyst speaking with the director.
+- Short sentences. Data > opinion. Sources when possible.
+- If the manager asks something outside your scope, say so honestly.
+- Use markdown formatting when useful (bold, lists, tables).`;
 }

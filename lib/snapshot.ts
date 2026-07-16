@@ -1,6 +1,6 @@
-// Cliente do feed cliente-safe do overnight (GET /api/snapshot).
-// O filtro de confidencialidade acontece no servidor (app/api/snapshot/route.ts);
-// aqui só chega o "quê". Nunca há CRS/temperatura/fórmula neste tipo.
+// Client for the client-safe overnight feed (GET /api/snapshot).
+// The confidentiality filter happens on the server (app/api/snapshot/route.ts);
+// only the "what" arrives here. Never any CRS/temperature/formula in this type.
 
 export type RegimeState = "BULL" | "CAUTELA" | "BEAR" | "NEUTRO";
 
@@ -29,9 +29,9 @@ export interface Snapshot {
 }
 
 export const PROFILE_LABEL: Record<string, string> = {
-  CONSERVATIVE: "Conservador",
-  BALANCE: "Balanceado",
-  ADVANCE: "Avançado",
+  CONSERVATIVE: "Conservative",
+  BALANCE: "Balanced",
+  ADVANCE: "Advanced",
 };
 
 export async function fetchSnapshot(): Promise<Snapshot> {

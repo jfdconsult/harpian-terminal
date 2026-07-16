@@ -354,3 +354,15 @@ tbody tr:hover{background:rgba(255,255,255,.025)}
 .save-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;background:var(--gold);color:#0a1a30;border:0;border-radius:var(--r-sm);font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;transition:filter .15s;margin-top:4px}
 .save-btn:hover{filter:brightness(1.1)}
 .saved-toast{font-size:11px;color:var(--green);text-align:center;padding:4px 0}
+
+/* Tutorial — fluxograma interativo: empilha em telas estreitas */
+@media(max-width:820px){.tut-grid{grid-template-columns:1fr !important}}
+
+/* ===== LOGO da marca no topbar (alterna por tema) ===== */
+.brand-logo{height:22px;width:auto;display:block}
+.brand-logo-navy{display:none}                         /* logo navy (p/ fundo claro) oculto por padrão */
+[data-theme="light"] .brand-logo-white{display:none}   /* no tema claro: esconde branco, mostra navy */
+[data-theme="light"] .brand-logo-navy{display:block}
+
+/* "ETP TERMINAL" agora fica à direita, perto das configurações (todos os temas) */
+.topbar-sub{font-weight:400;color:var(--tx3);font-size:11px;letter-spacing:1.5px;white-space:nowrap;margin-right:2px}

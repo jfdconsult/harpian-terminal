@@ -1,0 +1,14 @@
+{
+  "email": "joao@harpian.com",
+  "tickers": [
+    "NVDA",
+    "AAPL",
+    "MSFT"
+  ],
+  "notif": {
+    "enabled": true,
+    "hour": "07:30",
+    "tz": "America/Sao_Paulo"
+  },
+  "updatedAt": 1784198382296
+}

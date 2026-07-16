@@ -47,7 +47,7 @@ export default function AssetChart({ candles, volume, studies, compareLine }: { 
     if (studies.ema) addLine(emaEuler(closes, 13), "#4A90D9", 2);
     if (studies.bb) { const bb = bollinger(closes, 20, 2); addLine(bb.upper, "#7FA8C9", 1, true); addLine(bb.lower, "#7FA8C9", 1, true); }
 
-    // Linha de comparação (benchmark rebaseado ao nível do ativo)
+    // Comparison line (benchmark rebased to the asset's level)
     if (compareLine && compareLine.length) {
       const cmp = main.addLineSeries({ color: "#C77DFF", lineWidth: 2, priceLineVisible: false, lastValueVisible: true });
       cmp.setData(compareLine as never);
@@ -92,7 +92,7 @@ export default function AssetChart({ candles, volume, studies, compareLine }: { 
       <div ref={mainRef} style={{ width: "100%" }} />
       {studies.rsi && <div style={{ fontSize: 9, color: "var(--tx3)", fontFamily: "var(--mono)", margin: "6px 0 0", letterSpacing: ".08em" }}>RSI (14)</div>}
       <div ref={rsiRef} style={{ width: "100%", display: studies.rsi ? "block" : "none" }} />
-      {(studies.momD || studies.momJ) && <div style={{ fontSize: 9, color: "var(--tx3)", fontFamily: "var(--mono)", margin: "6px 0 0", letterSpacing: ".08em" }}>MOMENTO{studies.momD && studies.momJ ? " · D (ouro) / J (azul)" : studies.momD ? " D" : " J"}</div>}
+      {(studies.momD || studies.momJ) && <div style={{ fontSize: 9, color: "var(--tx3)", fontFamily: "var(--mono)", margin: "6px 0 0", letterSpacing: ".08em" }}>MOMENTUM{studies.momD && studies.momJ ? " · D (gold) / J (blue)" : studies.momD ? " D" : " J"}</div>}
       <div ref={momRef} style={{ width: "100%", display: (studies.momD || studies.momJ) ? "block" : "none" }} />
     </div>
   );

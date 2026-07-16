@@ -6,8 +6,16 @@ import { publishScreenData } from "@/lib/jim-data";
 import ClienteEditModal from "./ClienteEditModal";
 import type { ScreenId } from "@/lib/nav";
 
-const HPC22_RN = 38; // Número de Risco do produto (motor interno)
+const HPC22_RN = 38; // Product Risk Number (internal engine)
 const ALLOC_COLORS = ["#4A90D9", "#C9A02C", "#2ECC71", "#F39C12", "#7d96b3"];
+// Account["type"] stays in Portuguese in lib/clients.ts (stored value); this is
+// only for what's rendered on screen.
+const ACCOUNT_TYPE_TXT: Record<string, string> = {
+  "Conta corrente": "Checking account",
+  Corretora: "Brokerage",
+  "Custódia": "Custody",
+  Outro: "Other",
+};
 
 export function ClientDetail({ client: clientProp, go, screen = "cliente" }: { client: Client; go: (id: ScreenId, param?: string) => void; screen?: ScreenId }) {
   const [client, setClient] = useState(clientProp);
@@ -22,7 +30,7 @@ export function ClientDetail({ client: clientProp, go, screen = "cliente" }: { c
     setEditing(true);
   }
 
-  const [migrate, setMigrate] = useState(0); // % migrado p/ HPC22
+  const [migrate, setMigrate] = useState(0); // % migrated to HPC22
   const ganhoPct = client.invested ? (client.current / client.invested - 1) * 100 : 0;
   const aligned = client.riskNumber <= client.mandate;
 
@@ -32,12 +40,12 @@ export function ClientDetail({ client: clientProp, go, screen = "cliente" }: { c
   );
   const gap = blendedRN - client.mandate;
 
-  // Publica pro JIM o cliente/carteira aberto (adequação, risco, alocação).
+  // Publishes the open client/portfolio to JIM (suitability, risk, allocation).
   useEffect(() => {
     const foco = screen === "carteira" ? "a carteira de" : "o cliente";
     publishScreenData(
       screen,
-      `Ficha do cliente ${client.name} (${client.type}, perfil ${client.profile}). AUM, ganho, Número de Risco vs mandato, alocação atual e adequação ao perfil.`,
+      `Client record for ${client.name} (${client.type}, ${client.profile} profile). AUM, gain, Risk Number vs mandate, current allocation, and profile suitability.`,
       {
         cliente: client.name, tipo: client.type, perfil: client.profile,
         aumAtual: client.current, investido: client.invested, ganhoPct: +ganhoPct.toFixed(1),
@@ -52,14 +60,14 @@ export function ClientDetail({ client: clientProp, go, screen = "cliente" }: { c
       },
       {
         briefing:
-          `Você está vendo ${foco} **${client.name}** (${client.type}, perfil ${client.profile}). ` +
-          `AUM ${brl(client.current)}, ganho +${ganhoPct.toFixed(1).replace(".", ",")}%. ` +
-          `Número de Risco **${client.riskNumber}** vs mandato **${client.mandate}** — ` +
-          (aligned ? "dentro do mandato." : `**${client.riskNumber - client.mandate} acima do teto**.`),
+          `You are viewing ${foco === "a carteira de" ? "the portfolio of" : "the client"} **${client.name}** (${client.type}, ${client.profile} profile). ` +
+          `AUM ${brl(client.current)}, gain +${ganhoPct.toFixed(1)}%. ` +
+          `Risk Number **${client.riskNumber}** vs mandate **${client.mandate}** — ` +
+          (aligned ? "within mandate." : `**${client.riskNumber - client.mandate} above the ceiling**.`),
         suggestions: [
-          aligned ? "Esse cliente está bem posicionado?" : "Por que esse cliente está fora do mandato?",
-          "Qual posição pesa mais no risco dele?",
-          "Migrar pro HPC22 resolve o enquadramento?",
+          aligned ? "Is this client well positioned?" : "Why is this client outside the mandate?",
+          "Which position weighs most on their risk?",
+          "Does migrating to HPC22 resolve the compliance gap?",
         ],
       }
     );
@@ -72,12 +80,12 @@ export function ClientDetail({ client: clientProp, go, screen = "cliente" }: { c
           <div className="tk" style={{ fontSize: 20 }}>{client.name}</div>
           <div className="nm">{client.type} · {client.profile}</div>
         </div>
-        <div className="fhstat"><div className="l">AUM atual</div><div className="v">{brl(client.current)}</div></div>
-        <div className="fhstat"><div className="l">Ganho</div><div className="v g">+{ganhoPct.toFixed(1).replace(".", ",")}%</div></div>
-        <div className="fhstat"><div className="l">Desde</div><div className="v" style={{ fontSize: 14 }}>{client.since}</div></div>
+        <div className="fhstat"><div className="l">Current AUM</div><div className="v">{brl(client.current)}</div></div>
+        <div className="fhstat"><div className="l">Gain</div><div className="v g">+{ganhoPct.toFixed(1)}%</div></div>
+        <div className="fhstat"><div className="l">Since</div><div className="v" style={{ fontSize: 14 }}>{client.since}</div></div>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-          <button className="btn ghost" onClick={() => { setEditTab("perfil"); setFocusPortfolioId(undefined); setEditing(true); }}><i className="ti ti-settings" />Editar cliente</button>
-          <button className="btn" onClick={() => go("ordem", client.id)}><i className="ti ti-send" />Enviar ordem</button>
+          <button className="btn ghost" onClick={() => { setEditTab("perfil"); setFocusPortfolioId(undefined); setEditing(true); }}><i className="ti ti-settings" />Edit client</button>
+          <button className="btn" onClick={() => go("ordem", client.id)}><i className="ti ti-send" />Send order</button>
         </div>
       </div>
 
@@ -93,7 +101,7 @@ export function ClientDetail({ client: clientProp, go, screen = "cliente" }: { c
 
       <div className="grid g2">
         <div className="card">
-          <h3><i className="ti ti-chart-donut" />O que ela tem hoje</h3>
+          <h3><i className="ti ti-chart-donut" />What they hold today</h3>
           {client.alloc.map((a, i) => (
             <div key={a.label} style={{ marginBottom: 10 }}>
               <div className="flex between" style={{ marginBottom: 4 }}>
@@ -108,61 +116,61 @@ export function ClientDetail({ client: clientProp, go, screen = "cliente" }: { c
         </div>
 
         <div className="card" style={{ borderColor: aligned ? "var(--line2)" : "rgba(231,76,60,.25)" }}>
-          <h3><i className={`ti ${aligned ? "ti-shield-check" : "ti-alert-triangle"}`} />Gap de risco</h3>
+          <h3><i className={`ti ${aligned ? "ti-shield-check" : "ti-alert-triangle"}`} />Risk gap</h3>
           <div className={`big ${gap > 0 ? "r" : "g"}`}>{gap > 0 ? `+${gap}` : "✓"}</div>
           <div className="muted mt" style={{ lineHeight: 1.6 }}>
-            Número de Risco {blendedRN} vs. mandato {client.mandate}. {client.note}
+            Risk Number {blendedRN} vs. mandate {client.mandate}. {client.note}
           </div>
           <div className="flex mt" style={{ gap: 12 }}>
-            <span className="muted" style={{ minWidth: 150, fontSize: 12 }}>Simular migração p/ HPC22</span>
+            <span className="muted" style={{ minWidth: 150, fontSize: 12 }}>Simulate migration to HPC22</span>
             <input type="range" min={0} max={100} value={migrate} onChange={(e) => setMigrate(+e.target.value)} style={{ flex: 1 }} />
             <span style={{ fontFamily: "var(--mono)", minWidth: 42, textAlign: "right" }}>{migrate}%</span>
           </div>
           <div className="muted mt" style={{ fontSize: 11 }}>
             {gap > 0
-              ? `Migrando ${migrate}%, o risco cai para ${blendedRN} — ainda ${gap} acima do teto.`
-              : `Migrando ${migrate}%, o portfólio entra dentro do mandato (${blendedRN} ≤ ${client.mandate}).`}
+              ? `Migrating ${migrate}%, risk drops to ${blendedRN} — still ${gap} above the ceiling.`
+              : `Migrating ${migrate}%, the portfolio falls within the mandate (${blendedRN} ≤ ${client.mandate}).`}
           </div>
         </div>
       </div>
 
       <div className="card mt">
-        <h3><i className="ti ti-info-circle" />Resumo</h3>
+        <h3><i className="ti ti-info-circle" />Summary</h3>
         <div className="grid g4">
-          <div className="kv"><span className="muted">Investido</span><span className="v">{brl(client.invested)}</span></div>
-          <div className="kv"><span className="muted">Atual</span><span className="v">{brl(client.current)}</span></div>
-          <div className="kv"><span className="muted">Risk Nº atual</span><span className="v" style={{ color: aligned ? "var(--tx)" : "var(--red)" }}>{client.riskNumber}</span></div>
-          <div className="kv"><span className="muted">Alocação Harpian</span><span className="v" style={{ color: "var(--gold)" }}>{client.harpianPct}%</span></div>
+          <div className="kv"><span className="muted">Invested</span><span className="v">{brl(client.invested)}</span></div>
+          <div className="kv"><span className="muted">Current</span><span className="v">{brl(client.current)}</span></div>
+          <div className="kv"><span className="muted">Current Risk Nº</span><span className="v" style={{ color: aligned ? "var(--tx)" : "var(--red)" }}>{client.riskNumber}</span></div>
+          <div className="kv"><span className="muted">Harpian Allocation</span><span className="v" style={{ color: "var(--gold)" }}>{client.harpianPct}%</span></div>
         </div>
       </div>
 
       <div className="grid g3 mt">
         <div className="card">
-          <h3><i className="ti ti-id" />Dados pessoais</h3>
+          <h3><i className="ti ti-id" />Personal data</h3>
           {client.email || client.personalData?.phone || client.personalData?.cpfCnpj ? (
             <>
-              {client.email && <div className="kv"><span className="muted">E-mail</span><span className="v" style={{ fontSize: 12 }}>{client.email}</span></div>}
-              {client.personalData?.phone && <div className="kv"><span className="muted">Telefone</span><span className="v">{client.personalData.phone}</span></div>}
+              {client.email && <div className="kv"><span className="muted">Email</span><span className="v" style={{ fontSize: 12 }}>{client.email}</span></div>}
+              {client.personalData?.phone && <div className="kv"><span className="muted">Phone</span><span className="v">{client.personalData.phone}</span></div>}
               {client.personalData?.cpfCnpj && <div className="kv"><span className="muted">CPF/CNPJ</span><span className="v">{client.personalData.cpfCnpj}</span></div>}
-              {client.personalData?.responsavel && <div className="kv"><span className="muted">Responsável</span><span className="v">{client.personalData.responsavel}</span></div>}
+              {client.personalData?.responsavel && <div className="kv"><span className="muted">Responsible party</span><span className="v">{client.personalData.responsavel}</span></div>}
             </>
-          ) : <div className="muted">Nenhum dado cadastrado — clique em Editar cliente.</div>}
+          ) : <div className="muted">No data registered — click Edit client.</div>}
         </div>
 
         <div className="card">
-          <h3><i className="ti ti-building-bank" />Contas & bancos</h3>
-          {(client.accounts?.length || 0) === 0 ? <div className="muted">Nenhuma conta cadastrada.</div> : (
+          <h3><i className="ti ti-building-bank" />Accounts & banks</h3>
+          {(client.accounts?.length || 0) === 0 ? <div className="muted">No accounts registered.</div> : (
             client.accounts!.map((a) => (
-              <div className="kv" key={a.id}><span>{a.bank || "(sem nome)"} <span className="muted">{a.type}</span></span><span className="v" style={{ fontSize: 11 }}>{a.accountNumber || "—"}</span></div>
+              <div className="kv" key={a.id}><span>{a.bank || "(no name)"} <span className="muted">{ACCOUNT_TYPE_TXT[a.type] || a.type}</span></span><span className="v" style={{ fontSize: 11 }}>{a.accountNumber || "—"}</span></div>
             ))
           )}
         </div>
 
         <div className="card">
-          <h3><i className="ti ti-plug" />Integrações (API)</h3>
-          {(client.integrations?.length || 0) === 0 ? <div className="muted">Nenhuma integração cadastrada.</div> : (
+          <h3><i className="ti ti-plug" />Integrations (API)</h3>
+          {(client.integrations?.length || 0) === 0 ? <div className="muted">No integration registered.</div> : (
             client.integrations!.map((i) => (
-              <div className="kv" key={i.id}><span>{i.system || "(sem nome)"}</span><span className={`tag ${i.status === "conectado" ? "g" : i.status === "erro" ? "r" : "o"}`}>{i.status}</span></div>
+              <div className="kv" key={i.id}><span>{i.system || "(no name)"}</span><span className={`tag ${i.status === "conectado" ? "g" : i.status === "erro" ? "r" : "o"}`}>{i.status}</span></div>
             ))
           )}
         </div>
@@ -170,14 +178,14 @@ export function ClientDetail({ client: clientProp, go, screen = "cliente" }: { c
 
       <div className="card mt">
         <div className="flex between" style={{ alignItems: "center" }}>
-          <h3 style={{ margin: 0 }}><i className="ti ti-briefcase" />Portfólios ({client.portfolios?.length || 0})</h3>
-          <button className="btn ghost" style={{ fontSize: 12 }} onClick={() => openPortfolioEdit()}><i className="ti ti-plus" />Adicionar portfólio</button>
+          <h3 style={{ margin: 0 }}><i className="ti ti-briefcase" />Portfolios ({client.portfolios?.length || 0})</h3>
+          <button className="btn ghost" style={{ fontSize: 12 }} onClick={() => openPortfolioEdit()}><i className="ti ti-plus" />Add portfolio</button>
         </div>
         {(client.portfolios?.length || 0) === 0 ? (
-          <div className="placeholder mt"><i className="ti ti-briefcase" /><b>Nenhum portfólio cadastrado</b></div>
+          <div className="placeholder mt"><i className="ti ti-briefcase" /><b>No portfolio registered</b></div>
         ) : (
           <>
-            <div className="muted mb mt" style={{ fontSize: 11 }}>Clique num portfólio para ver o detalhamento completo — cada portfólio tem sua própria tela. Use a engrenagem pra editar direto.</div>
+            <div className="muted mb mt" style={{ fontSize: 11 }}>Click a portfolio to see the full breakdown — each portfolio has its own screen. Use the gear icon to edit directly.</div>
             <div className="grid g3">
               {client.portfolios!.map((p) => {
                 const hasItems = (p.items?.length || 0) > 0;
@@ -192,18 +200,18 @@ export function ClientDetail({ client: clientProp, go, screen = "cliente" }: { c
                   >
                     <button
                       className="btn ghost"
-                      title="Editar portfólio"
+                      title="Edit portfolio"
                       style={{ position: "absolute", top: 8, right: 8, padding: "3px 7px" }}
                       onClick={(e) => { e.stopPropagation(); openPortfolioEdit(p.id); }}
                     >
                       <i className="ti ti-settings" />
                     </button>
                     <div style={{ fontWeight: 600, color: "var(--tx)", paddingRight: 24 }}>{p.name}</div>
-                    <div className="muted" style={{ fontSize: 11, marginTop: 2 }}>{acc ? acc.bank : "sem conta vinculada"}{p.modelLabel && ` · ${p.modelLabel}`}</div>
+                    <div className="muted" style={{ fontSize: 11, marginTop: 2 }}>{acc ? acc.bank : "no linked account"}{p.modelLabel && ` · ${p.modelLabel}`}</div>
                     <div style={{ fontSize: 15, color: "var(--gold)", fontWeight: 600, marginTop: 6 }}>
-                      {hasItems ? "US$ " + totalUsd!.toLocaleString("pt-BR", { maximumFractionDigits: 0 }) : brl(totalBrl)}
+                      {hasItems ? "$" + totalUsd!.toLocaleString("en-US", { maximumFractionDigits: 0 }) : brl(totalBrl)}
                     </div>
-                    <div className="muted" style={{ fontSize: 11 }}>{hasItems ? p.items!.length : p.positions.length} {hasItems ? "produtos" : "posições"} <i className="ti ti-chevron-right" style={{ float: "right" }} /></div>
+                    <div className="muted" style={{ fontSize: 11 }}>{hasItems ? p.items!.length : p.positions.length} {hasItems ? "products" : "positions"} <i className="ti ti-chevron-right" style={{ float: "right" }} /></div>
                   </div>
                 );
               })}
@@ -219,7 +227,7 @@ export default function Cliente({ clientId, go }: { clientId: string; go: (id: S
   const client = findClient(clientId);
   return (
     <div className="screen">
-      <div className="crumb">Clientes › <b>{client.name}</b></div>
+      <div className="crumb">Clients › <b>{client.name}</b></div>
       <ClientDetail client={client} go={go} />
     </div>
   );

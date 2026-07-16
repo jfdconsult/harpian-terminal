@@ -8,9 +8,9 @@ function ensureDir() {
   if (!existsSync(CACHE_DIR)) mkdirSync(CACHE_DIR, { recursive: true });
 }
 
-// Hash da chave → nome de arquivo curto e seguro. Chaves longas (ex.: 70 tickers numa
-// watchlist) estouravam o limite de caminho do Windows (MAX_PATH ~260) e quebravam o
-// writeFileSync. O prefixo legível ajuda a inspecionar o .cache manualmente.
+// Hash of the key → short, safe file name. Long keys (e.g.: 70 tickers in a
+// watchlist) blew past the Windows path limit (MAX_PATH ~260) and broke
+// writeFileSync. The readable prefix helps when inspecting .cache manually.
 function fileFor(key: string): string {
   const h = createHash("sha1").update(key).digest("hex").slice(0, 16);
   const prefix = key.replace(/[^a-zA-Z0-9_]/g, "").slice(0, 40);

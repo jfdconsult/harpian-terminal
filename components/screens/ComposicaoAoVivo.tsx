@@ -3,21 +3,21 @@ import { useEffect, useState } from "react";
 import { fetchSnapshot, PROFILE_LABEL, type Snapshot } from "@/lib/snapshot";
 import { publishScreenData } from "@/lib/jim-data";
 
-// Composição ao vivo do sistema (saída do overnight), cliente-safe.
-// Mostra os 3 perfis (Conservador/Balanceado/Avançado) com o split ações/ETFs
-// e as maiores posições, mais a camada de defesa vigente. Nada de sinais/fórmulas.
+// Live composition of the system (overnight output), client-safe.
+// Shows the 3 profiles (Conservative/Balanced/Advanced) with the stock/ETF split
+// and top positions, plus the current defense layer. No signals/formulas here.
 
 const REGIME_LABEL: Record<string, { txt: string; color: string }> = {
   BULL: { txt: "Risk-On", color: "#2ECC71" },
-  NEUTRO: { txt: "Neutro", color: "#4A90D9" },
-  CAUTELA: { txt: "Cautela", color: "#F39C12" },
+  NEUTRO: { txt: "Neutral", color: "#4A90D9" },
+  CAUTELA: { txt: "Caution", color: "#F39C12" },
   BEAR: { txt: "Risk-Off", color: "#E74C3C" },
 };
 
 function HoldingsTable({ rows }: { rows: { ticker: string; name: string; weight_pct: number }[] }) {
   return (
     <table>
-      <thead><tr><th>Ativo</th><th className="num">Peso</th></tr></thead>
+      <thead><tr><th>Asset</th><th className="num">Weight</th></tr></thead>
       <tbody>
         {rows.map((h, i) => (
           <tr key={h.ticker + i}>
@@ -46,15 +46,15 @@ export default function ComposicaoAoVivo() {
     return () => { live = false; };
   }, []);
 
-  // Publica pro JIM a composição ao vivo (resultado — nunca o gatilho/fórmula).
-  // Hook fica ANTES dos early returns (regra dos Hooks) — guarda por dentro.
+  // Publishes the live composition to JIM (the result — never the trigger/formula).
+  // Hook stays BEFORE the early returns (Rules of Hooks) — guarded internally.
   useEffect(() => {
     if (!snap) return;
     const reg = snap.regime ? REGIME_LABEL[snap.regime.state] : null;
     const profileKeys = ["CONSERVATIVE", "BALANCE", "ADVANCE"] as const;
     publishScreenData(
       "fundo",
-      "Aba Composição ao vivo do fundo: split ações/ETFs e maiores posições por perfil (Conservador/Balanceado/Avançado), mais a camada de defesa vigente. Resultado do sistema — o gatilho é proprietário.",
+      "Fund's Live Composition tab: stock/ETF split and top positions by profile (Conservative/Balanced/Advanced), plus the current defense layer. System output — the trigger is proprietary.",
       {
         leituraDe: snap.as_of, regime: reg?.txt || null,
         perfis: profileKeys.flatMap((k) => {
@@ -66,13 +66,13 @@ export default function ComposicaoAoVivo() {
       },
       {
         briefing:
-          `Você está vendo a composição ao vivo dos perfis (leitura de ${snap.as_of})` +
+          `You're looking at the live composition of the profiles (reading as of ${snap.as_of})` +
           (reg ? `, regime **${reg.txt}**.` : ".") +
-          (snap.defense?.holdings.length ? ` Defesa vigente: ${snap.defense.holdings.map((h) => h.ticker).join(", ")}.` : ""),
+          (snap.defense?.holdings.length ? ` Current defense: ${snap.defense.holdings.map((h) => h.ticker).join(", ")}.` : ""),
         suggestions: [
-          "Qual perfil está mais concentrado em ações?",
-          "Por que a defesa tem essas posições agora?",
-          "O que muda se o regime virar?",
+          "Which profile is most concentrated in stocks?",
+          "Why does the defense have these positions now?",
+          "What changes if the regime flips?",
         ],
       }
     );
@@ -89,8 +89,8 @@ export default function ComposicaoAoVivo() {
   if (conn === "offline" || !snap) {
     return (
       <div className="placeholder">
-        <i className="ti ti-cloud-off" /><b>Composição ao vivo indisponível</b>
-        <div className="muted mt">O sistema ainda não gerou o snapshot de hoje. Rode o overnight e recarregue.</div>
+        <i className="ti ti-cloud-off" /><b>Live composition unavailable</b>
+        <div className="muted mt">The system hasn&apos;t generated today&apos;s snapshot yet. Run the overnight process and reload.</div>
       </div>
     );
   }
@@ -103,8 +103,8 @@ export default function ComposicaoAoVivo() {
       <div className="card mb" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
         <i className="ti ti-layout-grid" style={{ fontSize: 22, color: "var(--gold)" }} />
         <div style={{ flex: 1, minWidth: 220 }}>
-          <div style={{ fontWeight: 600, color: "var(--tx)", fontSize: 15 }}>Composição ao vivo dos perfis</div>
-          <div className="muted" style={{ fontSize: 11 }}>Leitura de {snap.as_of} · atualizada a cada rodada do sistema</div>
+          <div style={{ fontWeight: 600, color: "var(--tx)", fontSize: 15 }}>Live composition of the profiles</div>
+          <div className="muted" style={{ fontSize: 11 }}>Reading as of {snap.as_of} · updated every system run</div>
         </div>
         {reg && (
           <div style={{ textAlign: "right" }}>
@@ -124,7 +124,7 @@ export default function ComposicaoAoVivo() {
               <div style={{ display: "flex", gap: 8, margin: "4px 0 12px" }}>
                 <div style={{ flex: 1, textAlign: "center", background: "var(--panel2)", borderRadius: 8, padding: "8px 4px" }}>
                   <div className="big" style={{ fontSize: 20, color: "var(--tx)" }}>{p.pct_acoes}%</div>
-                  <div className="muted" style={{ fontSize: 10 }}>Ações</div>
+                  <div className="muted" style={{ fontSize: 10 }}>Stocks</div>
                 </div>
                 <div style={{ flex: 1, textAlign: "center", background: "var(--panel2)", borderRadius: 8, padding: "8px 4px" }}>
                   <div className="big" style={{ fontSize: 20, color: "var(--tx)" }}>{p.pct_etfs}%</div>
@@ -132,10 +132,10 @@ export default function ComposicaoAoVivo() {
                 </div>
                 <div style={{ flex: 1, textAlign: "center", background: "var(--panel2)", borderRadius: 8, padding: "8px 4px" }}>
                   <div className="big" style={{ fontSize: 20, color: "var(--gold)" }}>{p.n_holdings}</div>
-                  <div className="muted" style={{ fontSize: 10 }}>Posições</div>
+                  <div className="muted" style={{ fontSize: 10 }}>Positions</div>
                 </div>
               </div>
-              <div className="muted mb" style={{ fontSize: 11 }}>Maiores posições</div>
+              <div className="muted mb" style={{ fontSize: 11 }}>Top positions</div>
               <HoldingsTable rows={p.top_holdings} />
             </div>
           );
@@ -144,7 +144,7 @@ export default function ComposicaoAoVivo() {
 
       {snap.defense && snap.defense.holdings.length > 0 && (
         <div className="card">
-          <h3><i className="ti ti-shield-half" />Camada de defesa vigente{snap.defense.label && <span style={{ marginLeft: 8, fontWeight: 400, color: "var(--tx2)", fontSize: 13 }}>· {snap.defense.label}</span>}</h3>
+          <h3><i className="ti ti-shield-half" />Current defense layer{snap.defense.label && <span style={{ marginLeft: 8, fontWeight: 400, color: "var(--tx2)", fontSize: 13 }}>· {snap.defense.label}</span>}</h3>
           <div className="grid g4">
             {snap.defense.holdings.map((h) => (
               <div key={h.ticker} className="card" style={{ textAlign: "center", padding: 14, background: "var(--panel2)" }}>
@@ -154,7 +154,7 @@ export default function ComposicaoAoVivo() {
               </div>
             ))}
           </div>
-          <div className="muted mt" style={{ fontSize: 11 }}>Ativos defensivos que o sistema aciona quando o regime pede proteção — o gatilho é proprietário.</div>
+          <div className="muted mt" style={{ fontSize: 11 }}>Defensive assets the system activates when the regime calls for protection — the trigger is proprietary.</div>
         </div>
       )}
     </>

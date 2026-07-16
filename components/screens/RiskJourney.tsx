@@ -8,11 +8,11 @@ const DrawdownChart = dynamic(() => import("./DrawdownChart"), { ssr: false });
 
 const PERIODS = [
   { k: "ytd", l: "YTD" },
-  { k: "1y", l: "1A" },
-  { k: "5y", l: "5A" },
-  { k: "2016", l: "10A" },
-  { k: "2006", l: "20A" },
-  { k: "2000", l: "Desde 2000" },
+  { k: "1y", l: "1Y" },
+  { k: "5y", l: "5Y" },
+  { k: "2016", l: "10Y" },
+  { k: "2006", l: "20Y" },
+  { k: "2000", l: "Since 2000" },
 ];
 
 interface Resp {
@@ -25,7 +25,7 @@ interface Resp {
   error?: boolean;
 }
 
-// Underwater curve do backtest CORE22+ vs S&P (mesma série, base 100, 1990–2026).
+// Underwater curve of the CORE22+ vs S&P backtest (same series, base 100, 1990-2026).
 export default function RiskJourney() {
   const [period, setPeriod] = useState("5y");
   const [data, setData] = useState<Resp | null>(null);
@@ -44,22 +44,22 @@ export default function RiskJourney() {
   if (data?.spx) series.push({ name: "S&P 500", color: "#E74C3C", data: data.spx, fill: false });
   if (data?.nasdaq) series.push({ name: "Nasdaq", color: "#7B68EE", data: data.nasdaq, fill: false });
 
-  // Publica pro JIM a curva de drawdown (jornada de risco) do período selecionado.
+  // Publishes the drawdown curve (risk journey) for the selected period to JIM.
   useEffect(() => {
     if (!data || data.error) return;
     const periodLabel = PERIODS.find((p) => p.k === period)?.l || period;
     publishScreenData(
       "fundo",
-      "Aba Risco & Jornada do fundo: curva submersa (drawdown vs. topo anterior) do CORE22+ vs S&P 500 vs Nasdaq, backtest + dado real, base 100.",
+      "Risk & Journey tab of the fund: underwater curve (drawdown vs. prior peak) of CORE22+ vs S&P 500 vs Nasdaq, backtest + real data, base 100.",
       { periodo: periodLabel, drawdownMaximoCore: data.maxCore, drawdownMaximoSpx: data.maxSpx, drawdownMaximoNasdaq: data.maxNasdaq },
       {
         briefing:
-          `Você está vendo a curva de drawdown (${periodLabel}): CORE22+ com máximo de ${data.maxCore}% vs S&P 500 ${data.maxSpx}%` +
+          `You're looking at the drawdown curve (${periodLabel}): CORE22+ with a max of ${data.maxCore}% vs S&P 500 ${data.maxSpx}%` +
           (data.maxNasdaq != null ? ` vs Nasdaq ${data.maxNasdaq}%.` : "."),
         suggestions: [
-          "O que essa curva de drawdown significa?",
-          "Quanto tempo leva pra recuperar uma queda dessas?",
-          "Por que o Nasdaq cai mais que o S&P?",
+          "What does this drawdown curve mean?",
+          "How long does it take to recover from a drop like this?",
+          "Why does Nasdaq fall more than the S&P?",
         ],
       }
     );
@@ -68,26 +68,26 @@ export default function RiskJourney() {
   return (
     <div className="card">
       <div className="flex between wrap mb" style={{ gap: 10 }}>
-        <h3 style={{ margin: 0 }}><i className="ti ti-wave-sine" />A jornada, visualizada · curva submersa (drawdown vs. topo anterior)</h3>
+        <h3 style={{ margin: 0 }}><i className="ti ti-wave-sine" />The journey, visualized · underwater curve (drawdown vs. prior peak)</h3>
         <div className="seg" style={{ margin: 0 }}>
           {PERIODS.map((p) => <span key={p.k} className={period === p.k ? "on" : ""} onClick={() => setPeriod(p.k)}>{p.l}</span>)}
         </div>
       </div>
       <div className="muted mb" style={{ lineHeight: 1.6 }}>
-        O drawdown máximo é uma foto, não um filme: mostra o quanto o capital caiu, mas não por quanto tempo ficou abaixo do topo. Passe o mouse para ver o drawdown do CORE22+, do S&amp;P 500 e do Nasdaq em cada ponto.
+        Maximum drawdown is a snapshot, not a movie: it shows how much capital fell, but not how long it stayed below the peak. Hover to see the drawdown of CORE22+, the S&amp;P 500, and the Nasdaq at each point.
       </div>
       {loading ? (
-        <div className="muted" style={{ padding: 70, textAlign: "center" }}>Carregando curva…</div>
+        <div className="muted" style={{ padding: 70, textAlign: "center" }}>Loading curve…</div>
       ) : series.length ? (
         <DrawdownChart series={series} />
       ) : (
-        <div className="placeholder"><i className="ti ti-cloud-off" /><b>Curva indisponível</b></div>
+        <div className="placeholder"><i className="ti ti-cloud-off" /><b>Curve unavailable</b></div>
       )}
       <div className="legend" style={{ marginTop: 10 }}>
-        <i><b style={{ background: "#C9A02C" }} />CORE22+ {data ? `(máx ${data.maxCore}%)` : ""}</i>
-        <i><b style={{ background: "#E74C3C" }} />S&P 500 {data ? `(máx ${data.maxSpx}%)` : ""}</i>
-        {data?.maxNasdaq != null && <i><b style={{ background: "#7B68EE" }} />Nasdaq (máx {data.maxNasdaq}%)</i>}
-        <span className="muted" style={{ marginLeft: "auto" }}>CORE22+/S&amp;P: backtest oficial · Nasdaq: comparativo nosso (Yahoo, dado real) · base 100</span>
+        <i><b style={{ background: "#C9A02C" }} />CORE22+ {data ? `(max ${data.maxCore}%)` : ""}</i>
+        <i><b style={{ background: "#E74C3C" }} />S&P 500 {data ? `(max ${data.maxSpx}%)` : ""}</i>
+        {data?.maxNasdaq != null && <i><b style={{ background: "#7B68EE" }} />Nasdaq (max {data.maxNasdaq}%)</i>}
+        <span className="muted" style={{ marginLeft: "auto" }}>CORE22+/S&amp;P: official backtest · Nasdaq: our comparison (Yahoo, real data) · base 100</span>
       </div>
     </div>
   );

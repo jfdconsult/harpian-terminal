@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { subscribeAskJim } from "@/lib/jim-ask";
 import Ticker from "./Ticker";
 import Topbar from "./Topbar";
 import JimDrawer from "./JimDrawer";
@@ -11,6 +12,8 @@ import Fundo from "./screens/Fundo";
 import Cotacoes from "./screens/Cotacoes";
 import Acoes from "./screens/Acoes";
 import Regime from "./screens/Regime";
+import Xri from "./screens/Xri";
+import MercadoVisao from "./screens/MercadoVisao";
 import Noticias from "./screens/Noticias";
 import Risco from "./screens/Risco";
 import Clientes from "./screens/Clientes";
@@ -32,15 +35,19 @@ import Institutional from "./screens/Institutional";
 import CotSentiment from "./screens/CotSentiment";
 import CotLegacy from "./screens/CotLegacy";
 import MarketDna from "./screens/MarketDna";
+import Screener from "./screens/Screener";
+import Snowflake from "./screens/Snowflake";
+import FilingsSearch from "./screens/FilingsSearch";
 import type { ScreenId } from "@/lib/nav";
 
 export default function Terminal() {
   const [screen, setScreen] = useState<ScreenId>("painel");
   const [fundId, setFundId] = useState("HPC22");
-  const [clientId, setClientId] = useState("vera");
+  const [clientId, setClientId] = useState("joao-daniel");
   const [orderArg, setOrderArg] = useState<string | undefined>(undefined);
   const [chartArg, setChartArg] = useState<string | undefined>(undefined);
   const [portfolioArg, setPortfolioArg] = useState<string | undefined>(undefined);
+  const [snowflakeArg, setSnowflakeArg] = useState<string | undefined>(undefined);
   const [jimOpen, setJimOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -51,8 +58,16 @@ export default function Terminal() {
     if (id === "ordem") setOrderArg(param);
     if (id === "acoes" && param) setChartArg(param);
     if (id === "portfolio-detalhe" && param) setPortfolioArg(param);
+    if (id === "snowflake" && param) setSnowflakeArg(param);
     if (typeof window !== "undefined") window.scrollTo(0, 0);
   };
+
+  // askJim() from any screen opens the drawer automatically (JimDrawer.tsx handles sending the question).
+  useEffect(() => subscribeAskJim(() => setJimOpen(true)), []);
+
+  // If the advisor has configured their email, pull favorites from the server on open
+  // (cross-device source of truth). Without an email, no network calls are made.
+  useEffect(() => { import("@/lib/favorites").then((m) => m.syncFromServer()); }, []);
 
   function renderScreen() {
     switch (screen) {
@@ -60,7 +75,9 @@ export default function Terminal() {
       case "fundo": return <Fundo fundId={fundId} onSelectFund={setFundId} go={go} />;
       case "cotacoes": return <Cotacoes go={go} />;
       case "acoes": return <Acoes symbol={chartArg} />;
+      case "mercado-visao": return <MercadoVisao go={go} />;
       case "regime": return <Regime go={go} />;
+      case "xri": return <Xri go={go} />;
       case "noticias": return <Noticias go={go} />;
       case "risco": return <Risco />;
       case "carteira": return <Carteira clientId={clientId} go={go} />;
@@ -71,12 +88,15 @@ export default function Terminal() {
       case "importar": return <Importar />;
       case "alertas": return <Alertas go={go} />;
       case "institutional": return <Institutional />;
-      case "market-dna": return <MarketDna />;
+      case "market-dna": return <MarketDna go={go} />;
       case "cot-sentiment": return <CotSentiment />;
       case "cot-legacy": return <CotLegacy />;
       case "social-radar": return <SocialRadar />;
       case "news-broadcast": return <NewsBroadcast />;
-      case "insider-orders": return <InsiderOrders />;
+      case "insider-orders": return <InsiderOrders go={go} />;
+      case "screener": return <Screener go={go} />;
+      case "snowflake": return <Snowflake symbol={snowflakeArg} go={go} />;
+      case "filings-search": return <FilingsSearch />;
       case "integracoes": return <Integracoes />;
       case "marca": return <Marca />;
       case "config": return <Config />;

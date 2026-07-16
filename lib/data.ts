@@ -1,8 +1,8 @@
 // ============================================================
-// HARPIAN ETP TERMINAL — Dados mock + lógica de inteligência
+// HARPIAN ETP TERMINAL — Mock data + intelligence logic
 // ============================================================
 
-// ---------- Helpers de formatação ----------
+// ---------- Formatting helpers ----------
 export function fmtUSD(n: number): string {
   if (n >= 1e9) return "$" + (n / 1e9).toFixed(1) + "B";
   if (n >= 1e6) return "$" + (n / 1e6).toFixed(1) + "M";
@@ -12,14 +12,18 @@ export function fmtUSD(n: number): string {
 export function fmtN(n: number): string {
   return (n || 0).toLocaleString("en-US");
 }
+export function fmtPct(n: number | null | undefined, digits = 1): string {
+  if (n === null || n === undefined) return "—";
+  return (n * 100).toFixed(digits) + "%";
+}
 
 // ---------- TICKER ----------
 export interface TickerItem {
   lbl: string;
   v: string;
   dir: "up" | "dn" | "nu" | "wa" | "go";
-  symbol?: string; // símbolo Yahoo — clique abre o gráfico do ativo
-  href?: string;   // link externo (ex.: matéria de notícia) — abre em nova aba
+  symbol?: string; // Yahoo symbol — click opens the asset chart
+  href?: string;   // external link (e.g., news article) — opens in a new tab
 }
 export interface TickerGroup {
   div: string;
@@ -226,30 +230,15 @@ export const NB_SOURCE_COLOR: Record<string, string> = { bloomberg: "#F06B00", r
 export const NB_SOURCE_LABEL: Record<string, string> = { bloomberg: "BLG", reuters: "REU", ft: "FT", wsj: "WSJ", cnbc: "CNBC" };
 
 // ---------- INSIDER ORDERS (SEC Form 4) ----------
-export interface InsiderOrder {
-  date: string;
-  insider: string;
-  role: string;
-  company: string;
-  ticker: string;
-  type: "Purchase" | "Sale";
-  shares: number;
-  value: number;
-}
-export const IO_DATA: InsiderOrder[] = [
-  { date: "2026-06-27", insider: "Jensen Huang", role: "CEO", company: "NVIDIA Corp", ticker: "NVDA", type: "Sale", shares: 120000, value: 14160000 },
-  { date: "2026-06-26", insider: "Tim Cook", role: "CEO", company: "Apple Inc", ticker: "AAPL", type: "Sale", shares: 50000, value: 9500000 },
-  { date: "2026-06-26", insider: "Jamie Dimon", role: "CEO", company: "JPMorgan Chase", ticker: "JPM", type: "Sale", shares: 150000, value: 29700000 },
-  { date: "2026-06-25", insider: "Satya Nadella", role: "CEO", company: "Microsoft Corp", ticker: "MSFT", type: "Sale", shares: 30000, value: 12360000 },
-  { date: "2026-06-25", insider: "Mark Zuckerberg", role: "CEO", company: "Meta Platforms", ticker: "META", type: "Sale", shares: 80000, value: 37920000 },
-  { date: "2026-06-24", insider: "Warren Buffett", role: "10% Owner", company: "Occidental Petroleum", ticker: "OXY", type: "Purchase", shares: 2500000, value: 155000000 },
-  { date: "2026-06-24", insider: "Michael Saylor", role: "CEO", company: "Strategy", ticker: "MSTR", type: "Purchase", shares: 5000, value: 8425000 },
-  { date: "2026-06-23", insider: "Lisa Su", role: "CEO", company: "AMD", ticker: "AMD", type: "Sale", shares: 25000, value: 4125000 },
-  { date: "2026-06-23", insider: "Elon Musk", role: "CEO", company: "Tesla Inc", ticker: "TSLA", type: "Sale", shares: 4400000, value: 715000000 },
-  { date: "2026-06-22", insider: "Carl Icahn", role: "10% Owner", company: "Icahn Enterprises", ticker: "IEP", type: "Purchase", shares: 500000, value: 7550000 },
-  { date: "2026-06-22", insider: "Ruth Porat", role: "CFO", company: "Alphabet Inc", ticker: "GOOGL", type: "Sale", shares: 12000, value: 1968000 },
-  { date: "2026-06-21", insider: "Andy Jassy", role: "CEO", company: "Amazon.com", ticker: "AMZN", type: "Sale", shares: 20000, value: 3700000 },
-];
+// REMOVED: this used to hold IO_DATA — 12 FABRICATED transactions attributed
+// to real executives (Jensen Huang, Warren Buffett, Elon Musk, Tim Cook...),
+// with fictitious share counts and values, rendered with no disclaimer that
+// they were examples, on a screen called "SEC Form 4".
+//
+// Never reintroduce fabricated data attributed to a real person. The real
+// source already exists and is auditable: gov-data GET /api/insider (SEC EDGAR),
+// with the filing accession number on each row. See components/screens/InsiderOrders.tsx.
+// If the API goes down, the screen shows an error — it does not make data up.
 
 // ---------- COT Short Names ----------
 export const COT_SHORT_NAME: Record<string, string> = {

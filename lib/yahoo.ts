@@ -1,58 +1,59 @@
 // ============================================================
-// Yahoo Finance — helper server-side + cálculo de métricas.
-// Usado apenas em Route Handlers (server). O browser não fala com o
-// Yahoo direto (CORS); o Node busca e repassa. Trocável por FastTrack depois.
+// Market prices via the HQP Backend (single source: Yahoo Finance).
+// Used only in Route Handlers (server). The browser doesn't talk here
+// directly; Node fetches from HQP and passes it along. Swappable for
+// FastTrack later.
 // ============================================================
 
-const UA =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
+const HQP = process.env.NEXT_PUBLIC_HQP_API_URL || "http://localhost:8080";
+const HQP_HEADERS = { "X-User-Role": "assessor", "X-User-Name": "Terminal MFO" };
+
+function dateToEpoch(d: string): number {
+  return Math.floor(new Date(d + "T12:00:00Z").getTime() / 1000);
+}
 
 export interface Series { t: number[]; close: number[]; }
 
+interface HqpCandle { time: string; open: number; high: number; low: number; close: number; volume: number }
+interface HqpChartResp { ticker: string; name: string; currency?: string; ok: boolean; candles: HqpCandle[] }
+
+async function hqpChart(symbol: string, range: string, interval: string): Promise<HqpChartResp> {
+  const url = `${HQP}/v1/market/chart/${encodeURIComponent(symbol)}?rng=${range}&interval=${interval}`;
+  const r = await fetch(url, { headers: HQP_HEADERS, cache: "no-store" });
+  if (!r.ok) throw new Error(`HQP chart ${symbol} HTTP ${r.status}`);
+  return r.json();
+}
+
 export async function yahooChart(symbol: string, range = "1y", interval = "1d"): Promise<{ meta: Record<string, unknown>; series: Series }> {
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}`;
-  const r = await fetch(url, { headers: { "User-Agent": UA }, cache: "no-store" });
-  if (!r.ok) throw new Error(`Yahoo ${symbol} HTTP ${r.status}`);
-  const j = await r.json();
-  const res = j?.chart?.result?.[0];
-  if (!res) throw new Error(`Yahoo ${symbol} sem dados`);
-  const rawT: number[] = res.timestamp || [];
-  const q = res.indicators?.quote?.[0] || {};
-  const adj = res.indicators?.adjclose?.[0]?.adjclose;
-  const rawClose: (number | null)[] = adj || q.close || [];
+  const j = await hqpChart(symbol, range, interval);
+  if (!j.ok || !j.candles?.length) throw new Error(`HQP chart ${symbol} has no data`);
   const t: number[] = [];
   const close: number[] = [];
-  for (let i = 0; i < rawT.length; i++) {
-    if (rawClose[i] != null && !Number.isNaN(rawClose[i] as number)) {
-      t.push(rawT[i]);
-      close.push(rawClose[i] as number);
-    }
+  for (const c of j.candles) {
+    t.push(dateToEpoch(c.time));
+    close.push(c.close);
   }
-  return { meta: res.meta || {}, series: { t, close } };
+  return { meta: { shortName: j.name || symbol, currency: j.currency || "USD" }, series: { t, close } };
 }
 
 export interface OHLCSeries { t: number[]; o: number[]; h: number[]; l: number[]; c: number[]; v: number[] }
 
-// OHLC + volume (para candlestick). Aceita range/interval (timeframes).
 export async function yahooOHLC(symbol: string, range = "1y", interval = "1d"): Promise<{ meta: Record<string, unknown>; s: OHLCSeries }> {
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}`;
-  const r = await fetch(url, { headers: { "User-Agent": UA }, cache: "no-store" });
-  if (!r.ok) throw new Error(`Yahoo ${symbol} HTTP ${r.status}`);
-  const j = await r.json();
-  const res = j?.chart?.result?.[0];
-  if (!res) throw new Error(`Yahoo ${symbol} sem dados`);
-  const rawT: number[] = res.timestamp || [];
-  const q = res.indicators?.quote?.[0] || {};
+  const j = await hqpChart(symbol, range, interval);
+  if (!j.ok || !j.candles?.length) throw new Error(`HQP chart ${symbol} has no data`);
   const s: OHLCSeries = { t: [], o: [], h: [], l: [], c: [], v: [] };
-  for (let i = 0; i < rawT.length; i++) {
-    if (q.close?.[i] != null && q.open?.[i] != null) {
-      s.t.push(rawT[i]); s.o.push(q.open[i]); s.h.push(q.high?.[i] ?? q.open[i]); s.l.push(q.low?.[i] ?? q.open[i]); s.c.push(q.close[i]); s.v.push(q.volume?.[i] || 0);
-    }
+  for (const c of j.candles) {
+    s.t.push(dateToEpoch(c.time));
+    s.o.push(c.open);
+    s.h.push(c.high);
+    s.l.push(c.low);
+    s.c.push(c.close);
+    s.v.push(c.volume);
   }
-  return { meta: res.meta || {}, s };
+  return { meta: { shortName: j.name || symbol, currency: j.currency || "USD" }, s };
 }
 
-// ---------- Métricas (funções puras) ----------
+// ---------- Metrics (pure functions) ----------
 const last = (a: number[]) => a[a.length - 1];
 const mean = (a: number[]) => a.reduce((s, x) => s + x, 0) / (a.length || 1);
 function std(a: number[]) {
@@ -97,7 +98,7 @@ export function maxDrawdownPct(close: number[]): number | null {
   for (const p of close) { if (p > peak) peak = p; const dd = p / peak - 1; if (dd < mdd) mdd = dd; }
   return mdd * 100;
 }
-// Sortino: como Sharpe, mas penaliza só a volatilidade de queda (downside deviation).
+// Sortino: like Sharpe, but only penalizes downside volatility (downside deviation).
 export function sortino(close: number[], rf = 0.035): number | null {
   const r = dailyReturns(close);
   if (!r.length) return null;
@@ -107,7 +108,7 @@ export function sortino(close: number[], rf = 0.035): number | null {
   if (dd === 0) return null;
   return (mean(r) * 252 - rf) / dd;
 }
-// Ulcer Index: raiz quadrada média dos quadrados do drawdown — penaliza profundidade E duração da queda.
+// Ulcer Index: root mean square of the drawdown — penalizes both depth AND duration of the decline.
 export function ulcerIndex(close: number[]): number | null {
   if (!close.length) return null;
   let peak = close[0];
@@ -115,14 +116,14 @@ export function ulcerIndex(close: number[]): number | null {
   for (const p of close) { if (p > peak) peak = p; const dd = (p / peak - 1) * 100; sumSq += dd * dd; }
   return Math.sqrt(sumSq / close.length);
 }
-// CAGR anualizado a partir de uma série base-100 (ou qualquer NAV) e nº de anos corridos.
+// Annualized CAGR from a base-100 series (or any NAV) and the number of elapsed years.
 export function cagrPct(close: number[], years: number): number | null {
   if (close.length < 2 || years <= 0) return null;
   const total = last(close) / close[0];
   if (total <= 0) return null;
   return (Math.pow(total, 1 / years) - 1) * 100;
 }
-// Nº de anos-calendário com retorno negativo, dado t (timestamps) e close alinhados.
+// Number of calendar years with a negative return, given t (timestamps) and close aligned.
 export function negativeYears(t: number[], close: number[]): number {
   const byYear = new Map<number, { first: number; last: number }>();
   for (let i = 0; i < t.length; i++) {
@@ -152,9 +153,22 @@ export function w52(close: number[]) {
   for (let i = 1; i < close.length; i++) { if (close[i] < lo) lo = close[i]; if (close[i] > hi) hi = close[i]; }
   return { lo, hi };
 }
-// Número de Risco (0–100) calibrado ao SPY≈27,6 (vol anual ~16%).
+// Risk Number 1–99 — Nitrogen/HRIE methodology (95% downside over 6 months),
+// the same as lib/risk-number.ts. It used to be vol×1.72 (calibrated to SPY≈27.6),
+// inconsistent with the UI which says SPY≈70. Now a single method across the
+// whole app: AGG≈29–31, SPY in the 60–70 range depending on the window.
 export function riskNumber(close: number[]): number | null {
-  const v = annualVolPct(close);
-  if (v == null) return null;
-  return Math.max(1, Math.min(99, Math.round(v * 1.72)));
+  const rets = dailyReturns(close);
+  const neg = rets.filter((x) => x < 0);
+  if (rets.length < 20) return null;
+  const dd = neg.length ? Math.sqrt(neg.reduce((s, x) => s + x * x, 0) / rets.length) * Math.sqrt(252) : 0;
+  const loss = 1.645 * dd * Math.sqrt(0.5);
+  const anchors: [number, number][] = [[0.02, 22], [0.05, 32], [0.07, 42], [0.12, 62], [0.18, 82], [0.2742, 91]];
+  if (loss <= 0) return 1;
+  if (loss >= anchors[anchors.length - 1][0]) return 99;
+  for (let i = 1; i < anchors.length; i++) {
+    const [x1, y1] = anchors[i - 1], [x2, y2] = anchors[i];
+    if (loss <= x2) return Math.round(y1 + (loss - x1) / (x2 - x1) * (y2 - y1));
+  }
+  return 99;
 }

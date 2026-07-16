@@ -1,10 +1,11 @@
 // ============================================================
-// HARPIAN ETP TERMINAL — Navegação (estrutura de menus)
+// HARPIAN ETP TERMINAL — Navigation (menu structure)
 // ============================================================
 export type ScreenId =
   | "painel"
   | "fundo"
   | "cotacoes"
+  | "mercado-visao"
   | "risco"
   | "clientes"
   | "cliente"
@@ -12,6 +13,7 @@ export type ScreenId =
   | "carteira"
   | "portfolio-detalhe"
   | "regime"
+  | "xri"
   | "acoes"
   | "noticias"
   | "importar"
@@ -27,6 +29,9 @@ export type ScreenId =
   | "news-broadcast"
   | "insider-orders"
   | "market-dna"
+  | "screener"
+  | "snowflake"
+  | "filings-search"
   | "tutorial";
 
 export interface MenuItem {
@@ -49,56 +54,61 @@ export interface Menu {
 }
 
 export const MENUS: Menu[] = [
-  { label: "Painel", icon: "ti-home", direct: "painel" },
+  { label: "Dashboard", icon: "ti-home", direct: "painel" },
   {
-    label: "Fundos",
+    label: "Funds",
     icon: "ti-coin",
     wide: true,
     columns: [
       {
-        label: "Escolha o fundo",
+        label: "Choose the fund",
         items: [
-          { id: "fundo", label: "HPC22 · Agressivo", icon: "ti-coin", param: "HPC22" },
+          { id: "fundo", label: "HPC22 · Aggressive", icon: "ti-coin", param: "HPC22" },
           { id: "fundo", label: "HPC11 · I.G.", icon: "ti-coin", param: "HPC11" },
-          { id: "fundo", label: "Lynk Core22 HPC", icon: "ti-coin", param: "LCORE22", tag: "novo" },
+          { id: "fundo", label: "Lynk Core22 HPC", icon: "ti-coin", param: "LCORE22", tag: "new" },
           { id: "fundo", label: "White-label", icon: "ti-tag", param: "HPC22" },
         ],
       },
       {
-        label: "O que fazer",
+        label: "What to do",
         items: [
-          { id: "fundo", label: "Visão", icon: "ti-eye" },
+          { id: "fundo", label: "Overview", icon: "ti-eye" },
           { id: "fundo", label: "Performance", icon: "ti-chart-line" },
-          { id: "fundo", label: "Composição", icon: "ti-chart-pie" },
-          { id: "fundo", label: "Defesa & risco", icon: "ti-shield" },
-          { id: "ordem", label: "Enviar ordem (Lynk)", icon: "ti-send", tag: "novo" },
+          { id: "fundo", label: "Composition", icon: "ti-chart-pie" },
+          { id: "fundo", label: "Defense & risk", icon: "ti-shield" },
+          { id: "ordem", label: "Send order (Lynk)", icon: "ti-send", tag: "new" },
         ],
       },
     ],
   },
   {
-    label: "Clientes",
+    label: "Clients",
     icon: "ti-users",
     columns: [
       {
         items: [
-          { id: "clientes", label: "Lista de clientes", icon: "ti-list" },
-          { id: "carteira", label: "Carteira do cliente", icon: "ti-wallet" },
-          { id: "importar", label: "Importar / conectar", icon: "ti-upload" },
-          { id: "alertas", label: "Alertas", icon: "ti-bell" },
-          { id: "ordem", label: "Ordens", icon: "ti-send", tag: "Lynk" },
+          { id: "clientes", label: "Client list", icon: "ti-list" },
+          { id: "carteira", label: "Client portfolio", icon: "ti-wallet" },
+          { id: "importar", label: "Import / connect", icon: "ti-upload" },
+          { id: "alertas", label: "Alerts", icon: "ti-bell" },
+          { id: "ordem", label: "Orders", icon: "ti-send", tag: "Lynk" },
         ],
       },
     ],
   },
   {
-    label: "Mercado",
+    label: "Market",
     icon: "ti-chart-candle",
     columns: [
       {
         items: [
-          { id: "cotacoes", label: "Cotações", icon: "ti-table" },
-          { id: "regime", label: "Visão de Mercado", icon: "ti-world" },
+          { id: "mercado-visao", label: "Market Overview", icon: "ti-layout-dashboard", tag: "new" },
+          { id: "regime", label: "American Regime Index (ARI)", icon: "ti-world" },
+          { id: "xri", label: "External Regime Index (XRI)", icon: "ti-world-exclamation" },
+          { id: "market-dna", label: "Market DNA", icon: "ti-dna-2" },
+          { id: "snowflake", label: "Snowflake", icon: "ti-snowflake" },
+          { id: "cotacoes", label: "Quotes", icon: "ti-table" },
+          { id: "screener", label: "Screener", icon: "ti-filter" },
         ],
       },
     ],
@@ -109,40 +119,40 @@ export const MENUS: Menu[] = [
     columns: [
       {
         items: [
-          { id: "social-radar", label: "Social Radar", icon: "ti-radar-2", tag: "novo" },
-          { id: "news-broadcast", label: "News Broadcast", icon: "ti-broadcast", tag: "novo" },
-          { id: "insider-orders", label: "Insider Orders", icon: "ti-gavel", tag: "novo" },
+          { id: "social-radar", label: "Social Radar", icon: "ti-radar-2", tag: "new" },
+          { id: "news-broadcast", label: "News Broadcast", icon: "ti-broadcast", tag: "new" },
+          { id: "insider-orders", label: "Insider Orders", icon: "ti-gavel", tag: "new" },
           { id: "institutional", label: "13F Holdings", icon: "ti-report-money", tag: "SEC" },
-          { id: "market-dna", label: "Market DNA", icon: "ti-dna-2", tag: "novo" },
           { id: "cot-sentiment", label: "COT Intelligence", icon: "ti-flame", tag: "CFTC" },
           { id: "cot-legacy", label: "COT Data Explorer", icon: "ti-chart-bar" },
+          { id: "filings-search", label: "Filings Search", icon: "ti-file-search", tag: "SEC" },
         ],
       },
     ],
   },
   {
-    label: "Risco",
+    label: "Risk",
     icon: "ti-shield-half",
     columns: [
       {
         items: [
-          { id: "risco", label: "Comparação · 4 níveis", icon: "ti-scale", tag: "novo" },
-          { id: "carteira", label: "Risco do portfólio", icon: "ti-wallet" },
-          { id: "carteira", label: "Risco do cliente", icon: "ti-user-heart" },
+          { id: "risco", label: "Comparison · 4 levels", icon: "ti-scale", tag: "new" },
+          { id: "carteira", label: "Portfolio risk", icon: "ti-wallet" },
+          { id: "carteira", label: "Client risk", icon: "ti-user-heart" },
         ],
       },
     ],
   },
   {
-    label: "Ajustes",
+    label: "Settings",
     icon: "ti-settings",
     columns: [
       {
         items: [
-          { id: "integracoes", label: "Integrações", icon: "ti-plug" },
-          { id: "api", label: "API & Integração", icon: "ti-code", tag: "dev" },
-          { id: "marca", label: "Marca (white-label)", icon: "ti-palette", tag: "novo" },
-          { id: "config", label: "Configurações", icon: "ti-adjustments" },
+          { id: "integracoes", label: "Integrations", icon: "ti-plug" },
+          { id: "api", label: "API & Integration", icon: "ti-code", tag: "dev" },
+          { id: "marca", label: "Brand (white-label)", icon: "ti-palette", tag: "new" },
+          { id: "config", label: "Settings", icon: "ti-adjustments" },
         ],
       },
     ],

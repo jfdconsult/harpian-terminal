@@ -10,18 +10,18 @@ function TickerItemView({ it, go }: { it: TickerItem; go?: (id: ScreenId, param?
       <span className={`tkr-v ${it.dir}`}>{it.v}</span>
     </>
   );
-  // Notícia real → abre a matéria original numa nova aba.
+  // Real news item → opens the original article in a new tab.
   if (it.href) {
     return (
-      <a className="tkr-item tkr-link" href={it.href} target="_blank" rel="noopener noreferrer" title="Abrir matéria">
+      <a className="tkr-item tkr-link" href={it.href} target="_blank" rel="noopener noreferrer" title="Open article">
         {content}
       </a>
     );
   }
-  // Ativo com símbolo conhecido → abre o gráfico no próprio Terminal.
+  // Asset with a known symbol → opens the chart in the Terminal itself.
   if (it.symbol && go) {
     return (
-      <div className="tkr-item tkr-link" onClick={() => go("acoes", it.symbol)} title={`Ver gráfico de ${it.lbl}`}>
+      <div className="tkr-item tkr-link" onClick={() => go("acoes", it.symbol)} title={`View chart for ${it.lbl}`}>
         {content}
       </div>
     );
@@ -42,7 +42,7 @@ function TickerContent({ groups, go }: { groups: TickerGroup[]; go?: (id: Screen
   );
 }
 
-const REFRESH_MS = 5 * 60 * 1000; // 5 min — a API já cacheia 8h no servidor, isso só mantém a tela viva
+const REFRESH_MS = 5 * 60 * 1000; // 5 min — the API already caches for 8h server-side, this just keeps the screen alive
 
 export default function Ticker({ go }: { go?: (id: ScreenId, param?: string) => void }) {
   const [groups, setGroups] = useState<TickerGroup[]>(TICKER_GROUPS);

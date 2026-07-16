@@ -1,13 +1,13 @@
 // ============================================================
-// Indicadores técnicos — portados do motor DSPT (Diogo) do Cockpit.
-// GOTCHA: EMA do Diogo é CASCATA com α = 1/d (aumenta atraso), ≠ Mulloy.
-// EMA padrão (α = 2/(n+1)) é usada só para osciladores.
-// Funções puras, client-safe. Arrays alinhados ao input (null no warmup).
+// Technical indicators — ported from the Cockpit's DSPT (Diogo) engine.
+// GOTCHA: Diogo's EMA is CASCADED with α = 1/d (increases lag), ≠ Mulloy.
+// Standard EMA (α = 2/(n+1)) is used only for oscillators.
+// Pure, client-safe functions. Arrays aligned to the input (null during warmup).
 // ============================================================
 
 export type Num = number | null;
 
-// EMA "Euler" do Diogo: α = 1/d
+// Diogo's "Euler" EMA: α = 1/d
 export function emaEuler(values: number[], d: number): number[] {
   if (!values.length) return [];
   const a = 1 / d;
@@ -19,7 +19,7 @@ export function emaEuler(values: number[], d: number): number[] {
 export const demaCascade = (v: number[], d: number) => emaEuler(emaEuler(v, d), d);
 export const temaCascade = (v: number[], d: number) => emaEuler(emaEuler(emaEuler(v, d), d), d);
 
-// EMA padrão (α = 2/(n+1)) — para osciladores
+// Standard EMA (α = 2/(n+1)) — for oscillators
 export function emaStd(values: number[], n: number): number[] {
   if (!values.length) return [];
   const a = 2 / (n + 1);
@@ -68,7 +68,7 @@ export function rsiSeries(values: number[], period = 14): Num[] {
   return out;
 }
 
-// Momento DSPT: DEMA cascata (α=1/d) do retorno %, × projeção. d=13 (D) ou 37 (J).
+// DSPT Momentum: cascaded DEMA (α=1/d) of the % return, × projection. d=13 (D) or 37 (J).
 export function demaReturns(c: number[], d = 37, projection = 21): Num[] {
   if (c.length < 2) return new Array(c.length).fill(null);
   const ret = [0];
@@ -77,7 +77,7 @@ export function demaReturns(c: number[], d = 37, projection = 21): Num[] {
   return dem.map((x) => +(x * projection).toFixed(3));
 }
 
-// Helper: array (com nulls) → pares {time,value} para o lightweight-charts
+// Helper: array (with nulls) → {time,value} pairs for lightweight-charts
 export function toLine(times: number[], vals: Num[]): { time: number; value: number }[] {
   const out: { time: number; value: number }[] = [];
   for (let i = 0; i < times.length; i++) if (vals[i] != null) out.push({ time: times[i], value: vals[i] as number });

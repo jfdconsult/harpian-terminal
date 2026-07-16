@@ -6,23 +6,23 @@ interface Collection { name: string; base: string; tag: string; note: string; en
 
 const COLLECTIONS: Collection[] = [
   {
-    name: "Gov Data · SEC 13F + CFTC COT", base: "http://localhost:8877", tag: "conectado",
-    note: "Holdings institucionais (Form 13F) e posicionamento de futuros (COT). Pipeline gov-data.",
+    name: "Gov Data · SEC 13F + CFTC COT", base: "http://localhost:8877", tag: "connected",
+    note: "Institutional holdings (Form 13F) and futures positioning (COT). gov-data pipeline.",
     endpoints: [
-      { m: "GET", path: "/api/funds", desc: "Lista os fundos da watchlist com períodos disponíveis" },
-      { m: "GET", path: "/api/fund/{SHORT}", desc: "Holdings completos de um fundo (ex: BRIDGEWATER)" },
-      { m: "GET", path: "/api/fund/{SHORT}/top/{N}", desc: "Top N posições do fundo" },
-      { m: "GET", path: "/api/cot/sentiment", desc: "Sentiment por mercado (especulador vs comercial)" },
-      { m: "GET", path: "/api/cot/legacy", desc: "COT Legacy — long/short por categoria" },
+      { m: "GET", path: "/api/funds", desc: "Lists watchlist funds with available periods" },
+      { m: "GET", path: "/api/fund/{SHORT}", desc: "Full holdings for a fund (e.g. BRIDGEWATER)" },
+      { m: "GET", path: "/api/fund/{SHORT}/top/{N}", desc: "Fund's top N positions" },
+      { m: "GET", path: "/api/cot/sentiment", desc: "Sentiment by market (speculator vs. commercial)" },
+      { m: "GET", path: "/api/cot/legacy", desc: "COT Legacy — long/short by category" },
     ],
   },
   {
-    name: "Mercado · Yahoo Finance (fonte atual)", base: "(este terminal · /api)", tag: "conectado",
-    note: "Cotações, métricas e candles servidos server-side. Trocável por FastTrack sem mudar o contrato.",
+    name: "Market · Yahoo Finance (current source)", base: "(this terminal · /api)", tag: "connected",
+    note: "Quotes, metrics and candles served server-side. Swappable for FastTrack without changing the contract.",
     endpoints: [
-      { m: "GET", path: "/api/quotes?symbols=^GSPC,NVDA", desc: "Snapshot multi-símbolo: preço, janelas, Sharpe, risco" },
-      { m: "GET", path: "/api/asset?symbol=NVDA", desc: "Métricas + série base 100 de um ativo vs S&P" },
-      { m: "GET", path: "/api/candles?symbol=NVDA&range=1y&interval=1d", desc: "OHLC + volume para candlestick" },
+      { m: "GET", path: "/api/quotes?symbols=^GSPC,NVDA", desc: "Multi-symbol snapshot: price, windows, Sharpe, risk" },
+      { m: "GET", path: "/api/asset?symbol=NVDA", desc: "Metrics + base-100 series for an asset vs. S&P" },
+      { m: "GET", path: "/api/candles?symbol=NVDA&range=1y&interval=1d", desc: "OHLC + volume for candlestick" },
     ],
   },
 ];
@@ -53,15 +53,15 @@ export default function ApiIntegracao() {
 
   return (
     <div className="screen">
-      <div className="crumb">Ajustes › <b>API &amp; Integração</b></div>
-      <div className="h1">API &amp; Integração</div>
-      <div className="sub">Endpoints REST para integrar os dados do Terminal a sistemas do MFO, planilhas ou apps próprios.</div>
+      <div className="crumb">Settings › <b>API &amp; Integration</b></div>
+      <div className="h1">API &amp; Integration</div>
+      <div className="sub">REST endpoints to integrate the Terminal's data into MFO systems, spreadsheets, or in-house apps.</div>
 
       <div className="grid g4 mb">
-        <div className="card" style={{ textAlign: "center", padding: 14 }}><div className="big" style={{ fontSize: 22, color: "var(--gold)" }}>REST</div><div style={{ fontSize: 10, color: "var(--tx3)", marginTop: 4, textTransform: "uppercase", letterSpacing: ".5px" }}>Arquitetura</div></div>
-        <div className="card" style={{ textAlign: "center", padding: 14 }}><div className="big" style={{ fontSize: 22, color: "var(--gold)" }}>JSON</div><div style={{ fontSize: 10, color: "var(--tx3)", marginTop: 4, textTransform: "uppercase", letterSpacing: ".5px" }}>Formato</div></div>
+        <div className="card" style={{ textAlign: "center", padding: 14 }}><div className="big" style={{ fontSize: 22, color: "var(--gold)" }}>REST</div><div style={{ fontSize: 10, color: "var(--tx3)", marginTop: 4, textTransform: "uppercase", letterSpacing: ".5px" }}>Architecture</div></div>
+        <div className="card" style={{ textAlign: "center", padding: 14 }}><div className="big" style={{ fontSize: 22, color: "var(--gold)" }}>JSON</div><div style={{ fontSize: 10, color: "var(--tx3)", marginTop: 4, textTransform: "uppercase", letterSpacing: ".5px" }}>Format</div></div>
         <div className="card" style={{ textAlign: "center", padding: 14 }}><div className="big" style={{ fontSize: 22, color: "var(--gold)" }}>8</div><div style={{ fontSize: 10, color: "var(--tx3)", marginTop: 4, textTransform: "uppercase", letterSpacing: ".5px" }}>Endpoints</div></div>
-        <div className="card" style={{ textAlign: "center", padding: 14 }}><div className="big" style={{ fontSize: 22, color: "var(--orange)" }}>API Key</div><div style={{ fontSize: 10, color: "var(--tx3)", marginTop: 4, textTransform: "uppercase", letterSpacing: ".5px" }}>Auth (fase 2)</div></div>
+        <div className="card" style={{ textAlign: "center", padding: 14 }}><div className="big" style={{ fontSize: 22, color: "var(--orange)" }}>API Key</div><div style={{ fontSize: 10, color: "var(--tx3)", marginTop: 4, textTransform: "uppercase", letterSpacing: ".5px" }}>Auth (phase 2)</div></div>
       </div>
 
       {COLLECTIONS.map((col) => (
@@ -73,7 +73,7 @@ export default function ApiIntegracao() {
           <div className="kv"><span className="muted">Base URL</span><span className="v" style={{ color: "var(--gold)" }}>{col.base}</span></div>
           <div className="muted" style={{ margin: "6px 0 12px", fontSize: 12, lineHeight: 1.5 }}>{col.note}</div>
           <table>
-            <thead><tr><th style={{ width: 60 }}>Método</th><th>Endpoint</th><th>Descrição</th></tr></thead>
+            <thead><tr><th style={{ width: 60 }}>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
             <tbody>
               {col.endpoints.map((e) => (
                 <tr key={e.path}>
@@ -89,9 +89,9 @@ export default function ApiIntegracao() {
 
       <div className="card mb">
         <div className="flex between mb">
-          <h3 style={{ margin: 0 }}><i className="ti ti-code" />Exemplo de uso</h3>
+          <h3 style={{ margin: 0 }}><i className="ti ti-code" />Usage example</h3>
           <button className="btn ghost" onClick={() => copy(EXAMPLES[tab])}>
-            <i className={`ti ${copied ? "ti-check" : "ti-copy"}`} />{copied ? "Copiado" : "Copiar"}
+            <i className={`ti ${copied ? "ti-check" : "ti-copy"}`} />{copied ? "Copied" : "Copy"}
           </button>
         </div>
         <div className="seg" style={{ marginBottom: 12 }}>
@@ -106,7 +106,7 @@ export default function ApiIntegracao() {
         <div style={{ display: "flex", gap: 8 }}>
           <i className="ti ti-shield-lock" style={{ color: "var(--gold)", fontSize: 15, flexShrink: 0, marginTop: 2 }} />
           <div className="muted" style={{ fontSize: 11.5, lineHeight: 1.6 }}>
-            <b style={{ color: "var(--tx2)" }}>Roadmap de autenticação:</b> hoje os endpoints rodam localmente sem chave. Na fase 2 entram API keys por cliente, rate limiting e webhooks — para MFOs consumirem dados do Terminal de forma segura em produção.
+            <b style={{ color: "var(--tx2)" }}>Authentication roadmap:</b> today the endpoints run locally without a key. Phase 2 brings per-client API keys, rate limiting, and webhooks — so MFOs can consume Terminal data securely in production.
           </div>
         </div>
       </div>

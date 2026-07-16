@@ -27,10 +27,10 @@ function fullPeriodMetrics(t: number[], close: number[]): Metrics {
 
 interface CrisisWindow { key: string; label: string; start: string; end: string }
 const CRISES: CrisisWindow[] = [
-  { key: "dotcom", label: "Bolha ponto-com (pico 2000)", start: "2000-01-01", end: "2003-12-31" },
-  { key: "gfc", label: "Crise financeira (pico 2007)", start: "2007-01-01", end: "2009-12-31" },
-  { key: "covid", label: "COVID (fev. 2020)", start: "2020-01-01", end: "2020-06-30" },
-  { key: "bear2022", label: "Bear market 2022", start: "2022-01-01", end: "2022-12-31" },
+  { key: "dotcom", label: "Dot-com bubble (2000 peak)", start: "2000-01-01", end: "2003-12-31" },
+  { key: "gfc", label: "Financial crisis (2007 peak)", start: "2007-01-01", end: "2009-12-31" },
+  { key: "covid", label: "COVID (Feb. 2020)", start: "2020-01-01", end: "2020-06-30" },
+  { key: "bear2022", label: "2022 bear market", start: "2022-01-01", end: "2022-12-31" },
 ];
 
 interface CrisisResult { declinePct: number | null; recoveryMonths: number | null }
@@ -44,10 +44,10 @@ function findWindow(t: number[], startISO: string, endISO: string): [number, num
   return [ws, we];
 }
 
-// Ancorado no pico do S&P (referência de "quando o mercado topou"): todas as séries
-// (CORE22+, S&P, Nasdaq) medem sua própria queda/recuperação A PARTIR DA MESMA DATA —
-// senão uma estratégia que diverge do mercado (é o ponto de ter alpha) acharia seu
-// próprio pico/vale idiossincrático, incomparável ao "durante esta crise" pretendido.
+// Anchored on the S&P's peak (the reference for "when the market topped"): every
+// series (CORE22+, S&P, Nasdaq) measures its own decline/recovery FROM THE SAME DATE —
+// otherwise a strategy that diverges from the market (which is the whole point of having
+// alpha) would find its own idiosyncratic peak/trough, incomparable to the intended "during this crisis."
 function crisisMetrics(t: number[], close: number[], anchorIdx: number, windowEndIdx: number): CrisisResult {
   if (anchorIdx < 0 || windowEndIdx <= anchorIdx) return { declinePct: null, recoveryMonths: null };
   const peak = close[anchorIdx];
@@ -81,7 +81,7 @@ export async function GET() {
 
     const crises = CRISES.map((c) => {
       const [ws, we] = findWindow(t, c.start, c.end);
-      // pico do S&P dentro da janela = a data-âncora de "quando o mercado topou"
+      // S&P peak within the window = the anchor date for "when the market topped"
       let anchorIdx = ws;
       if (ws >= 0 && we > ws) for (let i = ws; i <= we; i++) if (spx[i] > spx[anchorIdx]) anchorIdx = i;
       return {
@@ -100,7 +100,7 @@ export async function GET() {
       full,
       crises,
       nasdaqAvailable: !!nasdaq,
-      note: "CORE22+ e S&P do backtest oficial (factsheet). Nasdaq calculado por nós com dado real do Yahoo (^IXIC), mesma metodologia — comparativo, não factsheet auditado.",
+      note: "CORE22+ and S&P from the official backtest (factsheet). Nasdaq computed by us with real Yahoo data (^IXIC), same methodology — comparative, not an audited factsheet.",
     });
   } catch (e) {
     return NextResponse.json({ ok: false, error: String(e) }, { status: 500 });

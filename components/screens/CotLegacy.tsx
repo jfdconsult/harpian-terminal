@@ -18,43 +18,40 @@ interface CotRow {
 }
 
 const WEEKS_OPTIONS = [
-  { k: 4, l: "4 semanas" },
-  { k: 12, l: "12 semanas" },
-  { k: 26, l: "6 meses" },
-  { k: 52, l: "1 ano" },
+  { k: 4, l: "4 weeks" },
+  { k: 12, l: "12 weeks" },
+  { k: 26, l: "6 months" },
+  { k: 52, l: "1 year" },
 ];
 
-const DEMO_ROWS: CotRow[] = [
-  { date: "2026-06-24", market: "S&P 500 CONSOLIDATED", spec_long: 312000, spec_short: 170000, spec_net: 142000, comm_long: 180000, comm_short: 308000, comm_net: -128000, open_interest: 2800000, spec_net_pct_oi: 5.1, comm_net_pct_oi: -4.6 },
-  { date: "2026-06-24", market: "GOLD - COMMODITY EXCHANGE INC.", spec_long: 298000, spec_short: 80000, spec_net: 218000, comm_long: 120000, comm_short: 365000, comm_net: -245000, open_interest: 520000, spec_net_pct_oi: 41.9, comm_net_pct_oi: -47.1 },
-  { date: "2026-06-24", market: "10-YEAR U.S. TREASURY NOTES - CHICAGO BOARD OF TRADE", spec_long: 680000, spec_short: 1100000, spec_net: -420000, comm_long: 890000, comm_short: 510000, comm_net: 380000, open_interest: 4200000, spec_net_pct_oi: -10.0, comm_net_pct_oi: 9.0 },
-  { date: "2026-06-17", market: "S&P 500 CONSOLIDATED", spec_long: 295000, spec_short: 171200, spec_net: 123800, comm_long: 184000, comm_short: 306000, comm_net: -122000, open_interest: 2780000, spec_net_pct_oi: 4.5, comm_net_pct_oi: -4.4 },
-  { date: "2026-06-17", market: "GOLD - COMMODITY EXCHANGE INC.", spec_long: 304000, spec_short: 77600, spec_net: 226400, comm_long: 118000, comm_short: 370000, comm_net: -252000, open_interest: 518000, spec_net_pct_oi: 43.7, comm_net_pct_oi: -48.6 },
-  { date: "2026-06-17", market: "10-YEAR U.S. TREASURY NOTES - CHICAGO BOARD OF TRADE", spec_long: 670000, spec_short: 1059000, spec_net: -389000, comm_long: 875000, comm_short: 520000, comm_net: 355000, open_interest: 4150000, spec_net_pct_oi: -9.4, comm_net_pct_oi: 8.6 },
-];
+// No DEMO_ROWS: previously, with gov-data down, this screen rendered 6
+// fabricated COT rows (S&P, gold, 10Y) as if they were CFTC data. CFTC data
+// or nothing — never fabricated data dressed up as official.
 
 export default function CotLegacy() {
   const [data, setData] = useState<CotRow[]>([]);
   const [offline, setOffline] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [weeks, setWeeks] = useState(12);
   const [marketFilter, setMarketFilter] = useState("");
 
   useEffect(() => {
+    setLoading(true);
     fetch(`${GOV_API}/api/cot/legacy?weeks=${weeks}`)
       .then((r) => r.json())
-      .then((d: CotRow[]) => { setData(d); setOffline(false); })
-      .catch(() => { setData(DEMO_ROWS); setOffline(true); });
+      .then((d: CotRow[]) => { setData(d); setOffline(false); setLoading(false); })
+      .catch(() => { setData([]); setOffline(true); setLoading(false); });
   }, [weeks]);
 
   const markets = [...new Set(data.map((r) => r.market || ""))].filter(Boolean).sort();
   const filtered = marketFilter ? data.filter((r) => r.market === marketFilter) : data;
 
-  // Publica pro JIM os dados brutos CFTC da janela selecionada.
+  // Publishes the raw CFTC data for the selected window to JIM.
   useEffect(() => {
     if (filtered.length === 0) return;
     publishScreenData(
       "cot-legacy",
-      `Dados brutos CFTC Legacy (janela ${weeks} semanas${marketFilter ? `, mercado ${cotShortName(marketFilter)}` : ", todos os mercados"}). Cada linha = data, mercado, Spec Net, Comm Net (e % do Open Interest), longs/shorts por grupo e Open Interest.`,
+      `Raw CFTC Legacy data (window: ${weeks} weeks${marketFilter ? `, market ${cotShortName(marketFilter)}` : ", all markets"}). Each row = date, market, Spec Net, Comm Net (and % of Open Interest), longs/shorts by group, and Open Interest.`,
       filtered.slice(0, 60).map((x) => ({
         data: x.date, mercado: cotShortName(x.market || ""),
         specNet: x.spec_net ?? (x.spec_long - x.spec_short),
@@ -63,12 +60,12 @@ export default function CotLegacy() {
       })),
       {
         briefing:
-          `Você está vendo os dados brutos CFTC de ${markets.length} mercados (${filtered.length} registros, janela ${weeks} semanas). ` +
-          `Spec Net = posição líquida dos especuladores; Comm Net = dos hedgers.`,
+          `You're looking at raw CFTC data for ${markets.length} markets (${filtered.length} records, ${weeks}-week window). ` +
+          `Spec Net = speculators' net position; Comm Net = hedgers'.`,
         suggestions: [
-          "Qual mercado mudou mais na semana?",
-          "Como leio Spec Net vs Comm Net?",
-          "O que o open interest indica aqui?",
+          "Which market moved the most this week?",
+          "How do I read Spec Net vs Comm Net?",
+          "What does the open interest indicate here?",
         ],
       }
     );
@@ -81,8 +78,8 @@ export default function CotLegacy() {
         <div>
           <div className="h1">COT Data Explorer</div>
           <div className="sub">
-            Dados brutos CFTC · posições Long/Short por grupo · Net e % do Open Interest.
-            {offline && <span style={{ color: "var(--orange)", marginLeft: 8 }}> [demo — API offline]</span>}
+            Raw CFTC data · Long/Short positions by group · Net and % of Open Interest.
+            {offline && <span style={{ color: "var(--orange)", marginLeft: 8 }}> — gov-data offline (8877)</span>}
           </div>
         </div>
       </div>
@@ -90,7 +87,7 @@ export default function CotLegacy() {
       {/* Controls */}
       <div className="flex wrap mt" style={{ gap: 10, marginBottom: 10, alignItems: "center" }}>
         <div className="flex" style={{ gap: 6, alignItems: "center" }}>
-          <span className="flabel">Período:</span>
+          <span className="flabel">Period:</span>
           <div className="seg" style={{ margin: 0 }}>
             {WEEKS_OPTIONS.map((w) => (
               <span key={w.k} className={weeks === w.k ? "on" : ""} onClick={() => setWeeks(w.k)}>{w.l}</span>
@@ -98,23 +95,38 @@ export default function CotLegacy() {
           </div>
         </div>
         <div className="flex" style={{ gap: 6, alignItems: "center" }}>
-          <span className="flabel">Mercado:</span>
+          <span className="flabel">Market:</span>
           <select className="fsel" value={marketFilter} onChange={(e) => setMarketFilter(e.target.value)} style={{ fontSize: 12, padding: "6px 10px", minWidth: 180 }}>
-            <option value="">Todos os mercados ({markets.length})</option>
+            <option value="">All markets ({markets.length})</option>
             {markets.map((m) => <option key={m} value={m}>{cotShortName(m)}</option>)}
           </select>
         </div>
-        <span className="muted" style={{ fontSize: 10, marginLeft: "auto" }}>{filtered.length} registros</span>
+        <span className="muted" style={{ fontSize: 10, marginLeft: "auto" }}>{filtered.length} records</span>
       </div>
 
       {/* Table */}
       <div className="card">
+        {loading ? (
+          <div className="muted" style={{ padding: 30, textAlign: "center" }}>Loading CFTC data…</div>
+        ) : offline || !filtered.length ? (
+          <div className="placeholder">
+            <i className="ti ti-cloud-off" />
+            <b style={{ display: "block", marginTop: 8 }}>
+              {offline ? "Could not fetch CFTC data" : "No records in the current filter"}
+            </b>
+            <div className="muted" style={{ marginTop: 4 }}>
+              {offline
+                ? <>gov-data offline — <span style={{ fontFamily: "var(--mono)" }}>api_server.py</span> (port 8877). I'd rather show nothing than show data that didn't come from the CFTC.</>
+                : "Try another market or period."}
+            </div>
+          </div>
+        ) : (
         <div style={{ maxHeight: 600, overflow: "auto" }}>
           <table>
             <thead>
               <tr>
-                <th>Data</th>
-                <th>Mercado</th>
+                <th>Date</th>
+                <th>Market</th>
                 <th className="num" style={{ color: "#4A90D9" }}>Spec Net</th>
                 <th className="num" style={{ color: "#4A90D9", fontSize: 10 }}>% OI</th>
                 <th className="num" style={{ color: "#C9A02C" }}>Comm Net</th>
@@ -153,12 +165,13 @@ export default function CotLegacy() {
             </tbody>
           </table>
         </div>
+        )}
       </div>
 
       <div className="legend mt">
-        <i><b style={{ background: "#4A90D9" }} />Especuladores (Non-Commercial)</i>
-        <i><b style={{ background: "#C9A02C" }} />Comerciais (Commercial)</i>
-        <span className="muted" style={{ marginLeft: "auto" }}>CFTC Legacy Futures · dados públicos</span>
+        <i><b style={{ background: "#4A90D9" }} />Speculators (Non-Commercial)</i>
+        <i><b style={{ background: "#C9A02C" }} />Commercials (Commercial)</i>
+        <span className="muted" style={{ marginLeft: "auto" }}>CFTC Legacy Futures · public data</span>
       </div>
     </div>
   );

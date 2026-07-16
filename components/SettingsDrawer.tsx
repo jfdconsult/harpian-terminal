@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import { useTheme, type ThemeId } from "@/lib/theme";
 import { useI18n, type Lang } from "@/lib/i18n";
+import { getNotifPrefs, saveNotifPrefs, detectTz, getUserEmail, type NotifPrefs } from "@/lib/user-prefs";
+import { pushToServer, syncFromServer } from "@/lib/favorites";
 
 const THEMES: { id: ThemeId; icon: string }[] = [
   { id: "navy", icon: "ti-moon-stars" },
@@ -9,45 +11,33 @@ const THEMES: { id: ThemeId; icon: string }[] = [
   { id: "dark", icon: "ti-moon" },
 ];
 
-const NOTIF_STORAGE = "harpian-notif";
-
-interface NotifPrefs {
-  enabled: boolean;
-  email: string;
-  hour: string;
-  tz: string;
-}
-
-function detectTz(): string {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  } catch {
-    return "America/New_York";
-  }
-}
-
-function loadNotifPrefs(): NotifPrefs {
-  try {
-    const raw = localStorage.getItem(NOTIF_STORAGE);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return { enabled: false, email: "", hour: "07:00", tz: detectTz() };
-}
-
 export default function SettingsDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { theme, setTheme } = useTheme();
   const { lang, setLang, t } = useI18n();
   const [notif, setNotif] = useState<NotifPrefs>({ enabled: false, email: "", hour: "07:00", tz: detectTz() });
   const [saved, setSaved] = useState(false);
+  const [syncMsg, setSyncMsg] = useState("");
 
   useEffect(() => {
-    if (open) setNotif(loadNotifPrefs());
+    if (open) setNotif(getNotifPrefs());
   }, [open]);
 
   const saveNotif = () => {
-    localStorage.setItem(NOTIF_STORAGE, JSON.stringify(notif));
+    saveNotifPrefs(notif);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+
+    // Valid email = advisor identity. Registers on the server (with the
+    // current favorites) and pulls back whatever's already there — this is
+    // what links cross-device sync and the nightly summary.
+    if (getUserEmail()) {
+      pushToServer();
+      setSyncMsg("Syncing favorites…");
+      syncFromServer()
+        .then((list) => setSyncMsg(`Favorites synced (${list.length}).`))
+        .catch(() => setSyncMsg("Saved locally — server unavailable right now."))
+        .finally(() => setTimeout(() => setSyncMsg(""), 4000));
+    }
   };
 
   return (
@@ -129,6 +119,12 @@ export default function SettingsDrawer({ open, onClose }: { open: boolean; onClo
                   <i className="ti ti-check" /> {t("salvar")}
                 </button>
                 {saved && <div className="saved-toast">{t("notif_salvas")}</div>}
+                {syncMsg && <div className="notif-desc" style={{ marginTop: 6 }}><i className="ti ti-cloud-check" style={{ marginRight: 4 }} />{syncMsg}</div>}
+                <p className="notif-desc" style={{ marginTop: 8 }}>
+                  With your email saved, your favorites are now stored on the server
+                  (they survive clearing the cache and carry over to any device) and you
+                  receive the daily summary by email.
+                </p>
               </div>
             )}
           </div>

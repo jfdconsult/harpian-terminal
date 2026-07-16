@@ -6,7 +6,13 @@ import {
 import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { ScreenId } from "@/lib/nav";
-import { SR_POSTS, GOV_API } from "@/lib/data";
+import { GOV_API } from "@/lib/data";
+import { fetchNews, fetchSocialTrending, IMPACT_COLOR, SENTIMENT_COLOR, type NewsHeadline, type SocialPost } from "@/lib/feeds";
+import { RadarSvg, buildLayersFromApi, regimeLabel, type IntelLayer } from "./MarketDna";
+import RegimeGauge from "../RegimeGauge";
+import { fetchSnapshot, type RegimeState } from "@/lib/snapshot";
+import { fetchCalendar, type CalendarResp } from "@/lib/calendar";
+import { type DnaRaw } from "@/lib/jim-market-analysis";
 import { CLIENTS, brl } from "@/lib/clients";
 import { allClients, findClient } from "@/lib/clientStore";
 import { MARKET_GROUPS } from "@/lib/market";
@@ -19,84 +25,83 @@ import { MiniRegua } from "./Risco";
 // JIM MORNING BRIEFING — proactive intelligence box
 // ════════════════════════════════════════════════════════════════
 
-interface DnaLayer { name: string; status: string; data?: Record<string, unknown> }
-interface DnaResponse { layers: DnaLayer[]; timestamp: string }
+// gov-data returns `layers` as an OBJECT ({volatility, sentiment, breadth,
+// macro, positioning...}), not as a list. This file read it as a list, so
+// the "Market DNA" section of the briefing NEVER appeared — `.length` was
+// undefined and the whole block was silently skipped.
 
 interface BriefingSection { title: string; icon: string; color: string; screenId?: ScreenId; items: BriefingItem[] }
 interface BriefingItem { label: string; value: string; color?: string; detail?: string }
 
-function generateBriefingSections(dna: DnaResponse | null): BriefingSection[] {
+function generateBriefingSections(dna: DnaRaw | null, cal: CalendarResp | null): BriefingSection[] {
   const sections: BriefingSection[] = [];
 
   // 1) PORTFOLIO STATUS
   sections.push({
-    title: "Portfólio", icon: "ti-coin", color: "var(--green)", screenId: "fundo" as ScreenId,
+    title: "Portfolio", icon: "ti-coin", color: "var(--green)", screenId: "fundo" as ScreenId,
     items: [
-      { label: "HPC22 Agressivo", value: "+2,31% hoje", color: "var(--green)", detail: "Exposição plena — sem hedge ativo" },
-      { label: "HPC11 I.G.", value: "+1,44% hoje", color: "var(--green)", detail: "Investment Grade — dentro da banda" },
-      { label: "Movimentação", value: "Sem ajustes", detail: "Última rebalanceamento em 01/jul" },
+      { label: "HPC22 Aggressive", value: "+2.31% today", color: "var(--green)", detail: "Full exposure — no active hedge" },
+      { label: "HPC11 I.G.", value: "+1.44% today", color: "var(--green)", detail: "Investment Grade — within range" },
+      { label: "Activity", value: "No adjustments", detail: "Last rebalancing on Jul 1" },
     ],
   });
 
   // 2) REGIME & DEFENSE
   sections.push({
-    title: "Regime & Defesa", icon: "ti-shield-check", color: "var(--green)", screenId: "regime" as ScreenId,
+    title: "Regime & Defense", icon: "ti-shield-check", color: "var(--green)", screenId: "regime" as ScreenId,
     items: [
-      { label: "Regime atual", value: "RISK-ON", color: "var(--green)", detail: "StormGuard positivo — tendência sustentada" },
-      { label: "Defesa", value: "Desarmada", color: "var(--tx2)", detail: "Exposição plena a risco — sem rotação para proteção" },
-      { label: "Mudança recente?", value: "Não", detail: "Regime estável há 14 dias consecutivos" },
+      { label: "Current regime", value: "RISK-ON", color: "var(--green)", detail: "StormGuard positive — sustained trend" },
+      { label: "Defense", value: "Disarmed", color: "var(--tx2)", detail: "Full risk exposure — no rotation to protection" },
+      { label: "Recent change?", value: "No", detail: "Regime stable for 14 consecutive days" },
     ],
   });
 
-  // 3) MARKET DNA (from API)
-  if (dna && dna.layers?.length) {
+  // 3) MARKET DNA (real data from gov-data — layers is an object, not a list)
+  const L = dna?.layers;
+  if (L) {
     const dnaItems: BriefingItem[] = [];
-    for (const layer of dna.layers) {
-      if (!layer.data) continue;
-      const d = layer.data;
-      if (layer.name === "Volatility & Options") {
-        const vix = d.vix_last as number | undefined;
-        const regime = d.vol_regime as string | undefined;
-        if (vix) dnaItems.push({
-          label: "VIX", value: `${vix.toFixed(1)} (${regime || "Normal"})`,
-          color: vix < 20 ? "var(--green)" : vix < 30 ? "var(--gold)" : "var(--red)",
-          detail: vix < 20 ? "Volatilidade baixa — ambiente favorável para risco" : "Volatilidade elevada — monitorar"
-        });
-      }
-      if (layer.name === "Sentiment & Breadth") {
-        const fg = d.fear_greed_score as number | undefined;
-        const fgRating = d.fear_greed_rating as string | undefined;
-        const breadth = d.pct_above_200ma as number | undefined;
-        if (fg) dnaItems.push({
-          label: "Fear & Greed", value: `${fg.toFixed(0)} (${fgRating || ""})`,
-          color: fg > 60 ? "var(--green)" : fg > 40 ? "var(--gold)" : "var(--red)",
-          detail: fg > 60 ? "Mercado ganancioso — atenção a excessos" : fg < 40 ? "Medo predomina — oportunidade ou cautela?" : "Sentimento neutro"
-        });
-        if (breadth) dnaItems.push({
-          label: "Breadth (>200MA)", value: `${breadth.toFixed(0)}%`,
-          color: breadth > 60 ? "var(--green)" : breadth > 40 ? "var(--gold)" : "var(--red)",
-          detail: breadth > 60 ? "Participação ampla — rally saudável" : "Participação estreita — risco de concentração"
-        });
-      }
-      if (layer.name === "Macro & Rates") {
-        const curve = d.yield_curve_spread as number | undefined;
-        const curveStatus = d.yield_curve_status as string | undefined;
-        if (curve != null) dnaItems.push({
-          label: "Curva de Juros", value: `${curve > 0 ? "+" : ""}${(curve * 100).toFixed(0)}bps (${curveStatus || ""})`,
-          color: curve > 0 ? "var(--green)" : "var(--red)",
-          detail: curve > 0 ? "Curva normalizada — sinal positivo para crescimento" : "Curva invertida — atenção recessiva"
-        });
-      }
-      if (layer.name === "Liquidity (Dark Pool)") {
-        const tracked = d.tracked_symbols as number | undefined;
-        if (tracked) dnaItems.push({
-          label: "Dark Pool", value: `${tracked} ativos monitorados`,
-          color: "var(--tx2)", detail: "Volume fora de bolsa — monitoramento institucional"
-        });
-      }
+
+    const vol = L.volatility?.data;
+    const vix = vol?.vix?.current;
+    if (vix != null) dnaItems.push({
+      label: "VIX", value: `${vix.toFixed(1)} (${vol?.regime || "Normal"})`,
+      color: vix < 20 ? "var(--green)" : vix < 30 ? "var(--gold)" : "var(--red)",
+      detail: vix < 20 ? "Low volatility — favorable environment for risk" : "Elevated volatility — monitor",
+    });
+
+    const fg = L.sentiment?.data?.score;
+    if (fg != null) dnaItems.push({
+      label: "Fear & Greed", value: `${fg.toFixed(0)} (${L.sentiment?.data?.rating || ""})`,
+      color: fg > 60 ? "var(--green)" : fg > 40 ? "var(--gold)" : "var(--red)",
+      detail: fg > 60 ? "Greedy market — watch for excess" : fg < 40 ? "Fear dominates — opportunity or caution?" : "Neutral sentiment",
+    });
+
+    const breadth = L.breadth?.data?.pct_above_200ma;
+    if (breadth != null) dnaItems.push({
+      label: "Breadth (>200MA)", value: `${breadth.toFixed(0)}%`,
+      color: breadth > 60 ? "var(--green)" : breadth > 40 ? "var(--gold)" : "var(--red)",
+      detail: breadth > 60 ? "Broad participation — healthy rally" : "Narrow participation — concentration risk",
+    });
+
+    const curve = L.macro?.data?.yield_curve_spread;
+    if (curve != null) dnaItems.push({
+      label: "Yield Curve", value: `${curve > 0 ? "+" : ""}${(curve * 100).toFixed(0)}bps (${L.macro?.data?.yield_curve_signal || ""})`,
+      color: curve > 0 ? "var(--green)" : "var(--red)",
+      detail: curve > 0 ? "Normalized curve — positive signal for growth" : "Inverted curve — recession watch",
+    });
+
+    const cot = L.positioning?.data;
+    if (cot?.length) {
+      const ext = cot.filter((r) => (r.spec_sentiment || "").startsWith("EXTREME")).length;
+      dnaItems.push({
+        label: "Positioning (COT)", value: `${ext} of ${cot.length} at extreme`,
+        color: ext >= 3 ? "var(--red)" : ext >= 1 ? "var(--gold)" : "var(--green)",
+        detail: ext ? "Speculator stretched — flags vulnerability, not timing" : "No significant positioning extremes",
+      });
     }
+
     if (dnaItems.length) {
-      sections.push({ title: "DNA do Mercado", icon: "ti-dna", color: "var(--gold)", screenId: "market-dna" as ScreenId, items: dnaItems });
+      sections.push({ title: "Market DNA", icon: "ti-dna", color: "var(--gold)", screenId: "market-dna" as ScreenId, items: dnaItems });
     }
   }
 
@@ -104,82 +109,124 @@ function generateBriefingSections(dna: DnaResponse | null): BriefingSection[] {
   const fora = CLIENTS.filter((c) => c.riskNumber > c.mandate);
   const aum = CLIENTS.reduce((s, c) => s + c.current, 0);
   sections.push({
-    title: "Clientes & Risco", icon: "ti-users", color: fora.length ? "var(--red)" : "var(--green)", screenId: "risco" as ScreenId,
+    title: "Clients & Risk", icon: "ti-users", color: fora.length ? "var(--red)" : "var(--green)", screenId: "risco" as ScreenId,
     items: [
-      { label: "AUM Total", value: brl(aum) },
-      { label: "Clientes ativos", value: `${CLIENTS.length}` },
+      { label: "Total AUM", value: brl(aum) },
+      { label: "Active clients", value: `${CLIENTS.length}` },
       {
-        label: "Fora do mandato", value: fora.length ? `${fora.length} cliente(s)` : "Nenhum",
+        label: "Outside mandate", value: fora.length ? `${fora.length} client(s)` : "None",
         color: fora.length ? "var(--red)" : "var(--green)",
-        detail: fora.length ? `Atenção: ${fora.map(c => c.name).join(", ")}` : "Todos dentro dos limites",
+        detail: fora.length ? `Attention: ${fora.map(c => c.name).join(", ")}` : "All within limits",
       },
     ],
   });
 
-  // 5) ECONOMIC CALENDAR & ALERTS
+  // 5) ECONOMIC CALENDAR — real data (/api/calendar → Investing.com).
+  // Previously this was 3 fixed lines with already-past July dates shown
+  // as the "next event". Now: if no data comes back, it says so.
+  const calItems: BriefingItem[] = [];
+  if (cal === null) {
+    calItems.push({ label: "Calendar", value: "loading…", detail: "Fetching upcoming releases." });
+  } else if (!cal.ok || !cal.events.length) {
+    calItems.push({ label: "Calendar", value: "unavailable", color: "var(--tx3)", detail: "Couldn't fetch upcoming releases right now — I'd rather not show a date I haven't verified." });
+  } else {
+    const altos = cal.events.filter((e) => e.importance === 3);
+    const prox = altos[0] || cal.events[0];
+    calItems.push({
+      label: "Next event", value: `${prox.event} — ${prox.date}`, color: "var(--gold)",
+      detail: `${prox.time}${prox.forecast ? ` · forecast ${prox.forecast}` : ""}${prox.previous ? ` · previous ${prox.previous}` : ""}`,
+    });
+    for (const e of altos.slice(1, 3)) {
+      calItems.push({
+        label: e.date, value: e.event,
+        detail: `${e.time}${e.forecast ? ` · forecast ${e.forecast}` : ""}${e.previous ? ` · previous ${e.previous}` : ""}`,
+      });
+    }
+    if (altos.length > 3) {
+      calItems.push({ label: "This week", value: `+${altos.length - 3} high-impact event(s)`, color: "var(--tx3)", detail: "Open Alerts for the full list." });
+    }
+  }
   sections.push({
-    title: "Calendário & Alertas", icon: "ti-calendar-event", color: "var(--gold)", screenId: "alertas" as ScreenId,
-    items: [
-      { label: "Próximo evento", value: "FOMC Minutes — 09/jul", color: "var(--gold)", detail: "Ata do Federal Reserve — pode impactar expectativas de juros" },
-      { label: "Payroll", value: "Divulgado 04/jul: 206K", detail: "Acima do consenso (190K) — mercado de trabalho resiliente" },
-      { label: "CPI (inflação)", value: "11/jul 09:30 ET", color: "var(--gold)", detail: "Dado mais relevante da semana para política monetária" },
-    ],
+    title: "Calendar & Alerts", icon: "ti-calendar-event", color: "var(--gold)", screenId: "alertas" as ScreenId,
+    items: calItems,
   });
 
   return sections;
 }
 
-function generateHeadline(dna: DnaResponse | null): { text: string; color: string } {
+// Regime comes from the real overnight snapshot — this function used to write
+// "Regime RISK-ON" as fixed text on ALL paths, even when the engine was
+// in RISK-OFF. It was the first sentence on the first screen.
+const REGIME_TXT: Record<string, string> = {
+  BULL: "RISK-ON", CAUTELA: "CAUTION", NEUTRO: "NEUTRAL", BEAR: "RISK-OFF",
+};
+
+function generateHeadline(dna: DnaRaw | null, regime: RegimeState | null): { text: string; color: string } {
+  const reg = regime ? REGIME_TXT[regime] : null;
+  const regFrase = reg ? `Regime ${reg}` : "Regime unavailable";
+  const defensivo = regime === "BEAR" || regime === "CAUTELA";
+
   const fora = CLIENTS.filter((c) => c.riskNumber > c.mandate).length;
   if (fora > 0) return {
-    text: `Atenção: ${fora} cliente(s) fora do mandato de risco. Regime RISK-ON, portfólios positivos, mas ação necessária na conformidade.`,
-    color: "var(--red)"
+    text: `Attention: ${fora} client(s) outside the risk mandate. ${regFrase} — compliance action required.`,
+    color: "var(--red)",
   };
 
-  if (dna?.layers?.length) {
-    const volLayer = dna.layers.find(l => l.name === "Volatility & Options");
-    const vix = volLayer?.data?.vix_last as number | undefined;
-    const sentLayer = dna.layers.find(l => l.name === "Sentiment & Breadth");
-    const fg = sentLayer?.data?.fear_greed_score as number | undefined;
+  const L = dna?.layers;
+  if (L) {
+    const vix = L.volatility?.data?.vix?.current;
+    const fg = L.sentiment?.data?.score;
 
-    if (vix && vix > 25) return {
-      text: `VIX em ${vix.toFixed(1)} — volatilidade elevada. Regime RISK-ON sustentado, mas monitore de perto. Portfólios positivos.`,
-      color: "var(--gold)"
+    if (vix != null && vix > 25) return {
+      text: `VIX at ${vix.toFixed(1)} — elevated volatility. ${regFrase}. Monitor closely.`,
+      color: "var(--gold)",
     };
-    if (fg && fg < 30) return {
-      text: `Fear & Greed em ${fg.toFixed(0)} (medo extremo). Historicamente, esses níveis precedem recuperações. Regime RISK-ON intacto.`,
-      color: "var(--gold)"
+    if (fg != null && fg < 30) return {
+      text: `Fear & Greed at ${fg.toFixed(0)} (extreme fear). These levels have historically preceded recoveries. ${regFrase}.`,
+      color: "var(--gold)",
     };
-    if (fg && fg > 80) return {
-      text: `Fear & Greed em ${fg.toFixed(0)} (ganância extrema). Cautela — excessos de otimismo frequentemente antecedem correções.`,
-      color: "var(--gold)"
+    if (fg != null && fg > 80) return {
+      text: `Fear & Greed at ${fg.toFixed(0)} (extreme greed). Caution — excessive optimism often precedes corrections. ${regFrase}.`,
+      color: "var(--gold)",
+    };
+    if (defensivo) return {
+      text: `${regFrase} — adverse environment, active defense and reduced exposure. All clients within mandate.`,
+      color: "var(--gold)",
     };
   }
 
+  if (defensivo) return {
+    text: `${regFrase} — adverse environment, active defense. All clients within mandate.`,
+    color: "var(--gold)",
+  };
   return {
-    text: "Dia tranquilo. Regime RISK-ON estável, portfólios positivos, todos os clientes dentro do mandato. Nenhuma ação urgente necessária.",
-    color: "var(--green)"
+    text: `Quiet day. ${regFrase}, all clients within mandate. No urgent action required.`,
+    color: reg ? "var(--green)" : "var(--tx3)",
   };
 }
 
 function JimMorningBriefing({ go }: { go: (id: ScreenId, param?: string) => void }) {
-  const [dna, setDna] = useState<DnaResponse | null>(null);
+  const [dna, setDna] = useState<DnaRaw | null>(null);
+  const [cal, setCal] = useState<CalendarResp | null>(null);
+  const [regime, setRegime] = useState<RegimeState | null>(null);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(true);
 
   useEffect(() => {
     fetch(`${GOV_API}/api/market-dna`)
       .then(r => r.json())
-      .then((d: DnaResponse) => { setDna(d); setLoading(false); })
+      .then((d: DnaRaw) => { setDna(d); setLoading(false); })
       .catch(() => setLoading(false));
+    fetchCalendar().then(setCal).catch(() => setCal({ ok: false, events: [] }));
+    fetchSnapshot().then((s) => { if (s.ok && s.regime) setRegime(s.regime.state); }).catch(() => {});
   }, []);
 
-  const sections = generateBriefingSections(dna);
-  const headline = generateHeadline(dna);
+  const sections = generateBriefingSections(dna, cal);
+  const headline = generateHeadline(dna, regime);
   const now = new Date();
   const hora = now.getHours();
-  const saudacao = hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
-  const dataStr = now.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const saudacao = hora < 12 ? "Good morning" : hora < 18 ? "Good afternoon" : "Good evening";
+  const dataStr = now.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
   return (
     <div style={{
@@ -210,7 +257,7 @@ function JimMorningBriefing({ go }: { go: (id: ScreenId, param?: string) => void
               JIM — Morning Briefing
             </div>
             <div style={{ fontSize: 11.5, color: "var(--tx3)", marginTop: 2 }}>
-              {saudacao}, João · {dataStr} · Atualizado {now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+              {saudacao}, João · {dataStr} · Updated {now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
             </div>
           </div>
         </div>
@@ -224,7 +271,7 @@ function JimMorningBriefing({ go }: { go: (id: ScreenId, param?: string) => void
               background: "none", border: "1px solid var(--line2)", borderRadius: 6,
               padding: "4px 8px", cursor: "pointer", color: "var(--tx3)", fontSize: 12,
             }}
-            title={expanded ? "Recolher" : "Expandir"}
+            title={expanded ? "Collapse" : "Expand"}
           >
             <i className={`ti ${expanded ? "ti-chevron-up" : "ti-chevron-down"}`} />
           </button>
@@ -240,7 +287,7 @@ function JimMorningBriefing({ go }: { go: (id: ScreenId, param?: string) => void
         <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
           <i className="ti ti-bulb" style={{ color: headline.color, fontSize: 18, marginTop: 1, flexShrink: 0 }} />
           <div style={{ fontSize: 14, color: "var(--tx)", lineHeight: 1.55 }}>
-            {loading ? <span className="muted">Analisando dados do mercado...</span> : headline.text}
+            {loading ? <span className="muted">Analyzing market data...</span> : headline.text}
           </div>
         </div>
       </div>
@@ -295,17 +342,17 @@ function JimMorningBriefing({ go }: { go: (id: ScreenId, param?: string) => void
       {expanded && loading && (
         <div style={{ textAlign: "center", padding: "20px 0", color: "var(--tx3)", fontSize: 13 }}>
           <i className="ti ti-loader" style={{ marginRight: 8, animation: "spin 1s linear infinite" }} />
-          Consolidando inteligência de mercado...
+          Consolidating market intelligence...
         </div>
       )}
     </div>
   );
 }
 
-// Uma instância de módulo no painel — o mesmo módulo do catálogo (ex.: "cotacoes")
-// pode aparecer VÁRIAS vezes, cada instância com sua própria config (classe de
-// ativo, ou o cliente de quem mostrar a carteira). Isso é o que permite montar
-// "um módulo de Índices, outro de Ações, outro da carteira da Vera" lado a lado.
+// A module instance on the dashboard — the same catalog module (e.g. "cotacoes")
+// can appear MULTIPLE times, each instance with its own config (asset class,
+// or which client's portfolio to show). This is what lets you build
+// "one Indices module, another Stocks module, another Vera's portfolio" side by side.
 interface WidgetInstance { instanceId: string; catalogId: string; config?: Record<string, string> }
 
 interface ConfigField { key: string; label: string; options: { value: string; label: string }[] }
@@ -322,7 +369,7 @@ interface WidgetDef {
 
 interface Quote { symbol: string; price?: number; dayPct?: number | null; error?: boolean }
 
-// ---- Cotações (configurável por classe: Índices, Ações, Commodities, Cripto, Forex...) ----
+// ---- Quotes (configurable by class: Indices, Stocks, Commodities, Crypto, Forex...) ----
 const QUOTE_CLASSES = Object.keys(MARKET_GROUPS);
 
 function CotacoesWidgetBody({ go, config }: { go: (id: ScreenId, param?: string) => void; config?: Record<string, string> }) {
@@ -345,7 +392,7 @@ function CotacoesWidgetBody({ go, config }: { go: (id: ScreenId, param?: string)
   return (
     <>
       {loading ? (
-        <div className="muted" style={{ padding: "10px 0" }}>Carregando {classe.toLowerCase()}…</div>
+        <div className="muted" style={{ padding: "10px 0" }}>Loading {classe.toLowerCase()}…</div>
       ) : (
         rows.map((q) => (
           <div className="kv" key={q.symbol}>
@@ -354,12 +401,12 @@ function CotacoesWidgetBody({ go, config }: { go: (id: ScreenId, param?: string)
           </div>
         ))
       )}
-      <div className="mt"><button className="btn ghost" onClick={() => go("cotacoes")}><i className="ti ti-arrow-right" />Ver todas as cotações</button></div>
+      <div className="mt"><button className="btn ghost" onClick={() => go("cotacoes")}><i className="ti ti-arrow-right" />See all quotes</button></div>
     </>
   );
 }
 
-// ---- Carteira do cliente (configurável por cliente) — o detalhamento real: o que ele tem e o que está ganhando ----
+// ---- Client portfolio (configurable by client) — the real detail: what they hold and what they're earning ----
 function CarteiraWidgetBody({ go, config }: { go: (id: ScreenId, param?: string) => void; config?: Record<string, string> }) {
   const [clients, setClients] = useState(CLIENTS);
   useEffect(() => setClients(allClients()), []);
@@ -377,7 +424,7 @@ function CarteiraWidgetBody({ go, config }: { go: (id: ScreenId, param?: string)
       .catch(() => {});
   }, [portfolio]);
 
-  if (!client) return <div className="muted">Nenhum cliente cadastrado.</div>;
+  if (!client) return <div className="muted">No clients registered.</div>;
   const ganhoPct = client.invested ? (client.current / client.invested - 1) * 100 : 0;
 
   return (
@@ -389,7 +436,7 @@ function CarteiraWidgetBody({ go, config }: { go: (id: ScreenId, param?: string)
           const gainPct = q?.price ? ((q.price - pos.avgPrice) / pos.avgPrice) * 100 : null;
           return (
             <div className="kv" key={pos.ticker}>
-              <span>{pos.ticker} <span className="muted">{pos.qty.toLocaleString("pt-BR")} un.</span></span>
+              <span>{pos.ticker} <span className="muted">{pos.qty.toLocaleString("en-US")} units</span></span>
               <span className={`v ${pctClass(gainPct)}`}>{gainPct != null ? pctText(gainPct) : "…"}</span>
             </div>
           );
@@ -399,30 +446,30 @@ function CarteiraWidgetBody({ go, config }: { go: (id: ScreenId, param?: string)
           <div className="kv" key={a.label}><span>{a.label}</span><span className="v">{a.pct}%</span></div>
         ))
       )}
-      <div className="mt"><button className="btn ghost" onClick={() => go("cliente", client.id)}><i className="ti ti-arrow-right" />Abrir carteira completa</button></div>
+      <div className="mt"><button className="btn ghost" onClick={() => go("cliente", client.id)}><i className="ti ti-arrow-right" />Open full portfolio</button></div>
     </>
   );
 }
 
-// ---- Risco por cliente (configurável por cliente) — a régua de 4 níveis, versão compacta ----
+// ---- Client risk (configurable by client) — the 4-level ruler, compact version ----
 function RiscoClienteWidgetBody({ go, config }: { go: (id: ScreenId, param?: string) => void; config?: Record<string, string> }) {
   const [clients, setClients] = useState(CLIENTS);
   useEffect(() => setClients(allClients()), []);
   const client = (config?.clientId && findClient(config.clientId)) || clients[0];
-  if (!client) return <div className="muted">Nenhum cliente cadastrado.</div>;
+  if (!client) return <div className="muted">No clients registered.</div>;
 
   const tol = TOLERANCE[client.profile];
   const gap = client.riskNumber - client.mandate;
   const markers = [
-    { v: HPC22_RN, color: "#C9A02C", label: "produto" },
-    { v: client.mandate, color: "#4A90D9", label: "mandato" },
-    { v: tol, color: "#EAF0F7", label: "tolerância" },
-    { v: client.riskNumber, color: gap > 0 ? "#E74C3C" : "#2ECC71", label: "portfólio" },
+    { v: HPC22_RN, color: "#C9A02C", label: "product" },
+    { v: client.mandate, color: "#4A90D9", label: "mandate" },
+    { v: tol, color: "#EAF0F7", label: "tolerance" },
+    { v: client.riskNumber, color: gap > 0 ? "#E74C3C" : "#2ECC71", label: "portfolio" },
   ];
 
   return (
     <>
-      <div className="flex between mb"><span style={{ fontWeight: 600, color: "var(--tx)" }}>{client.name}</span><span className={`v ${gap > 0 ? "neg" : "pos"}`}>{gap > 0 ? `▲ +${gap}` : "✓ dentro"}</span></div>
+      <div className="flex between mb"><span style={{ fontWeight: 600, color: "var(--tx)" }}>{client.name}</span><span className={`v ${gap > 0 ? "neg" : "pos"}`}>{gap > 0 ? `▲ +${gap}` : "✓ within"}</span></div>
       <div style={{ position: "relative", height: 26, margin: "6px 4px 4px" }}>
         <div style={{ position: "absolute", top: 11, left: 0, right: 0, height: 6, borderRadius: 3, background: "linear-gradient(90deg,#2ECC71,#F39C12,#E74C3C)" }} />
         {markers.map((m) => (
@@ -430,17 +477,17 @@ function RiscoClienteWidgetBody({ go, config }: { go: (id: ScreenId, param?: str
         ))}
       </div>
       <div className="legend" style={{ fontSize: 9.5, marginTop: 2 }}>
-        <i><b style={{ background: "#C9A02C" }} />Produto {HPC22_RN}</i>
-        <i><b style={{ background: "#4A90D9" }} />Mandato {client.mandate}</i>
-        <i><b style={{ background: "#EAF0F7" }} />Tolerância {tol}</i>
-        <i><b style={{ background: gap > 0 ? "#E74C3C" : "#2ECC71" }} />Portfólio {client.riskNumber}</i>
+        <i><b style={{ background: "#C9A02C" }} />Product {HPC22_RN}</i>
+        <i><b style={{ background: "#4A90D9" }} />Mandate {client.mandate}</i>
+        <i><b style={{ background: "#EAF0F7" }} />Tolerance {tol}</i>
+        <i><b style={{ background: gap > 0 ? "#E74C3C" : "#2ECC71" }} />Portfolio {client.riskNumber}</i>
       </div>
-      <div className="mt"><button className="btn ghost" onClick={() => go("risco")}><i className="ti ti-arrow-right" />Ver régua completa</button></div>
+      <div className="mt"><button className="btn ghost" onClick={() => go("risco")}><i className="ti ti-arrow-right" />See full ruler</button></div>
     </>
   );
 }
 
-// ---- Todos os clientes na régua — panorama comparativo, um módulo só (sem config) ----
+// ---- All clients on the ruler — comparative overview, a single module (no config) ----
 function TodosClientesReguaWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }) {
   const [clients, setClients] = useState(CLIENTS);
   useEffect(() => setClients(allClients()), []);
@@ -448,11 +495,11 @@ function TodosClientesReguaWidgetBody({ go }: { go: (id: ScreenId, param?: strin
 
   return (
     <>
-      <div className="flex between mb"><span className="muted">{clients.length} clientes</span><span className={`tag ${fora.length ? "r" : "g"}`}>{fora.length ? `${fora.length} fora do mandato` : "todos dentro"}</span></div>
+      <div className="flex between mb"><span className="muted">{clients.length} clients</span><span className={`tag ${fora.length ? "r" : "g"}`}>{fora.length ? `${fora.length} outside mandate` : "all within"}</span></div>
       <div style={{ overflowX: "auto" }}>
         <table>
           <thead><tr>
-            <th>Cliente</th><th className="num">Portfólio</th><th className="num">Mandato</th><th>Distribuição</th><th>Alinhamento</th>
+            <th>Client</th><th className="num">Portfolio</th><th className="num">Mandate</th><th>Distribution</th><th>Alignment</th>
           </tr></thead>
           <tbody>
             {clients.map((c) => {
@@ -464,141 +511,224 @@ function TodosClientesReguaWidgetBody({ go }: { go: (id: ScreenId, param?: strin
                   <td className="num" style={{ color: aligned ? "var(--tx)" : "var(--red)", fontWeight: 600 }}>{c.riskNumber}</td>
                   <td className="num" style={{ color: "var(--tx2)" }}>{c.mandate}</td>
                   <td><MiniRegua portfolio={c.riskNumber} tolerance={t} mandate={c.mandate} /></td>
-                  <td>{aligned ? <span className="tag g">dentro</span> : <span className="tag r">▲ +{c.riskNumber - c.mandate}</span>}</td>
+                  <td>{aligned ? <span className="tag g">within</span> : <span className="tag r">▲ +{c.riskNumber - c.mandate}</span>}</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
-      <div className="mt"><button className="btn ghost" onClick={() => go("risco")}><i className="ti ti-arrow-right" />Ver detalhe por cliente</button></div>
+      <div className="mt"><button className="btn ghost" onClick={() => go("risco")}><i className="ti ti-arrow-right" />See detail by client</button></div>
+    </>
+  );
+}
+
+// ---- Market Regime (180° gauge — how we read the market) ----
+const REGIME_GAUGE_LABEL: Record<string, string> = { BULL: "RISK-ON", CAUTELA: "CAUTION", NEUTRO: "NEUTRAL", BEAR: "RISK-OFF" };
+const REGIME_GAUGE_SUB: Record<string, string> = {
+  BULL: "full exposure · defense on standby",
+  CAUTELA: "reducing risk · defense activating",
+  NEUTRO: "moderate exposure · monitoring",
+  BEAR: "active defense · reduced exposure",
+};
+function RegimeGaugeWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }) {
+  const [regime, setRegime] = useState<RegimeState>("BULL");
+  useEffect(() => {
+    fetchSnapshot().then((s) => { if (s.ok && s.regime) setRegime(s.regime.state); }).catch(() => {});
+  }, []);
+  const label = REGIME_GAUGE_LABEL[regime] || "NEUTRO";
+  return (
+    <>
+      <RegimeGauge state={label} sub={REGIME_GAUGE_SUB[regime]} />
+      <div className="mt"><button className="btn ghost" onClick={() => go("regime")}><i className="ti ti-arrow-right" />See Market Overview</button></div>
+    </>
+  );
+}
+
+// ---- Intelligence Radar (live Market DNA radar) ----
+function IntelRadarWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }) {
+  const [layers, setLayers] = useState<IntelLayer[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    fetch(`${GOV_API}/api/market-dna`)
+      .then((r) => r.json())
+      .then((d) => { setLayers(buildLayersFromApi(d)); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+  if (loading) return <div className="muted" style={{ padding: "24px 0", textAlign: "center" }}>Loading radar…</div>;
+  if (!layers.length) return <div className="muted" style={{ padding: "12px 0" }}>Radar unavailable.</div>;
+  const avg = Math.round(layers.reduce((s, l) => s + l.score, 0) / layers.length);
+  const reg = regimeLabel(avg);
+  return (
+    <>
+      <div className="flex between mb">
+        <div><span className="big" style={{ fontSize: 26, color: reg.color }}>{avg}</span> <span className="muted" style={{ fontSize: 11 }}>conviction</span></div>
+        <span className="tag" style={{ background: "transparent", border: `1px solid ${reg.color}`, color: reg.color }}>{reg.label}</span>
+      </div>
+      <RadarSvg layers={layers} />
+      <div className="mt"><button className="btn ghost" onClick={() => go("market-dna")}><i className="ti ti-arrow-right" />See Market DNA</button></div>
+    </>
+  );
+}
+
+// ---- News Broadcast (live headlines, filtered by impact) ----
+function NewsWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }) {
+  const [items, setItems] = useState<NewsHeadline[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    fetchNews()
+      .then((d) => {
+        const hi = (d.headlines || []).filter((h) => h.impact === "Market Moving" || h.impact === "High");
+        setItems((hi.length ? hi : (d.headlines || [])).slice(0, 4));
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+  if (loading) return <div className="muted" style={{ padding: "10px 0" }}>Loading news…</div>;
+  if (!items.length) return <div className="muted" style={{ padding: "10px 0" }}>No news at the moment.</div>;
+  return (
+    <>
+      {items.map((h) => (
+        <div className="kv" key={h.id} style={{ alignItems: "flex-start" }}>
+          <span style={{ fontSize: 12.5, lineHeight: 1.35 }}>
+            <span style={{ fontFamily: "var(--mono)", fontSize: 9, fontWeight: 700, color: IMPACT_COLOR[h.impact] || "var(--tx3)", marginRight: 6 }}>{h.source_label}</span>
+            {h.headline}
+          </span>
+        </div>
+      ))}
+      <div className="mt"><button className="btn ghost" onClick={() => go("news-broadcast")}><i className="ti ti-arrow-right" />See News Broadcast</button></div>
+    </>
+  );
+}
+
+// ---- Social Radar (live StockTwits) ----
+function SocialWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }) {
+  const [posts, setPosts] = useState<SocialPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    fetchSocialTrending()
+      .then((d) => { setPosts((d.posts || []).slice(0, 3)); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+  if (loading) return <div className="muted" style={{ padding: "10px 0" }}>Loading social radar…</div>;
+  if (!posts.length) return <div className="muted" style={{ padding: "10px 0" }}>No posts at the moment.</div>;
+  return (
+    <>
+      {posts.map((p) => (
+        <div className="kv" key={p.id}>
+          <span style={{ fontSize: 12.5, color: "var(--tx2)" }}>{p.author}{p.symbols?.[0] ? <span className="muted"> ${p.symbols[0]}</span> : null}</span>
+          <span style={{ fontSize: 10, fontWeight: 700, color: SENTIMENT_COLOR[p.sentiment] || "var(--tx3)" }}>{p.sentiment}</span>
+        </div>
+      ))}
+      <div className="mt"><button className="btn ghost" onClick={() => go("social-radar")}><i className="ti ti-arrow-right" />See Social Radar</button></div>
     </>
   );
 }
 
 const CATALOG: Record<string, WidgetDef> = {
   fundos: {
-    id: "fundos", title: "Seus fundos hoje", icon: "ti-coin",
+    id: "fundos", title: "Your funds today", icon: "ti-coin",
     render: (go) => (
       <>
-        <div className="flex between mb"><span>HPC22 · Agressivo</span><span className="big g" style={{ fontSize: 24 }}>+2,31%</span></div>
-        <div className="flex between"><span>HPC11 · I.G.</span><span className="big g" style={{ fontSize: 24 }}>+1,44%</span></div>
-        <div className="mt"><button className="btn ghost" onClick={() => go("fundo", "HPC22")}><i className="ti ti-arrow-right" />Abrir HPC22</button></div>
+        <div className="flex between mb"><span>HPC22 · Aggressive</span><span className="big g" style={{ fontSize: 24 }}>+2.31%</span></div>
+        <div className="flex between"><span>HPC11 · I.G.</span><span className="big g" style={{ fontSize: 24 }}>+1.44%</span></div>
+        <div className="mt"><button className="btn ghost" onClick={() => go("fundo", "HPC22")}><i className="ti ti-arrow-right" />Open HPC22</button></div>
       </>
     ),
   },
   etp: {
-    id: "etp", title: "Comprados no ETP", icon: "ti-basket",
+    id: "etp", title: "Held in the ETP", icon: "ti-basket",
     render: () => (
       <>
-        {[["NVDA", "+2,4%"], ["AVGO", "+1,9%"], ["XOM", "+1,1%"], ["JPM", "−0,4%"]].map(([t, c]) => (
-          <div className="kv" key={t}><span>{t} <span className="muted">5,0%</span></span><span className="v" style={{ color: c.startsWith("−") ? "var(--red)" : "var(--green)" }}>{c}</span></div>
+        {[["NVDA", "+2.4%"], ["AVGO", "+1.9%"], ["XOM", "+1.1%"], ["JPM", "−0.4%"]].map(([t, c]) => (
+          <div className="kv" key={t}><span>{t} <span className="muted">5.0%</span></span><span className="v" style={{ color: c.startsWith("−") ? "var(--red)" : "var(--green)" }}>{c}</span></div>
         ))}
-        <div className="muted mt">+16 posições · ver composição ›</div>
+        <div className="muted mt">+16 positions · see composition ›</div>
       </>
     ),
   },
   regime: {
-    id: "regime", title: "Regime & Defesa", icon: "ti-activity",
-    render: (go) => (
-      <div style={{ textAlign: "center", padding: "8px 0" }}>
-        <div className="big g" style={{ fontSize: 30 }}>RISK-ON</div>
-        <div className="muted mt">defesa desarmada · exposição plena</div>
-        <div style={{ height: 8, borderRadius: 4, background: "#08182c", marginTop: 12, overflow: "hidden" }}>
-          <div style={{ width: "96%", height: "100%", background: "linear-gradient(90deg,var(--gold),var(--green))" }} />
-        </div>
-        <div className="mt"><button className="btn ghost" onClick={() => go("regime")}><i className="ti ti-arrow-right" />Ver regime</button></div>
-      </div>
-    ),
+    id: "regime", title: "Market Regime", icon: "ti-gauge",
+    Component: RegimeGaugeWidgetBody,
+  },
+  "intel-radar": {
+    id: "intel-radar", title: "Intelligence Radar", icon: "ti-chart-radar",
+    Component: IntelRadarWidgetBody,
   },
   noticias: {
-    id: "noticias", title: "Notícias", icon: "ti-news",
-    render: (go) => (
-      <>
-        {["Fed mantém juros; sinaliza dependência de dados", "Goldman eleva alvo do S&P 500 para 5.600", "Ouro renova máxima acima de US$ 2.400"].map((h, i) => (
-          <div className="kv" key={i}><span style={{ fontSize: 12.5 }}>{h}</span></div>
-        ))}
-        <div className="mt"><button className="btn ghost" onClick={() => go("news-broadcast")}><i className="ti ti-arrow-right" />Ver News Broadcast</button></div>
-      </>
-    ),
+    id: "noticias", title: "News Broadcast", icon: "ti-broadcast",
+    Component: NewsWidgetBody,
   },
   cotacoes: {
-    id: "cotacoes", title: "Cotações", icon: "ti-table",
+    id: "cotacoes", title: "Quotes", icon: "ti-table",
     allowMultiple: true,
-    configFields: [{ key: "classe", label: "Classe", options: QUOTE_CLASSES.map((c) => ({ value: c, label: c })) }],
-    titleFor: (config) => `Cotações · ${config?.classe || QUOTE_CLASSES[0]}`,
+    configFields: [{ key: "classe", label: "Class", options: QUOTE_CLASSES.map((c) => ({ value: c, label: c })) }],
+    titleFor: (config) => `Quotes · ${config?.classe || QUOTE_CLASSES[0]}`,
     Component: CotacoesWidgetBody,
   },
   carteira: {
-    id: "carteira", title: "Carteira do cliente", icon: "ti-briefcase",
+    id: "carteira", title: "Client portfolio", icon: "ti-briefcase",
     allowMultiple: true,
-    configFields: [{ key: "clientId", label: "Cliente", options: CLIENTS.map((c) => ({ value: c.id, label: c.name })) }],
+    configFields: [{ key: "clientId", label: "Client", options: CLIENTS.map((c) => ({ value: c.id, label: c.name })) }],
     titleFor: (config) => {
       const c = config?.clientId ? CLIENTS.find((x) => x.id === config.clientId) : null;
-      return `Carteira · ${c?.name || CLIENTS[0].name}`;
+      return `Portfolio · ${c?.name || CLIENTS[0].name}`;
     },
     Component: CarteiraWidgetBody,
   },
   alocacao: {
-    id: "alocacao", title: "Alocação por fundo", icon: "ti-chart-donut",
+    id: "alocacao", title: "Allocation by fund", icon: "ti-chart-donut",
     render: () => (
       <>
-        <div className="kv"><span>HPC22 · Agressivo</span><span className="v">62%</span></div>
+        <div className="kv"><span>HPC22 · Aggressive</span><span className="v">62%</span></div>
         <div className="kv"><span>HPC11 · I.G.</span><span className="v">28%</span></div>
-        <div className="kv"><span>Caixa</span><span className="v">10%</span></div>
+        <div className="kv"><span>Cash</span><span className="v">10%</span></div>
       </>
     ),
   },
   social: {
     id: "social", title: "Social Radar", icon: "ti-radar-2",
-    render: (go) => (
-      <>
-        {SR_POSTS.slice(0, 3).map((p) => (
-          <div className="kv" key={p.id}><span style={{ fontSize: 12.5, color: "var(--tx2)" }}>{p.account}</span><span className="muted" style={{ fontSize: 10 }}>{p.impact}</span></div>
-        ))}
-        <div className="mt"><button className="btn ghost" onClick={() => go("social-radar")}><i className="ti ti-arrow-right" />Ver Social Radar</button></div>
-      </>
-    ),
+    Component: SocialWidgetBody,
   },
   clientes: {
-    id: "clientes", title: "Clientes", icon: "ti-users",
+    id: "clientes", title: "Clients", icon: "ti-users",
     render: (go) => {
       const aum = CLIENTS.reduce((s, c) => s + c.current, 0);
       const fora = CLIENTS.filter((c) => c.riskNumber > c.mandate).length;
       return (
         <>
-          <div className="kv"><span>AUM total</span><span className="v">{brl(aum)}</span></div>
-          <div className="kv"><span>Clientes</span><span className="v">{CLIENTS.length}</span></div>
-          <div className="kv"><span>Fora do mandato</span><span className="v" style={{ color: fora ? "var(--red)" : "var(--green)" }}>{fora}</span></div>
-          <div className="mt"><button className="btn ghost" onClick={() => go("clientes")}><i className="ti ti-arrow-right" />Ver clientes</button></div>
+          <div className="kv"><span>Total AUM</span><span className="v">{brl(aum)}</span></div>
+          <div className="kv"><span>Clients</span><span className="v">{CLIENTS.length}</span></div>
+          <div className="kv"><span>Outside mandate</span><span className="v" style={{ color: fora ? "var(--red)" : "var(--green)" }}>{fora}</span></div>
+          <div className="mt"><button className="btn ghost" onClick={() => go("clientes")}><i className="ti ti-arrow-right" />See clients</button></div>
         </>
       );
     },
   },
   alertas: {
-    id: "alertas", title: "Alertas", icon: "ti-bell",
+    id: "alertas", title: "Alerts", icon: "ti-bell",
     render: (go) => {
       const fora = CLIENTS.filter((c) => c.riskNumber > c.mandate);
       return (
         <>
-          {fora.slice(0, 3).map((c) => (<div className="kv" key={c.id}><span style={{ fontSize: 12.5 }}><span className="tag r">risco</span> {c.name}</span></div>))}
-          <div className="mt"><button className="btn ghost" onClick={() => go("alertas")}><i className="ti ti-arrow-right" />Ver alertas</button></div>
+          {fora.slice(0, 3).map((c) => (<div className="kv" key={c.id}><span style={{ fontSize: 12.5 }}><span className="tag r">risk</span> {c.name}</span></div>))}
+          <div className="mt"><button className="btn ghost" onClick={() => go("alertas")}><i className="ti ti-arrow-right" />See alerts</button></div>
         </>
       );
     },
   },
   risco: {
-    id: "risco", title: "Risco · 4 níveis por cliente", icon: "ti-scale",
+    id: "risco", title: "Risk · 4 levels per client", icon: "ti-scale",
     allowMultiple: true,
-    configFields: [{ key: "clientId", label: "Cliente", options: CLIENTS.map((c) => ({ value: c.id, label: c.name })) }],
+    configFields: [{ key: "clientId", label: "Client", options: CLIENTS.map((c) => ({ value: c.id, label: c.name })) }],
     titleFor: (config) => {
       const c = config?.clientId ? CLIENTS.find((x) => x.id === config.clientId) : null;
-      return `Risco · ${c?.name || CLIENTS[0].name}`;
+      return `Risk · ${c?.name || CLIENTS[0].name}`;
     },
     Component: RiscoClienteWidgetBody,
   },
   "risco-todos": {
-    id: "risco-todos", title: "Todos os clientes na régua", icon: "ti-users-group",
+    id: "risco-todos", title: "All clients on the ruler", icon: "ti-users-group",
     Component: TodosClientesReguaWidgetBody,
   },
 };
@@ -642,7 +772,7 @@ function SortableCard({
           <div className="drag-handle" {...attributes} {...listeners}><i className="ti ti-grip-vertical" /></div>
           <div className="rm-btn" onClick={onRemove}><i className="ti ti-x" /></div>
           {def.configFields && (
-            <div className="rm-btn" style={{ right: 34 }} onClick={() => setConfiguring((v) => !v)} title="Configurar módulo">
+            <div className="rm-btn" style={{ right: 34 }} onClick={() => setConfiguring((v) => !v)} title="Configure module">
               <i className="ti ti-settings" />
             </div>
           )}
@@ -676,31 +806,31 @@ export default function Painel({ go }: { go: (id: ScreenId, param?: string) => v
   const [showAdd, setShowAdd] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
-  // Carrega o layout salvo (módulos + configs) assim que monta no cliente.
+  // Loads the saved layout (modules + configs) as soon as it mounts on the client.
   useEffect(() => setWidgets(loadWidgets()), []);
-  // Persiste a cada mudança — personalização sobrevive ao refresh.
+  // Persists on every change — customization survives a refresh.
   useEffect(() => { saveWidgets(widgets); }, [widgets]);
 
-  // Publica pro JIM o resumo do dia (o essencial do painel).
+  // Publishes the day's summary to JIM (the dashboard essentials).
   useEffect(() => {
     const aum = CLIENTS.reduce((s, c) => s + c.current, 0);
     const fora = CLIENTS.filter((c) => c.riskNumber > c.mandate).length;
     publishScreenData(
       "painel",
-      "Painel do gestor: fundos do dia (HPC22 Agressivo, HPC11 I.G.), regime de mercado, defesa, e resumo de clientes (AUM, fora do mandato). Painel é personalizável: módulos de Cotações (por classe de ativo) e Carteira do cliente podem ser adicionados várias vezes, cada um configurado diferente.",
+      "Manager dashboard: today's funds (HPC22 Aggressive, HPC11 I.G.), market regime, defense, and client summary (AUM, outside mandate). The dashboard is customizable: Quotes modules (by asset class) and Client portfolio modules can be added multiple times, each with a different configuration.",
       {
-        HPC22_hoje: "+2,31%", HPC11_hoje: "+1,44%",
-        regime: "RISK-ON", defesa: "desarmada · exposição plena",
+        HPC22_hoje: "+2.31%", HPC11_hoje: "+1.44%",
+        regime: "RISK-ON", defesa: "disarmed · full exposure",
         clientes: CLIENTS.length, aumTotal: aum, foraDoMandato: fora,
       },
       {
         briefing:
-          `Bom dia! Resumo de hoje: **HPC22 +2,31%**, **HPC11 +1,44%**. Regime **RISK-ON** (defesa desarmada). ` +
-          `${CLIENTS.length} clientes, AUM ${brl(aum)}` + (fora ? `, **${fora} fora do mandato**.` : ", todos dentro do mandato."),
+          `Good morning! Today's summary: **HPC22 +2.31%**, **HPC11 +1.44%**. Regime **RISK-ON** (defense disarmed). ` +
+          `${CLIENTS.length} clients, AUM ${brl(aum)}` + (fora ? `, **${fora} outside mandate**.` : ", all within mandate."),
         suggestions: [
-          "Como estão os fundos hoje?",
-          fora ? "Quais clientes estão fora do mandato?" : "Algum cliente exige atenção?",
-          "Por que o regime está RISK-ON?",
+          "How are the funds doing today?",
+          fora ? "Which clients are outside the mandate?" : "Does any client need attention?",
+          "Why is the regime RISK-ON?",
         ],
       }
     );
@@ -731,41 +861,41 @@ export default function Painel({ go }: { go: (id: ScreenId, param?: string) => v
       });
     }
   }
-  // Módulos únicos (allowMultiple=false) já adicionados somem do menu; os
-  // configuráveis (Cotações, Carteira) ficam sempre disponíveis — dá pra
-  // adicionar quantos quiser, cada um numa classe/cliente diferente.
+  // Single-instance modules (allowMultiple=false) disappear from the menu once
+  // added; configurable ones (Quotes, Portfolio) stay always available — you can
+  // add as many as you want, each in a different class/client.
   const available = Object.values(CATALOG).filter((w) => w.allowMultiple || !widgets.some((inst) => inst.catalogId === w.id));
 
   return (
     <div className={`screen${editing ? " editing" : ""}`}>
-      <div className="crumb"><b>Painel</b></div>
+      <div className="crumb"><b>Dashboard</b></div>
       <div className="flex between" style={{ alignItems: "flex-start" }}>
-        <div><div className="h1">Bom dia, João</div><div className="sub">O essencial do dia. {editing ? "Arraste para reorganizar, adicione módulos (Cotações e Carteira podem repetir, cada um com sua própria configuração — clique na engrenagem) ou remova." : "Tudo o mais está a um clique nos menus do topo."}</div></div>
+        <div><div className="h1">Good morning, João</div><div className="sub">The essentials of the day. {editing ? "Drag to reorganize, add modules (Quotes and Portfolio can repeat, each with its own configuration — click the gear) or remove them." : "Everything else is a click away in the top menus."}</div></div>
         <div className="flex" style={{ gap: 8, alignItems: "center" }}>
           {editing && (
             <>
               <div style={{ position: "relative" }}>
                 <button className="btn ghost" style={{ padding: "6px 11px", fontSize: 12 }} onClick={() => setShowAdd((v) => !v)}>
-                  <i className="ti ti-plus" />Adicionar módulo<i className="ti ti-chevron-down" style={{ fontSize: 12 }} />
+                  <i className="ti ti-plus" />Add module<i className="ti ti-chevron-down" style={{ fontSize: 12 }} />
                 </button>
                 {showAdd && (
                   <div style={{ position: "absolute", top: "100%", right: 0, marginTop: 4, background: "var(--panel)", border: "1px solid var(--line2)", borderRadius: 10, boxShadow: "0 18px 50px rgba(0,0,0,.55)", padding: 6, minWidth: 230, zIndex: 60, maxHeight: 340, overflowY: "auto" }}>
                     {available.length === 0
-                      ? <div className="muted" style={{ padding: 10, fontSize: 12 }}>Todos os módulos já estão no painel.</div>
+                      ? <div className="muted" style={{ padding: 10, fontSize: 12 }}>All modules are already on the dashboard.</div>
                       : available.map((w) => (
                         <div key={w.id} className="dd-item" onClick={() => addWidget(w.id)}>
-                          <i className={`ti ${w.icon}`} />{w.title}{w.allowMultiple && <span className="muted" style={{ marginLeft: "auto", fontSize: 10 }}>+ adicionar outro</span>}
+                          <i className={`ti ${w.icon}`} />{w.title}{w.allowMultiple && <span className="muted" style={{ marginLeft: "auto", fontSize: 10 }}>+ add another</span>}
                         </div>
                       ))}
                   </div>
                 )}
               </div>
-              <button className="btn ghost" style={{ padding: "6px 10px", fontSize: 12 }} onClick={() => setWidgets(DEFAULT_INSTANCES)} title="Restaurar padrão"><i className="ti ti-rotate" /></button>
+              <button className="btn ghost" style={{ padding: "6px 10px", fontSize: 12 }} onClick={() => setWidgets(DEFAULT_INSTANCES)} title="Restore default"><i className="ti ti-rotate" /></button>
             </>
           )}
           <button
             onClick={() => { setEditing((v) => !v); setShowAdd(false); }}
-            title={editing ? "Concluir" : "Personalizar painel"}
+            title={editing ? "Done" : "Customize dashboard"}
             style={{
               display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer",
               fontSize: 12, padding: "6px 11px", borderRadius: 7, fontFamily: "var(--sans)",
@@ -773,7 +903,7 @@ export default function Painel({ go }: { go: (id: ScreenId, param?: string) => v
               background: editing ? "rgba(201,160,44,.15)" : "transparent",
               color: editing ? "var(--gold)" : "var(--tx3)",
             }}>
-            <i className={`ti ${editing ? "ti-check" : "ti-layout-grid-add"}`} />{editing ? "Concluir" : "Personalizar"}
+            <i className={`ti ${editing ? "ti-check" : "ti-layout-grid-add"}`} />{editing ? "Done" : "Customize"}
           </button>
         </div>
       </div>
@@ -801,7 +931,7 @@ export default function Painel({ go }: { go: (id: ScreenId, param?: string) => v
       </DndContext>
 
       {editing && available.length > 0 && (
-        <div className="muted mt" style={{ fontSize: 11 }}>{available.length} módulo(s) disponíveis para adicionar · Cotações e Carteira do cliente podem ser adicionados várias vezes, cada um com sua própria configuração.</div>
+        <div className="muted mt" style={{ fontSize: 11 }}>{available.length} module(s) available to add · Quotes and Client portfolio can be added multiple times, each with its own configuration.</div>
       )}
     </div>
   );

@@ -19,8 +19,8 @@ interface ChatRequest {
   screenSummary?: string | null;
 }
 
-// Injeta os dados que estão VISÍVEIS na tela para o JIM enxergar e responder
-// direto — nunca perguntar "o que você está vendo". Trunca pra não estourar tokens.
+// Injects the data currently VISIBLE on screen so JIM can see it and answer
+// directly — never asking "what are you looking at?". Truncates to avoid blowing the token budget.
 function buildScreenDataContext(summary: string | null | undefined, data: unknown): string {
   if (data == null) return "";
   let json = "";
@@ -31,20 +31,20 @@ function buildScreenDataContext(summary: string | null | undefined, data: unknow
   }
   if (!json || json === "null" || json === "[]" || json === "{}") return "";
   const MAX = 8000;
-  const truncated = json.length > MAX ? json.slice(0, MAX) + " …(lista truncada)" : json;
+  const truncated = json.length > MAX ? json.slice(0, MAX) + " …(list truncated)" : json;
   return (
-    "\n\n--- DADOS ATUALMENTE VISÍVEIS NA TELA (você ENXERGA isto) ---\n" +
+    "\n\n--- DATA CURRENTLY VISIBLE ON SCREEN (you SEE this) ---\n" +
     (summary ? summary + "\n" : "") +
-    "Estes são os dados reais renderizados na tela do gestor AGORA, em JSON. " +
-    "Se a pergunta for sobre qualquer item aqui (uma empresa, um ticker, uma linha, um número), " +
-    "localize-o nestes dados e responda direto com os valores reais. NUNCA pergunte o que ele está vendo.\n\n" +
+    "This is the real data rendered on the manager's screen RIGHT NOW, in JSON. " +
+    "If the question is about any item here (a company, a ticker, a row, a number), " +
+    "find it in this data and answer directly with the real values. NEVER ask what they're looking at.\n\n" +
     truncated
   );
 }
 
 const MODEL_MAP: Record<string, string> = {
   haiku: "claude-haiku-4-5-20251001",
-  sonnet: "claude-sonnet-4-20250514",
+  sonnet: "claude-sonnet-5",
 };
 
 const BOOK_SEARCH_URL = process.env.BOOK_SEARCH_URL || "http://localhost:8878";
@@ -81,7 +81,7 @@ function buildBookContext(results: BookResult[]): string {
     const src = r.citation;
     const ref = [
       src.book,
-      src.author ? `por ${src.author}` : "",
+      src.author ? `by ${src.author}` : "",
       src.pages ? `p. ${src.pages}` : "",
       src.chapter || "",
     ]
@@ -90,8 +90,8 @@ function buildBookContext(results: BookResult[]): string {
     return `[${i + 1}] ${ref}\n${r.content.slice(0, 600)}`;
   });
   return (
-    "\n\n--- TRECHOS RELEVANTES DA BIBLIOTECA ---\n" +
-    "Use estas fontes para fundamentar sua resposta. Cite como: (Livro, p. XX).\n\n" +
+    "\n\n--- RELEVANT EXCERPTS FROM THE LIBRARY ---\n" +
+    "Use these sources to back up your answer. Cite as: (Book, p. XX).\n\n" +
     citations.join("\n\n")
   );
 }
@@ -166,8 +166,12 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await res.json();
+    // content can have blocks that aren't "text" (e.g. thinking) before the real text —
+    // don't blindly trust content[0].
+    const blocks: { type: string; text?: string }[] = data.content || [];
     const text =
-      data.content?.[0]?.text || "Desculpe, não consegui processar sua pergunta.";
+      blocks.filter((b) => b.type === "text").map((b) => b.text || "").join("\n").trim() ||
+      "Sorry, I couldn't process your question.";
     const usage = data.usage || {};
 
     return NextResponse.json({

@@ -1,46 +1,50 @@
-// Clientes do MFO (mock). Carteiras em BRL (investidores brasileiros).
+// Model portfolios of Harpian's PARTNERS (presentation). In the presentation
+// terminal, the "clients" are the partners themselves with their own portfolios —
+// real name/role data, real allocation by geography, and % in the ETP (HPC).
+// Names and credentials come from the TEAM slide of the institutional deck.
+// (This is the only "client" data in the terminal — everything else is live.)
 import type { PortfolioItemDetail } from "./portfolioModels";
 import { MODELS } from "./portfolioModels";
 export type { PortfolioItemDetail };
 export interface Alloc { label: string; pct: number; tone?: "g" | "r" | "gold" }
 export interface ImportedPosition { ticker: string; qty: number; avgPrice: number }
 
-// Dados pessoais/cadastrais — separados do perfil de risco (aba própria na edição).
+// Personal/registration data — kept separate from the risk profile (its own tab in editing).
 export interface PersonalData {
   cpfCnpj?: string;
   phone?: string;
   address?: string;
-  responsavel?: string; // pessoa de contato no family office/instituição
+  responsavel?: string; // contact person at the family office/institution
 }
 
-// Uma conta em um banco/corretora/custodiante — o cliente pode ter várias.
+// An account at a bank/broker/custodian — a client can have several.
 export interface Account {
   id: string;
-  bank: string;                 // nome do banco/corretora
+  bank: string;                 // bank/broker name
   type: "Conta corrente" | "Corretora" | "Custódia" | "Outro";
   agency?: string;
   accountNumber?: string;
-  custodian?: string;           // custodiante, se diferente do banco
+  custodian?: string;           // custodian, if different from the bank
   notes?: string;
 }
 
-// Um portfólio — o cliente pode ter vários (um por banco/conta, por exemplo).
+// A portfolio — a client can have several (one per bank/account, for example).
 export interface Portfolio {
   id: string;
-  name: string;                 // ex.: "Carteira XP", "Carteira Itaú Private"
-  accountId?: string;           // referência a Account.id
-  positions: ImportedPosition[]; // subconjunto líquido (Yahoo-quotável) — alimenta o "ganho ao vivo"
-  items?: PortfolioItemDetail[]; // detalhamento COMPLETO produto-a-produto (Excel) — pra tela do portfólio
-  modelLabel?: string;           // rótulo do modelo de referência de origem (ex.: "P1 — Conservador Brasil")
-  baseValueUsd?: number;         // valor-base do modelo (normalmente USD 100.000)
+  name: string;                 // e.g.: "XP Portfolio", "Itaú Private Portfolio"
+  accountId?: string;           // reference to Account.id
+  positions: ImportedPosition[]; // liquid subset (Yahoo-quotable) — feeds the "live gain"
+  items?: PortfolioItemDetail[]; // FULL product-by-product breakdown (Excel) — for the portfolio screen
+  modelLabel?: string;           // label of the originating reference model (e.g.: "P1 — Conservative Brazil")
+  baseValueUsd?: number;         // model base value (usually USD 100,000)
 }
 
-// Conexão com o sistema de gestão do próprio MFO (fase 2: sincronização real).
+// Connection to the MFO's own management system (phase 2: real sync).
 export interface ApiIntegration {
   id: string;
-  system: string;                // nome do sistema (ex.: Comdinheiro, sistema interno)
+  system: string;                // system name (e.g.: Comdinheiro, internal system)
   baseUrl?: string;
-  apiKey?: string;                // mascarado na UI
+  apiKey?: string;                // masked in the UI
   status: "conectado" | "a configurar" | "erro";
   lastSync?: string;
 }
@@ -48,18 +52,18 @@ export interface ApiIntegration {
 export interface Client {
   id: string;
   name: string;
-  type: string;         // Family Office / Pessoa Física / Institucional
-  profile: "Conservador" | "Moderado" | "Agressivo";
-  since: string;        // mês/ano de início
+  type: string;         // Family Office / Individual / Institutional
+  profile: "Conservative" | "Moderate" | "Aggressive";
+  since: string;        // start month/year
   invested: number;     // BRL
   current: number;      // BRL
-  riskNumber: number;   // 0–100
-  mandate: number;      // teto contratual
-  harpianPct: number;   // % alocado em HPC
+  riskNumber: number;   // 0-100
+  mandate: number;      // contractual ceiling
+  harpianPct: number;   // % allocated to HPC
   alloc: Alloc[];
   note?: string;
   email?: string;
-  importedPositions?: ImportedPosition[]; // planilha importada (Importar/conectar) — legado, 1 portfólio só
+  importedPositions?: ImportedPosition[]; // imported spreadsheet (Import/connect) — legacy, single portfolio
   personalData?: PersonalData;
   accounts?: Account[];
   portfolios?: Portfolio[];
@@ -67,186 +71,121 @@ export interface Client {
 }
 
 export const CLIENTS: Client[] = [
+  // ── João Daniel — Managing Partner / Founder / CIO ──
+  // Brazil and USA, 35% in the ETP (HPC). MBA Pittsburgh · floor trader.
   {
-    id: "vera", name: "Vera Hollanda", type: "Family Office", profile: "Moderado",
-    since: "03/2023", invested: 7_200_000, current: 8_200_000, riskNumber: 78, mandate: 62, harpianPct: 0,
+    id: "joao-daniel", name: "João Daniel", type: "Partner · Founder / CIO", profile: "Aggressive",
+    since: "01/2022", invested: 4_200_000, current: 5_600_000, riskNumber: 58, mandate: 65, harpianPct: 35,
     alloc: [
-      { label: "Renda fixa BR", pct: 52 },
-      { label: "Ações BR", pct: 28 },
-      { label: "Multimercado", pct: 20 },
-      { label: "HPC (Harpian)", pct: 0, tone: "r" },
+      { label: "US Stocks", pct: 32 },
+      { label: "HPC22 · ETP (Harpian)", pct: 35, tone: "gold" },
+      { label: "BR Stocks", pct: 22 },
+      { label: "BR Fixed Income", pct: 11 },
     ],
-    note: "100% fora da Harpian, sem a camada de defesa. Oportunidade: migrar parte para o HPC11/HPC22.",
-    // 2 portfólios em 2 bancos — estilo "Investimento Brasil" (Itaú) + "Investimento Exterior" (XP),
-    // igual os modelos de referência da apresentação (lente-3-portfolio.html).
+    note: "CIO's model portfolio: Brazil + USA with 35% in the ETP — the largest Harpian allocation among the partners. The defense layer protects the risk core.",
+    personalData: { responsavel: "João Daniel — Founder/CIO" },
     accounts: [
-      { id: "vera-itau", bank: "Itaú Private", type: "Custódia", agency: "0910", accountNumber: "18.442-1" },
-      { id: "vera-xp", bank: "XP Investimentos", type: "Corretora", accountNumber: "XP-772104" },
+      { id: "jd-btg", bank: "BTG Pactual", type: "Corretora", accountNumber: "BTG-JD-0001" },
+      { id: "jd-ibkr", bank: "Interactive Brokers", type: "Corretora", accountNumber: "IBKR-JD-USA" },
     ],
     portfolios: [
       {
-        id: "vera-p1", name: "Carteira Itaú · Brasil", accountId: "vera-itau",
-        modelLabel: MODELS.P1.label, baseValueUsd: 100000, items: MODELS.P1.items,
-        positions: [
-          { ticker: "PETR4.SA", qty: 20000, avgPrice: 30 },
-          { ticker: "VALE3.SA", qty: 15000, avgPrice: 65 },
-          { ticker: "ITUB4.SA", qty: 30000, avgPrice: 30 },
-          { ticker: "BOVA11.SA", qty: 10000, avgPrice: 130 },
-        ],
-      },
-      {
-        id: "vera-p2", name: "Carteira XP · Exterior", accountId: "vera-xp",
-        modelLabel: MODELS.P3.label, baseValueUsd: 100000, items: MODELS.P3.items,
-        positions: [
-          { ticker: "SPY", qty: 3000, avgPrice: 500 },
-          { ticker: "TLT", qty: 5000, avgPrice: 85 },
-          { ticker: "AGG", qty: 4000, avgPrice: 98 },
-        ],
-      },
-    ],
-  },
-  {
-    id: "silveira", name: "Silveira Family Office", type: "Family Office", profile: "Agressivo",
-    since: "08/2022", invested: 12_000_000, current: 15_400_000, riskNumber: 71, mandate: 70, harpianPct: 8,
-    alloc: [
-      { label: "Ações US", pct: 40 },
-      { label: "Ações BR", pct: 22 },
-      { label: "Cripto", pct: 18 },
-      { label: "Multimercado", pct: 12 },
-      { label: "HPC (Harpian)", pct: 8, tone: "gold" },
-    ],
-    note: "Levemente acima do mandato; sem proteção estruturada na parte de risco.",
-    // 3 portfólios em 3 bancos — Itaú (Brasil + exterior misturado), Santander (cripto/tech),
-    // Bank of America (US mega-cap) — o cliente-exemplo com mais bancos, pra testar o leiaute.
-    accounts: [
-      { id: "silv-itau", bank: "Itaú Private", type: "Custódia", accountNumber: "IT-90234" },
-      { id: "silv-santander", bank: "Santander Private Banking", type: "Corretora", accountNumber: "SAN-44120" },
-      { id: "silv-boa", bank: "Bank of America Private Bank", type: "Corretora", accountNumber: "BOA-US-33871" },
-    ],
-    portfolios: [
-      {
-        id: "silv-p1", name: "Carteira Itaú (Brasil + Exterior)", accountId: "silv-itau",
-        modelLabel: MODELS.P2.label, baseValueUsd: 100000, items: MODELS.P2.items,
-        positions: [
-          { ticker: "BOVA11.SA", qty: 8000, avgPrice: 130 },
-          { ticker: "SPY", qty: 2000, avgPrice: 500 },
-          { ticker: "QQQ", qty: 1000, avgPrice: 480 },
-        ],
-      },
-      {
-        id: "silv-p2", name: "Carteira Santander (Cripto + Multimercado)", accountId: "silv-santander",
+        id: "jd-br", name: "BR Portfolio · Brazil", accountId: "jd-btg",
         modelLabel: MODELS.P4.label, baseValueUsd: 100000, items: MODELS.P4.items,
         positions: [
-          { ticker: "BTC-USD", qty: 5, avgPrice: 45000 },
-          { ticker: "ETH-USD", qty: 50, avgPrice: 2000 },
-          { ticker: "AMZN", qty: 500, avgPrice: 180 },
+          { ticker: "BOVA11.SA", qty: 6000, avgPrice: 130 },
+          { ticker: "ITUB4.SA", qty: 20000, avgPrice: 30 },
+          { ticker: "PETR4.SA", qty: 10000, avgPrice: 32 },
         ],
       },
       {
-        id: "silv-p3", name: "Carteira Bank of America (US)", accountId: "silv-boa",
+        id: "jd-us", name: "US Portfolio · Abroad + ETP", accountId: "jd-ibkr",
         modelLabel: MODELS.P5.label, baseValueUsd: 100000, items: MODELS.P5.items,
         positions: [
-          { ticker: "AAPL", qty: 2000, avgPrice: 200 },
-          { ticker: "MSFT", qty: 1000, avgPrice: 380 },
-          { ticker: "NVDA", qty: 500, avgPrice: 150 },
-        ],
-      },
-    ],
-  },
-  {
-    id: "marazul", name: "Instituto MarAzul", type: "Institucional (endowment)", profile: "Conservador",
-    since: "01/2024", invested: 20_000_000, current: 21_100_000, riskNumber: 32, mandate: 40, harpianPct: 15,
-    alloc: [
-      { label: "Renda fixa BR", pct: 58 },
-      { label: "Renda fixa global", pct: 15 },
-      { label: "HPC11 (Harpian)", pct: 15, tone: "g" },
-      { label: "Ações BR", pct: 12 },
-    ],
-    note: "Bem dentro do mandato. Perfil de preservação com a camada de defesa da Harpian.",
-    // Modelo P2 (Conservador-Moderado Global) — diversificação ampla BR/EUA/Europa, foco em preservação.
-    accounts: [{ id: "maz-bny", bank: "BNY Mellon", type: "Custódia", accountNumber: "BNYM-EC21625" }],
-    portfolios: [
-      {
-        id: "maz-p1", name: "Endowment · Conservador-Moderado Global", accountId: "maz-bny",
-        modelLabel: MODELS.P2.label, baseValueUsd: 100000, items: MODELS.P2.items,
-        positions: [
-          { ticker: "AGG", qty: 20000, avgPrice: 98 },
-          { ticker: "IEV", qty: 3000, avgPrice: 55 },
-          { ticker: "BOVA11.SA", qty: 4000, avgPrice: 130 },
-        ],
-      },
-    ],
-  },
-  {
-    id: "ricardo", name: "Ricardo Menezes", type: "Pessoa Física", profile: "Moderado",
-    since: "11/2023", invested: 3_500_000, current: 4_000_000, riskNumber: 58, mandate: 60, harpianPct: 22,
-    alloc: [
-      { label: "Ações US", pct: 30 },
-      { label: "HPC22 (Harpian)", pct: 22, tone: "gold" },
-      { label: "Renda fixa BR", pct: 28 },
-      { label: "Multimercado", pct: 20 },
-    ],
-    note: "Alinhado ao mandato. Bom candidato a aumentar a alocação no HPC.",
-    // Modelo P4 (Balanceado Moderado Global) — 50% Brasil/40% EUA/10% Europa, inclui cripto (HASH11).
-    accounts: [{ id: "ric-btg", bank: "BTG Pactual", type: "Corretora", accountNumber: "BTG-551029" }],
-    portfolios: [
-      {
-        id: "ric-p1", name: "Carteira BTG · Balanceado Moderado Global", accountId: "ric-btg",
-        modelLabel: MODELS.P4.label, baseValueUsd: 100000, items: MODELS.P4.items,
-        positions: [
           { ticker: "SPY", qty: 2000, avgPrice: 500 },
-          { ticker: "BOVA11.SA", qty: 5000, avgPrice: 130 },
-          { ticker: "AGG", qty: 2000, avgPrice: 98 },
+          { ticker: "QQQ", qty: 800, avgPrice: 480 },
+          { ticker: "AAPL", qty: 1500, avgPrice: 200 },
         ],
       },
     ],
   },
+  // ── Diogo Scelza — Portfolio Manager ──
+  // Only USA, 25% in HPC. Wachovia/Wells Fargo · Bolton · 18+ years · $50M+ AUM.
   {
-    id: "aurora", name: "Aurora Capital MFO", type: "Institucional", profile: "Agressivo",
-    since: "05/2023", invested: 30_000_000, current: 39_000_000, riskNumber: 66, mandate: 68, harpianPct: 30,
+    id: "diogo", name: "Diogo Scelza", type: "Partner · Portfolio Manager", profile: "Aggressive",
+    since: "01/2022", invested: 6_000_000, current: 7_900_000, riskNumber: 66, mandate: 70, harpianPct: 25,
     alloc: [
-      { label: "Ações US", pct: 35 },
+      { label: "US Stocks", pct: 50 },
+      { label: "HPC22 (Harpian)", pct: 25, tone: "gold" },
+      { label: "US ETFs", pct: 18 },
+      { label: "US Fixed Income", pct: 7 },
+    ],
+    note: "Portfolio Manager's model portfolio: 100% abroad (USA), 25% in HPC. High-conviction profile with the Harpian defense at its core.",
+    personalData: { responsavel: "Diogo Scelza — Portfolio Manager" },
+    accounts: [{ id: "ds-ibkr", bank: "Interactive Brokers", type: "Corretora", accountNumber: "IBKR-DS-USA" }],
+    portfolios: [
+      {
+        id: "ds-us", name: "IBKR Portfolio · Abroad Only (USA)", accountId: "ds-ibkr",
+        modelLabel: MODELS.P5.label, baseValueUsd: 100000, items: MODELS.P5.items,
+        positions: [
+          { ticker: "AAPL", qty: 2500, avgPrice: 200 },
+          { ticker: "MSFT", qty: 1500, avgPrice: 380 },
+          { ticker: "NVDA", qty: 800, avgPrice: 150 },
+          { ticker: "SPY", qty: 2000, avgPrice: 500 },
+        ],
+      },
+    ],
+  },
+  // ── Johnny Zighelboim — Quant Data Architecture ──
+  // Only USA, 30% in HPC. Morgan Stanley · Bolton · MSM · 31+ years wealth mgmt.
+  {
+    id: "johnny", name: "Johnny Zighelboim", type: "Partner · Quant Data Architecture", profile: "Aggressive",
+    since: "01/2022", invested: 8_500_000, current: 11_200_000, riskNumber: 62, mandate: 70, harpianPct: 30,
+    alloc: [
+      { label: "US Stocks", pct: 44 },
       { label: "HPC22 (Harpian)", pct: 30, tone: "gold" },
-      { label: "Ações globais", pct: 20 },
-      { label: "Renda fixa", pct: 15 },
+      { label: "US ETFs", pct: 20 },
+      { label: "US Fixed Income", pct: 6 },
     ],
-    note: "Maior alocação Harpian da base. Dentro do mandato com retorno forte.",
-    // Modelo P5 (Moderado EUA) — 100% USD, ações diretas (AAPL/MSFT/GOOGL/JPM...) + ETFs + 2% cripto (IBIT).
-    accounts: [{ id: "aur-ibkr", bank: "Interactive Brokers", type: "Corretora", accountNumber: "IBKR-U15982774" }],
+    note: "Quant architecture's model portfolio: 100% abroad (USA), 30% in HPC. 31 years of wealth management with the Harpian systematic layer.",
+    personalData: { responsavel: "Johnny Zighelboim — Quant Data Architecture" },
+    accounts: [{ id: "jz-ms", bank: "Morgan Stanley", type: "Corretora", accountNumber: "MS-JZ-USA" }],
     portfolios: [
       {
-        id: "aur-p1", name: "Carteira IBKR · Só Exterior (Moderado EUA)", accountId: "aur-ibkr",
+        id: "jz-us", name: "Morgan Stanley Portfolio · USA", accountId: "jz-ms",
         modelLabel: MODELS.P5.label, baseValueUsd: 100000, items: MODELS.P5.items,
         positions: [
-          { ticker: "AAPL", qty: 10000, avgPrice: 200 },
-          { ticker: "MSFT", qty: 8000, avgPrice: 380 },
-          { ticker: "GOOGL", qty: 6000, avgPrice: 300 },
-          { ticker: "SPY", qty: 3000, avgPrice: 500 },
+          { ticker: "SPY", qty: 4000, avgPrice: 500 },
+          { ticker: "MSFT", qty: 2000, avgPrice: 380 },
+          { ticker: "GOOGL", qty: 1500, avgPrice: 300 },
+          { ticker: "AGG", qty: 3000, avgPrice: 98 },
         ],
       },
     ],
   },
+  // ── João Pedro Murad Panizzutti — CTO ──
+  // Europe and USA. Carlyle · Millennium · Sage · Data Science.
   {
-    id: "helena", name: "Helena Prado", type: "Pessoa Física", profile: "Conservador",
-    since: "04/2024", invested: 1_800_000, current: 1_900_000, riskNumber: 41, mandate: 38, harpianPct: 5,
+    id: "joao-pedro", name: "João Pedro Panizzutti", type: "Partner · CTO", profile: "Moderate",
+    since: "01/2022", invested: 3_800_000, current: 4_700_000, riskNumber: 55, mandate: 62, harpianPct: 20,
     alloc: [
-      { label: "Renda fixa BR", pct: 62 },
-      { label: "Multimercado", pct: 21 },
-      { label: "Ações BR", pct: 12 },
-      { label: "HPC11 (Harpian)", pct: 5, tone: "g" },
+      { label: "US Stocks", pct: 40 },
+      { label: "Europe Stocks", pct: 25 },
+      { label: "HPC22 (Harpian)", pct: 20, tone: "gold" },
+      { label: "Global Fixed Income", pct: 15 },
     ],
-    note: "Levemente acima do mandato conservador. Migrar parte para HPC11 reduz o risco.",
-    // Modelo P1 (Conservador Brasil) — 80% Brasil / 20% EUA, tickers reais da Análise USD.
-    accounts: [{ id: "hel-itau", bank: "Itaú", type: "Conta corrente", accountNumber: "IT-22841" }],
+    note: "CTO's model portfolio: Europe + USA, 20% in HPC. Developed-market geographic diversification with the Harpian defense.",
+    personalData: { responsavel: "João Pedro Panizzutti — CTO" },
+    accounts: [{ id: "jp-ibkr", bank: "Interactive Brokers", type: "Corretora", accountNumber: "IBKR-JP-EU-US" }],
     portfolios: [
       {
-        id: "hel-p1", name: "Conservador · Brasil (modelo P1)", accountId: "hel-itau",
-        modelLabel: MODELS.P1.label, baseValueUsd: 100000, items: MODELS.P1.items,
+        id: "jp-eu-us", name: "IBKR Portfolio · Europe + USA", accountId: "jp-ibkr",
+        modelLabel: MODELS.P2.label, baseValueUsd: 100000, items: MODELS.P2.items,
         positions: [
-          { ticker: "BOVA11.SA", qty: 3000, avgPrice: 130 },
-          { ticker: "ITUB4.SA", qty: 8000, avgPrice: 30 },
-          { ticker: "AGG", qty: 3000, avgPrice: 98 },
-          { ticker: "TLT", qty: 1500, avgPrice: 85 },
+          { ticker: "SPY", qty: 2500, avgPrice: 500 },
+          { ticker: "VGK", qty: 5000, avgPrice: 62 },
+          { ticker: "IEV", qty: 3000, avgPrice: 55 },
+          { ticker: "AGG", qty: 2000, avgPrice: 98 },
         ],
       },
     ],
@@ -254,4 +193,4 @@ export const CLIENTS: Client[] = [
 ];
 
 export const clientById = (id: string) => CLIENTS.find((c) => c.id === id) || CLIENTS[0];
-export const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+export const brl = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });

@@ -1,6 +1,6 @@
-// Notícias + Social REAIS no Terminal — clientes dos endpoints /v1/news e /v1/social do
-// backend (RSS financeiro + StockTwits). Substituem os mocks NB_HEADLINES/SR_POSTS.
-// Portado do Cockpit (mesma fonte real). Só dado de mercado — sem método.
+// Real News + Social in the Terminal — clients for the backend's /v1/news and /v1/social
+// endpoints (financial RSS + StockTwits). Replace the NB_HEADLINES/SR_POSTS mocks.
+// Ported from the Cockpit (same real source). Market data only — no method.
 import { hqpGet } from "./hqp";
 
 export interface NewsHeadline {

@@ -5,12 +5,12 @@ export const dynamic = "force-dynamic";
 
 const SINCE_YEAR: Record<string, number> = { "2016": 2016, "2006": 2006, "2000": 2000 };
 
-// GET /api/core-drawdown?period=5y → underwater do CORE22+, S&P e Nasdaq (backtest + Yahoo real)
+// GET /api/core-drawdown?period=5y → underwater series for CORE22+, S&P and Nasdaq (backtest + real Yahoo data)
 export async function GET(req: NextRequest) {
   const period = req.nextUrl.searchParams.get("period") || "5y";
   try {
     const { t, core, spx } = loadCore22Nav();
-    const nasdaqFull = await alignedNasdaq(t); // null se Yahoo indisponível — segue só com core/spx
+    const nasdaqFull = await alignedNasdaq(t); // null if Yahoo is unavailable — proceeds with just core/spx
 
     const lastTs = t[t.length - 1];
     let startIdx = 0;

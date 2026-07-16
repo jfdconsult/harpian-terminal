@@ -5,20 +5,20 @@ import { join } from "path";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Pasta de saída do overnight_run.py (sistema HC-US IG). Configurável por env.
+// Output folder for overnight_run.py (HC-US IG system). Configurable via env.
 const SNAP_DIR =
   process.env.HARPIAN_SNAPSHOT_DIR ||
   "C:\\dev\\HARPIAN\\01_HOMOLOGADO\\_SISTEMA_HC-US_IG\\overnight\\output";
 
-// ── CONFIDENCIALIDADE ──────────────────────────────────────────────────────
-// Este handler roda no SERVIDOR. Ele é o filtro: só o "quê" (regime, postura,
-// posições, perfis) chega ao navegador do cliente MFO. O "como" — CRS, thresholds,
-// temperaturas dos pilares, breadth, cross-corr, fórmulas dos motores, lane_rocs,
-// step_attack_fraction, w_hc — NUNCA sai daqui. É whitelist, não blacklist.
+// ── CONFIDENTIALITY ────────────────────────────────────────────────────────
+// This handler runs on the SERVER. It's the filter: only the "what" (regime,
+// stance, positions, profiles) reaches the MFO client's browser. The "how" — CRS,
+// thresholds, pillar temperatures, breadth, cross-corr, engine formulas, lane_rocs,
+// step_attack_fraction, w_hc — NEVER leaves here. It's a whitelist, not a blacklist.
 
 type Holding = { ticker: string; weight_pct: number; name: string };
 
-// regime interno → estado cliente-safe (rótulo, jamais o mecanismo)
+// internal regime → client-safe state (label only, never the mechanism)
 function mapRegime(raw: string): "BULL" | "CAUTELA" | "BEAR" | "NEUTRO" {
   const s = (raw || "").toUpperCase();
   if (s.startsWith("RISK-ON")) return "BULL";
@@ -31,19 +31,19 @@ function latestSnapshot(): { file: string; data: Record<string, unknown> } {
   const files = readdirSync(SNAP_DIR).filter(
     (f) => f.startsWith("snapshot_") && f.endsWith(".json")
   );
-  if (!files.length) throw new Error("nenhum snapshot na pasta de saída");
-  files.sort(); // snapshot_YYYYMMDD_HHMM → ordem lexicográfica = cronológica
+  if (!files.length) throw new Error("no snapshot in the output folder");
+  files.sort(); // snapshot_YYYYMMDD_HHMM → lexicographic order = chronological
   const file = files[files.length - 1];
   const data = JSON.parse(readFileSync(join(SNAP_DIR, file), "utf-8"));
   return { file, data };
 }
 
-// GET /api/snapshot → visão cliente-safe do último snapshot do overnight
+// GET /api/snapshot → client-safe view of the latest overnight snapshot
 export async function GET() {
   try {
     const { file, data } = latestSnapshot();
 
-    // dicionário ticker→nome, montado a partir do que já vem no snapshot
+    // ticker→name dictionary, built from what's already in the snapshot
     const nameOf: Record<string, string> = {};
     const motorA = (data.motor_a || {}) as { ranking?: { ticker: string; name: string }[] };
     for (const r of motorA.ranking || []) nameOf[r.ticker] = r.name;
@@ -57,7 +57,7 @@ export async function GET() {
       name: nameOf[h.ticker] || "",
     });
 
-    // Perfis: só o split ações/ETFs, nº de posições e top holdings (sem sinais/scores)
+    // Profiles: only the stock/ETF split, number of positions, and top holdings (no signals/scores)
     const rawProfiles = (data.profiles || {}) as Record<
       string,
       { w_motor_a: number; w_motor_b: number; n_holdings: number; top_holdings?: { ticker: string; weight_pct: number }[] }
@@ -82,7 +82,7 @@ export async function GET() {
       source_file: file,
       regime: { state: mapRegime(String(data.regime && (data.regime as Record<string, unknown>).regime)) },
       defense: {
-        // rótulo humano, sem o código interno da lane (ex.: "D2 HEALTH + STAPLES" → "HEALTH + STAPLES")
+        // human-readable label, without the internal lane code (e.g.: "D2 HEALTH + STAPLES" → "HEALTH + STAPLES")
         label: (pilarD.winner_label || "").replace(/^D\d+\s+/, ""),
         holdings: (pilarD.holdings || []).map(named),
       },

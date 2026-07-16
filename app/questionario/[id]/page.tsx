@@ -1,43 +1,43 @@
 "use client";
 import { useState } from "react";
 
-// Questionário de perfil de investidor (suitability) — o cliente abre pelo link que o gestor
-// envia. Calcula o perfil (Conservador/Moderado/Agressivo) a partir das respostas. Fase 2:
-// gravar o resultado de volta na ficha do cliente via API do MFO. Hoje mostra o resultado
-// ao cliente (funcional) — o gestor confirma no Terminal.
+// Investor risk profile questionnaire (suitability) — the client opens it via the link the
+// manager sends. Calculates the profile (Conservative/Moderate/Aggressive) from the answers.
+// Phase 2: write the result back to the client record via the MFO API. Today it shows the
+// result to the client (functional) — the manager confirms it in the Terminal.
 const PERGUNTAS = [
-  { q: "Qual o principal objetivo deste investimento?", opts: [
-    { t: "Preservar o capital, com o mínimo de oscilação", v: 1 },
-    { t: "Crescer de forma equilibrada, aceitando alguma oscilação", v: 2 },
-    { t: "Maximizar o retorno, aceitando oscilações fortes", v: 3 },
+  { q: "What is the main objective of this investment?", opts: [
+    { t: "Preserve capital, with minimal fluctuation", v: 1 },
+    { t: "Grow steadily, accepting some fluctuation", v: 2 },
+    { t: "Maximize return, accepting strong fluctuation", v: 3 },
   ] },
-  { q: "Em quanto tempo pretende usar este dinheiro?", opts: [
-    { t: "Menos de 2 anos", v: 1 },
-    { t: "Entre 2 e 5 anos", v: 2 },
-    { t: "Mais de 5 anos", v: 3 },
+  { q: "When do you plan to use this money?", opts: [
+    { t: "Less than 2 years", v: 1 },
+    { t: "Between 2 and 5 years", v: 2 },
+    { t: "More than 5 years", v: 3 },
   ] },
-  { q: "Se a carteira caísse 20% em um mês, o que faria?", opts: [
-    { t: "Resgataria tudo para evitar mais perdas", v: 1 },
-    { t: "Manteria e esperaria a recuperação", v: 2 },
-    { t: "Aportaria mais, aproveitando os preços baixos", v: 3 },
+  { q: "If the portfolio dropped 20% in a month, what would you do?", opts: [
+    { t: "Redeem everything to avoid further losses", v: 1 },
+    { t: "Hold and wait for recovery", v: 2 },
+    { t: "Add more, taking advantage of the lower prices", v: 3 },
   ] },
-  { q: "Qual sua experiência com investimentos de risco?", opts: [
-    { t: "Pouca — prefiro renda fixa e produtos simples", v: 1 },
-    { t: "Média — já invisto em ações e fundos", v: 2 },
-    { t: "Alta — invisto em ações, cripto, derivativos", v: 3 },
+  { q: "What is your experience with risk investments?", opts: [
+    { t: "Little — I prefer fixed income and simple products", v: 1 },
+    { t: "Moderate — I already invest in stocks and funds", v: 2 },
+    { t: "High — I invest in stocks, crypto, derivatives", v: 3 },
   ] },
-  { q: "Que parte do seu patrimônio este valor representa?", opts: [
-    { t: "A maior parte — é o meu colchão", v: 1 },
-    { t: "Uma parte relevante", v: 2 },
-    { t: "Uma parte pequena, posso arriscar", v: 3 },
+  { q: "What share of your total wealth does this amount represent?", opts: [
+    { t: "Most of it — it's my safety cushion", v: 1 },
+    { t: "A significant share", v: 2 },
+    { t: "A small share, I can take on risk", v: 3 },
   ] },
 ];
 
 function perfil(score: number): { nome: string; cor: string; desc: string } {
   const media = score / PERGUNTAS.length;
-  if (media <= 1.6) return { nome: "Conservador", cor: "#2ECC71", desc: "Prioriza a preservação do capital. Carteira com forte camada de defesa e baixa oscilação." };
-  if (media <= 2.4) return { nome: "Moderado", cor: "#C9A02C", desc: "Busca equilíbrio entre crescimento e proteção. Aceita oscilação controlada." };
-  return { nome: "Agressivo", cor: "#E67E22", desc: "Busca o máximo retorno e tolera oscilações fortes em troca de crescimento." };
+  if (media <= 1.6) return { nome: "Conservative", cor: "#2ECC71", desc: "Prioritizes capital preservation. Portfolio with a strong defensive layer and low fluctuation." };
+  if (media <= 2.4) return { nome: "Moderate", cor: "#C9A02C", desc: "Seeks a balance between growth and protection. Accepts controlled fluctuation." };
+  return { nome: "Aggressive", cor: "#E67E22", desc: "Seeks maximum return and tolerates strong fluctuation in exchange for growth." };
 }
 
 export default function Questionario() {
@@ -55,8 +55,8 @@ export default function Questionario() {
           <div style={{ width: 30, height: 30, borderRadius: 7, background: "#c9a84c", color: "#000", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800 }}>H</div>
           <div style={{ fontWeight: 700, letterSpacing: ".5px" }}>HARPIAN</div>
         </div>
-        <h1 style={{ fontSize: 26, margin: "10px 0 4px" }}>Questionário de perfil de investidor</h1>
-        <p style={{ color: "#8ba0b8", fontSize: 14, marginTop: 0 }}>Cinco perguntas para entendermos seu perfil e recomendar a carteira certa. Leva 2 minutos.</p>
+        <h1 style={{ fontSize: 26, margin: "10px 0 4px" }}>Investor risk profile questionnaire</h1>
+        <p style={{ color: "#8ba0b8", fontSize: 14, marginTop: 0 }}>Five questions so we can understand your profile and recommend the right portfolio. Takes 2 minutes.</p>
 
         {!enviado ? (
           <>
@@ -80,15 +80,15 @@ export default function Questionario() {
             <button disabled={!completo} onClick={() => setEnviado(true)}
               style={{ width: "100%", marginTop: 20, padding: 14, borderRadius: 9, border: "none", fontSize: 15, fontWeight: 700,
                 cursor: completo ? "pointer" : "not-allowed", background: completo ? "#c9a84c" : "#2a3a52", color: completo ? "#000" : "#5a6b82" }}>
-              {completo ? "Ver meu perfil" : `Responda as ${PERGUNTAS.length} perguntas`}
+              {completo ? "See my profile" : `Answer the ${PERGUNTAS.length} questions`}
             </button>
           </>
         ) : (
           <div style={{ background: "#0f1e33", border: `1px solid ${p.cor}`, borderRadius: 12, padding: 28, marginTop: 20, textAlign: "center" }}>
-            <div style={{ fontSize: 13, color: "#8ba0b8", letterSpacing: "1px", textTransform: "uppercase" }}>Seu perfil</div>
+            <div style={{ fontSize: 13, color: "#8ba0b8", letterSpacing: "1px", textTransform: "uppercase" }}>Your profile</div>
             <div style={{ fontSize: 34, fontWeight: 800, color: p.cor, margin: "8px 0" }}>{p.nome}</div>
             <p style={{ color: "#cfe0f0", fontSize: 15, lineHeight: 1.6 }}>{p.desc}</p>
-            <p style={{ color: "#8ba0b8", fontSize: 13, marginTop: 16 }}>Recebemos suas respostas. Seu gestor Harpian vai usar este perfil para calibrar a carteira e o mandato. Obrigado!</p>
+            <p style={{ color: "#8ba0b8", fontSize: 13, marginTop: 16 }}>We received your answers. Your Harpian manager will use this profile to calibrate the portfolio and mandate. Thank you!</p>
           </div>
         )}
       </div>

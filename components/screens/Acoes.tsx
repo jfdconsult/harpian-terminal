@@ -10,18 +10,18 @@ import type { CandlesResp, AssetResp } from "@/lib/types";
 const AssetChart = dynamic(() => import("./AssetChart"), { ssr: false });
 const TradingViewWidget = dynamic(() => import("./TradingViewWidget"), { ssr: false });
 
-const RANGES = [{ k: "3mo", l: "3M" }, { k: "6mo", l: "6M" }, { k: "1y", l: "1A" }, { k: "2y", l: "2A" }, { k: "5y", l: "5A" }];
-const INTERVALS = [{ k: "1d", l: "Diário" }, { k: "1wk", l: "Semanal" }];
+const RANGES = [{ k: "3mo", l: "3M" }, { k: "6mo", l: "6M" }, { k: "1y", l: "1Y" }, { k: "2y", l: "2Y" }, { k: "5y", l: "5Y" }];
+const INTERVALS = [{ k: "1d", l: "Daily" }, { k: "1wk", l: "Weekly" }];
 const INDS: { key: keyof Studies; label: string }[] = [
   { key: "ema", label: "EMA" }, { key: "bb", label: "Bollinger" }, { key: "vol", label: "Volume" },
-  { key: "rsi", label: "RSI" }, { key: "momD", label: "Momento D" }, { key: "momJ", label: "Momento J" },
+  { key: "rsi", label: "RSI" }, { key: "momD", label: "Momentum D" }, { key: "momJ", label: "Momentum J" },
 ];
 const COMPARE = [
-  { k: "", l: "— sem comparação" },
+  { k: "", l: "— no comparison" },
   { k: "SPY", l: "S&P 500" },
   { k: "QQQ", l: "Nasdaq 100" },
-  { k: "XLK", l: "Tecnologia (XLK)" },
-  { k: "BITO", l: "Cripto (Bitcoin)" },
+  { k: "XLK", l: "Technology (XLK)" },
+  { k: "BITO", l: "Crypto (Bitcoin)" },
 ];
 
 export default function Acoes({ symbol: initial }: { symbol?: string }) {
@@ -53,17 +53,17 @@ export default function Acoes({ symbol: initial }: { symbol?: string }) {
   const tvSym = tvSymbol(symbol);
   const tick = symbol.replace("^", "");
 
-  // Publica pro JIM o ativo que está no gráfico, com momento/risco reais.
+  // Publishes the asset shown on the chart to JIM, with real momentum/risk data.
   useEffect(() => {
     if (!asset) return;
     const briefing =
-      `Você está vendo **${name} (${tick})**, a ${numShort(asset.price)} (${pctText(asset.dayPct)} hoje). ` +
-      `No ano: ${pctText(asset.ytdPct)}; em 12 meses: ${pctText(asset.yPct)}. ` +
-      `Risco: drawdown máximo ${pctText(asset.maxDD)}, Sharpe ${num(asset.sharpe, 2)}` +
+      `You're looking at **${name} (${tick})**, at ${numShort(asset.price)} (${pctText(asset.dayPct)} today). ` +
+      `Year to date: ${pctText(asset.ytdPct)}; 12 months: ${pctText(asset.yPct)}. ` +
+      `Risk: max drawdown ${pctText(asset.maxDD)}, Sharpe ${num(asset.sharpe, 2)}` +
       (asset.rsi != null ? `, RSI ${num(asset.rsi, 0)}` : "") + ".";
     publishScreenData(
       "acoes",
-      `Gráfico do ativo ${name} (${tick}) — dados Yahoo Finance. Métricas do ativo: preço, variação do dia/YTD/1 ano, Sharpe, drawdown máximo, RSI e faixa de 52 semanas.`,
+      `Chart for ${name} (${tick}) — Yahoo Finance data. Asset metrics: price, day/YTD/1-year change, Sharpe, max drawdown, RSI, and 52-week range.`,
       {
         ativo: name, ticker: tick, preco: asset.price, diaPct: asset.dayPct,
         ytdPct: asset.ytdPct, anoPct: asset.yPct, sharpe: asset.sharpe,
@@ -72,9 +72,9 @@ export default function Acoes({ symbol: initial }: { symbol?: string }) {
       {
         briefing,
         suggestions: [
-          `Como está o momento de ${tick}?`,
-          `Qual o risco de ${tick} agora?`,
-          `${tick} está cara ou barata pelo histórico?`,
+          `How's the momentum for ${tick}?`,
+          `What's the risk on ${tick} right now?`,
+          `Is ${tick} expensive or cheap relative to its history?`,
         ],
       }
     );
@@ -82,9 +82,9 @@ export default function Acoes({ symbol: initial }: { symbol?: string }) {
 
   return (
     <div className="screen">
-      <div className="crumb">Mercado › <b>Ações, ETFs &amp; Commodities</b></div>
+      <div className="crumb">Market › <b>Stocks, ETFs &amp; Commodities</b></div>
       <div className="flex between wrap">
-        <div><div className="h1">{name}</div><div className="sub" style={{ margin: 0 }}>{symbol.replace("^", "")} · dados Yahoo Finance</div></div>
+        <div><div className="h1">{name}</div><div className="sub" style={{ margin: 0 }}>{symbol.replace("^", "")} · Yahoo Finance data</div></div>
         <div className="flex" style={{ gap: 10, alignItems: "center" }}>
           <select className="fsel" style={{ fontSize: 13, padding: "8px 12px" }} value={symbol} onChange={(e) => setSymbol(e.target.value)}>
             {ASSET_GROUPS.map((g) => (
@@ -96,29 +96,29 @@ export default function Acoes({ symbol: initial }: { symbol?: string }) {
         </div>
       </div>
 
-      {/* Cards de métricas */}
+      {/* Metric cards */}
       <div className="grid g4 mt mb">
-        <div className="card"><div className="muted">Último</div><div className="big">{numShort(asset?.price)}</div><div className={`muted ${pctClass(asset?.dayPct)}`}>{asset ? pctText(asset.dayPct) + " hoje" : ""}</div></div>
+        <div className="card"><div className="muted">Last</div><div className="big">{numShort(asset?.price)}</div><div className={`muted ${pctClass(asset?.dayPct)}`}>{asset ? pctText(asset.dayPct) + " today" : ""}</div></div>
         <div className="card"><div className="muted">YTD</div><div className={`big ${asset && asset.ytdPct != null && asset.ytdPct >= 0 ? "g" : "r"}`}>{pctText(asset?.ytdPct)}</div></div>
-        <div className="card"><div className="muted">1 ano</div><div className={`big ${asset && asset.yPct != null && asset.yPct >= 0 ? "g" : "r"}`}>{pctText(asset?.yPct)}</div></div>
+        <div className="card"><div className="muted">1 year</div><div className={`big ${asset && asset.yPct != null && asset.yPct >= 0 ? "g" : "r"}`}>{pctText(asset?.yPct)}</div></div>
         <div className="card"><div className="muted">Max drawdown</div><div className="big r">{pctText(asset?.maxDD)}</div><div className="muted">Sharpe {num(asset?.sharpe, 2)}</div></div>
       </div>
 
-      {/* Toolbar do gráfico */}
+      {/* Chart toolbar */}
       <div className="card">
         <div className="flex between wrap mb" style={{ gap: 10 }}>
           <div className="flex" style={{ gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-            <span className="flabel" style={{ marginRight: 2 }}>Período:</span>
+            <span className="flabel" style={{ marginRight: 2 }}>Period:</span>
             <div className="seg" style={{ margin: 0 }}>{RANGES.map((r) => <span key={r.k} className={range === r.k ? "on" : ""} onClick={() => setRange(r.k)}>{r.l}</span>)}</div>
             <div className="seg" style={{ margin: 0 }}>{INTERVALS.map((iv) => <span key={iv.k} className={interval === iv.k ? "on" : ""} onClick={() => setInterval(iv.k)}>{iv.l}</span>)}</div>
           </div>
           <div className="flex" style={{ gap: 8, alignItems: "center" }}>
             <div className="seg" style={{ margin: 0 }}>
-              <span className={mode === "harpian" ? "on" : ""} onClick={() => setMode("harpian")}>Gráfico Harpian</span>
+              <span className={mode === "harpian" ? "on" : ""} onClick={() => setMode("harpian")}>Harpian Chart</span>
               <span className={mode === "tv" ? "on" : ""} onClick={() => setMode("tv")}>TradingView</span>
             </div>
-            <a className="btn ghost" href={`https://br.tradingview.com/chart/nNpCdTJZ/?symbol=${encodeURIComponent(tvSym)}`} target="_blank" rel="noopener noreferrer" title="Abrir no TradingView com o template HARPIAN DSPT">
-              <i className="ti ti-external-link" />DSPT completo
+            <a className="btn ghost" href={`https://br.tradingview.com/chart/nNpCdTJZ/?symbol=${encodeURIComponent(tvSym)}`} target="_blank" rel="noopener noreferrer" title="Open in TradingView with the HARPIAN DSPT template">
+              <i className="ti ti-external-link" />Full DSPT
             </a>
           </div>
         </div>
@@ -126,7 +126,7 @@ export default function Acoes({ symbol: initial }: { symbol?: string }) {
         {mode === "harpian" && (
           <div className="flex between wrap mb" style={{ gap: 10 }}>
             <div className="flex wrap" style={{ gap: 6, alignItems: "center" }}>
-              <span className="flabel" style={{ marginRight: 2 }}>Indicadores:</span>
+              <span className="flabel" style={{ marginRight: 2 }}>Indicators:</span>
               {INDS.map((ind) => (
                 <button key={ind.key} onClick={() => toggle(ind.key)}
                   style={{ fontFamily: "var(--mono)", fontSize: 10.5, padding: "4px 10px", borderRadius: 6, cursor: "pointer",
@@ -138,7 +138,7 @@ export default function Acoes({ symbol: initial }: { symbol?: string }) {
               ))}
             </div>
             <div className="flex" style={{ gap: 6, alignItems: "center" }}>
-              <span className="flabel">Comparar com:</span>
+              <span className="flabel">Compare with:</span>
               <select className="fsel" value={compare} onChange={(e) => setCompare(e.target.value)}>
                 {COMPARE.map((c) => <option key={c.k} value={c.k}>{c.l}</option>)}
               </select>
@@ -149,9 +149,9 @@ export default function Acoes({ symbol: initial }: { symbol?: string }) {
         {mode === "tv" ? (
           <TradingViewWidget tvSym={tvSym} />
         ) : err ? (
-          <div className="placeholder"><i className="ti ti-cloud-off" /><b>Não foi possível buscar {symbol} no Yahoo</b></div>
+          <div className="placeholder"><i className="ti ti-cloud-off" /><b>Could not fetch {symbol} from Yahoo</b></div>
         ) : loading || !cd ? (
-          <div className="muted" style={{ padding: 80, textAlign: "center" }}>Carregando candles do Yahoo…</div>
+          <div className="muted" style={{ padding: 80, textAlign: "center" }}>Loading candles from Yahoo…</div>
         ) : (
           <AssetChart candles={cd.candles} volume={cd.volume} studies={studies} compareLine={cd.compareLine} />
         )}
@@ -161,10 +161,10 @@ export default function Acoes({ symbol: initial }: { symbol?: string }) {
             <>
               <i><b style={{ background: "#4A90D9" }} />EMA</i>
               {cd?.compareName && <i><b style={{ background: "#C77DFF" }} />vs {cd.compareName}</i>}
-              <span className="muted" style={{ marginLeft: "auto" }}>Candles · Yahoo Finance · indicadores proprietários</span>
+              <span className="muted" style={{ marginLeft: "auto" }}>Candles · Yahoo Finance · proprietary indicators</span>
             </>
           ) : (
-            <span className="muted" style={{ marginLeft: "auto" }}>TradingView · estudos nativos (RSI/MACD) · DSPT completo no deep-link</span>
+            <span className="muted" style={{ marginLeft: "auto" }}>TradingView · native studies (RSI/MACD) · full DSPT via deep link</span>
           )}
         </div>
       </div>

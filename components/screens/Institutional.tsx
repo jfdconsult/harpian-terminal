@@ -32,13 +32,13 @@ export default function Institutional() {
   const totalVal = holdings.reduce((s, x) => s + (x.value_x1000_usd || 0), 0) * 1000;
   const fund = funds.find((f) => f.short === selected);
 
-  // Publica pro JIM o fundo selecionado e suas posições 13F visíveis.
+  // Publishes the selected fund and its visible 13F positions to JIM.
   useEffect(() => {
     if (!fund) return;
     const top = holdings[0];
     publishScreenData(
       "institutional",
-      `13F Holdings do fundo "${fund.name}" (${fund.style}). Filing ${data?.filing_date || "—"}, período ${data?.period || "—"}. AUM 13F total US$ ${totalVal}. Cada linha = emissor (issuer), classe, CUSIP, valor em USD (value_x1000_usd × 1000), nº de ações e Put/Call.`,
+      `13F Holdings for fund "${fund.name}" (${fund.style}). Filing ${data?.filing_date || "—"}, period ${data?.period || "—"}. Total 13F AUM $${totalVal}. Each row = issuer, class, CUSIP, value in USD (value_x1000_usd × 1000), share count, and Put/Call.`,
       {
         fundo: fund.name, estilo: fund.style, filing_date: data?.filing_date, period: data?.period,
         holdings: holdings.slice(0, 40).map((x) => ({
@@ -48,13 +48,13 @@ export default function Institutional() {
       },
       {
         briefing:
-          `Você está vendo as posições 13F de **${fund.name}** (${fund.style}): ${holdings.length} holdings, ` +
-          `AUM ${fmtUSD(totalVal)}` + (top ? `. Maior posição: **${top.issuer}**.` : ".") +
-          ` Lembre: 13F tem defasagem de até 45 dias.`,
+          `You're viewing the 13F positions of **${fund.name}** (${fund.style}): ${holdings.length} holdings, ` +
+          `AUM ${fmtUSD(totalVal)}` + (top ? `. Largest position: **${top.issuer}**.` : ".") +
+          ` Keep in mind: 13F has up to a 45-day lag.`,
         suggestions: [
-          `Qual a maior aposta de ${fund.short}?`,
-          "O que esse fundo tem de novo no trimestre?",
-          "Há concentração setorial preocupante?",
+          `What's ${fund.short}'s biggest bet?`,
+          "What's new for this fund this quarter?",
+          "Is there any concerning sector concentration?",
         ],
       }
     );
@@ -70,19 +70,19 @@ export default function Institutional() {
     <div className="screen">
       <div className="crumb">Intelligence › <b>13F Holdings</b></div>
       <div className="h1">Institutional Holdings</div>
-      <div className="sub">SEC Form 13F · O que os maiores hedge funds estão comprando e vendendo.</div>
+      <div className="sub">SEC Form 13F · What the largest hedge funds are buying and selling.</div>
 
       <div style={{ display: "flex", gap: 8, alignItems: "center", margin: "14px 0", flexWrap: "wrap" }}>
-        <span className="flabel">Fundo:</span>
+        <span className="flabel">Fund:</span>
         <select className="fsel" style={{ fontSize: 12, padding: "6px 10px", minWidth: 240 }} value={selected} onChange={(e) => setSelected(e.target.value)}>
-          {offline && <option>API offline — rode: python api_server.py</option>}
+          {offline && <option>API offline — run: python api_server.py</option>}
           {funds.map((f) => (<option key={f.short} value={f.short}>{f.name} ({f.style})</option>))}
         </select>
         <span style={{ fontSize: 11, color: "var(--tx3)", marginLeft: "auto" }}>{fund ? `${fund.style}${fund.cik ? " · CIK " + fund.cik : ""}` : ""}</span>
       </div>
 
       {offline ? (
-        <div className="placeholder">API gov-data offline. Rode <b>python api_server.py</b> (porta 8877) para ver os dados reais.</div>
+        <div className="placeholder">gov-data API offline. Run <b>python api_server.py</b> (port 8877) to see the real data.</div>
       ) : (
         <>
           <div className="grid g4" style={{ marginBottom: 14 }}>

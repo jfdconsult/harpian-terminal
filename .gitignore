@@ -48,3 +48,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+devserver*.log
+
+# stray malformed directory from an old path-as-name bug
+C*dev*harpian-terminal-next/

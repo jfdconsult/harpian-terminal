@@ -6,110 +6,106 @@ import { fetchNews, IMPACT_COLOR, type NewsHeadline } from "@/lib/feeds";
 import { GOV_API } from "@/lib/data";
 import { pctText, pctClass, numShort, num } from "@/lib/format";
 import { publishScreenData } from "@/lib/jim-data";
+import { buildAri, type DnaRaw } from "@/lib/jim-market-analysis";
+import { fetchCalendar, type CalendarResp } from "@/lib/calendar";
+import BackToVisao from "../BackToVisao";
+import JimBlock from "../JimBlock";
 import type { ScreenId } from "@/lib/nav";
 import type { Studies } from "./AssetChart";
 import type { CandlesResp, AssetResp } from "@/lib/types";
 
 const AssetChart = dynamic(() => import("./AssetChart"), { ssr: false });
 
-interface DnaLayer { name: string; status: string; data?: Record<string, unknown> }
-interface DnaResponse { layers: DnaLayer[]; timestamp: string }
+// gov-data returns `layers` as an OBJECT ({volatility, sentiment, breadth,
+// macro, positioning...}), not as a list. This screen read it as a list, so
+// the DNA panel kept falling back to "offline" even with the feed running.
 
-const REGIME_LABEL: Record<string, string> = { BULL: "RISK-ON", CAUTELA: "CAUTELA", NEUTRO: "NEUTRO", BEAR: "RISK-OFF" };
+const REGIME_LABEL: Record<string, string> = { BULL: "RISK-ON", CAUTELA: "CAUTION", NEUTRO: "NEUTRAL", BEAR: "RISK-OFF" };
 const REGIME_COLOR: Record<string, string> = { BULL: "#2ECC71", CAUTELA: "#F39C12", NEUTRO: "#4A90D9", BEAR: "#E74C3C" };
 const REGIME_DESC: Record<string, string> = {
-  BULL: "Ambiente favorável — exposição plena, defesa em prontidão",
-  CAUTELA: "Sinais de deterioração — reduzindo risco, defesa ativando",
-  NEUTRO: "Sem tendência dominante — exposição moderada, monitoramento próximo",
-  BEAR: "Ambiente adverso — defesa ativa, exposição reduzida",
+  BULL: "Favorable environment — full exposure, defense on standby",
+  CAUTELA: "Signs of deterioration — reducing risk, defense activating",
+  NEUTRO: "No dominant trend — moderate exposure, close monitoring",
+  BEAR: "Adverse environment — defense active, reduced exposure",
 };
 
-const RANGES = [{ k: "3mo", l: "3M" }, { k: "6mo", l: "6M" }, { k: "1y", l: "1A" }, { k: "2y", l: "2A" }, { k: "5y", l: "5A" }];
+const RANGES = [{ k: "3mo", l: "3M" }, { k: "6mo", l: "6M" }, { k: "1y", l: "1Y" }, { k: "2y", l: "2Y" }, { k: "5y", l: "5Y" }];
 const INDS: { key: keyof Studies; label: string }[] = [
   { key: "ema", label: "EMA" }, { key: "bb", label: "Bollinger" }, { key: "vol", label: "Volume" },
-  { key: "rsi", label: "RSI" }, { key: "momD", label: "Momento D" }, { key: "momJ", label: "Momento J" },
+  { key: "rsi", label: "RSI" }, { key: "momD", label: "Momentum D" }, { key: "momJ", label: "Momentum J" },
 ];
 
-const CALENDAR = [
-  { event: "FOMC Minutes", date: "09/jul", time: "14:00 ET", impact: "high" as const },
-  { event: "CPI (Inflação)", date: "11/jul", time: "08:30 ET", impact: "high" as const },
-  { event: "PPI (Preços ao Produtor)", date: "12/jul", time: "08:30 ET", impact: "medium" as const },
-  { event: "Initial Jobless Claims", date: "10/jul", time: "08:30 ET", impact: "medium" as const },
-  { event: "Consumer Sentiment (UMich)", date: "12/jul", time: "10:00 ET", impact: "medium" as const },
-];
+// Calendar: real data via /api/calendar (Investing.com). It used to be a
+// fixed array whose dates had already passed — and JIM's narrative would
+// state CALENDAR[0] as the "next relevant event", always wrong.
 
 interface DnaScore { label: string; score: number; color: string; detail: string }
 
-function buildDnaScores(dna: DnaResponse | null): DnaScore[] {
-  if (!dna?.layers?.length) return [];
+function buildDnaScores(dna: DnaRaw | null): DnaScore[] {
+  const L = dna?.layers;
+  if (!L) return [];
   const scores: DnaScore[] = [];
-  for (const layer of dna.layers) {
-    if (!layer.data) continue;
-    const d = layer.data;
-    if (layer.name === "Volatility & Options") {
-      const vix = d.vix_last as number | undefined;
-      const regime = d.vol_regime as string | undefined;
-      if (vix) {
-        const s = vix < 15 ? 85 : vix < 20 ? 70 : vix < 25 ? 50 : vix < 30 ? 30 : 15;
-        scores.push({ label: "Volatilidade", score: s, color: s > 60 ? "#2ECC71" : s > 40 ? "#F39C12" : "#E74C3C", detail: `VIX ${vix.toFixed(1)} (${regime || "N/A"})` });
-      }
-    }
-    if (layer.name === "Sentiment & Breadth") {
-      const fg = d.fear_greed_score as number | undefined;
-      const breadth = d.pct_above_200ma as number | undefined;
-      if (fg) scores.push({ label: "Sentimento", score: fg, color: fg > 60 ? "#2ECC71" : fg > 40 ? "#F39C12" : "#E74C3C", detail: `Fear & Greed ${fg.toFixed(0)}` });
-      if (breadth) scores.push({ label: "Breadth", score: breadth, color: breadth > 60 ? "#2ECC71" : breadth > 40 ? "#F39C12" : "#E74C3C", detail: `${breadth.toFixed(0)}% acima da MA200` });
-    }
-    if (layer.name === "Macro & Rates") {
-      const curve = d.yield_curve_spread as number | undefined;
-      if (curve != null) {
-        const s = curve > 0.5 ? 80 : curve > 0 ? 65 : curve > -0.5 ? 35 : 15;
-        scores.push({ label: "Macro & Juros", score: s, color: s > 60 ? "#2ECC71" : s > 40 ? "#F39C12" : "#E74C3C", detail: `Curva ${curve > 0 ? "+" : ""}${(curve * 100).toFixed(0)}bps` });
-      }
-    }
-    if (layer.name === "Positioning (COT/13F)") {
-      scores.push({ label: "Posicionamento", score: 62, color: "#2ECC71", detail: "COT + 13F institucional" });
-    }
-    if (layer.name === "Liquidity (Dark Pool)") {
-      const tracked = d.tracked_symbols as number | undefined;
-      if (tracked) scores.push({ label: "Liquidez", score: 58, color: "#F39C12", detail: `${tracked} ativos dark pool` });
-    }
+
+  const vol = L.volatility?.data;
+  const vix = vol?.vix?.current;
+  if (vix != null) {
+    const s = vix < 15 ? 85 : vix < 20 ? 70 : vix < 25 ? 50 : vix < 30 ? 30 : 15;
+    scores.push({ label: "Volatility", score: s, color: s > 60 ? "#2ECC71" : s > 40 ? "#F39C12" : "#E74C3C", detail: `VIX ${vix.toFixed(1)} (${vol?.regime || "N/A"})` });
+  }
+  const fg = L.sentiment?.data?.score;
+  if (fg != null) {
+    scores.push({ label: "Sentiment", score: Math.round(fg), color: fg > 60 ? "#2ECC71" : fg > 40 ? "#F39C12" : "#E74C3C", detail: `Fear & Greed ${fg.toFixed(0)} (${L.sentiment?.data?.rating || "—"})` });
+  }
+  const breadth = L.breadth?.data?.pct_above_200ma;
+  if (breadth != null) {
+    scores.push({ label: "Breadth", score: Math.round(breadth), color: breadth > 60 ? "#2ECC71" : breadth > 40 ? "#F39C12" : "#E74C3C", detail: `${breadth.toFixed(0)}% above MA200` });
+  }
+  const curve = L.macro?.data?.yield_curve_spread;
+  if (curve != null) {
+    const s = curve > 0.5 ? 80 : curve > 0 ? 65 : curve > -0.5 ? 35 : 15;
+    scores.push({ label: "Macro & Rates", score: s, color: s > 60 ? "#2ECC71" : s > 40 ? "#F39C12" : "#E74C3C", detail: `Curve ${curve > 0 ? "+" : ""}${(curve * 100).toFixed(0)}bps · credit ${L.macro?.data?.credit_signal || "—"}` });
+  }
+  const cot = L.positioning?.data;
+  if (cot?.length) {
+    const ext = cot.filter((r) => (r.spec_sentiment || "").startsWith("EXTREME")).length;
+    const s = Math.round(100 - (ext / cot.length) * 100);
+    scores.push({ label: "Positioning", score: s, color: s > 60 ? "#2ECC71" : s > 40 ? "#F39C12" : "#E74C3C", detail: `${ext} of ${cot.length} markets at extreme` });
   }
   return scores;
 }
 
-function generateJimMarketAnalysis(regime: RegimeState, asset: AssetResp | null, dna: DnaResponse | null, news: NewsHeadline[]): string {
+function generateJimMarketAnalysis(regime: RegimeState, asset: AssetResp | null, dna: DnaRaw | null, news: NewsHeadline[], cal: CalendarResp | null): string {
   const parts: string[] = [];
 
   const regLabel = REGIME_LABEL[regime];
-  parts.push(`O regime de mercado está em **${regLabel}**. ${REGIME_DESC[regime]}.`);
+  parts.push(`The market regime is **${regLabel}**. ${REGIME_DESC[regime]}.`);
 
   if (asset) {
-    parts.push(`O S&P 500 opera a ${numShort(asset.price)} (${pctText(asset.dayPct)} hoje, ${pctText(asset.ytdPct)} no ano). RSI em ${num(asset.rsi, 0)} — ${(asset.rsi ?? 50) > 70 ? "sobrecomprado, atenção" : (asset.rsi ?? 50) < 30 ? "sobrevendido, possível reversão" : "zona neutra"}.`);
-    if (asset.maxDD) parts.push(`Drawdown máximo de ${pctText(asset.maxDD)} nos últimos 12 meses, Sharpe ${num(asset.sharpe, 2)}.`);
+    parts.push(`The S&P 500 trades at ${numShort(asset.price)} (${pctText(asset.dayPct)} today, ${pctText(asset.ytdPct)} year-to-date). RSI at ${num(asset.rsi, 0)} — ${(asset.rsi ?? 50) > 70 ? "overbought, caution warranted" : (asset.rsi ?? 50) < 30 ? "oversold, possible reversal" : "neutral zone"}.`);
+    if (asset.maxDD) parts.push(`Maximum drawdown of ${pctText(asset.maxDD)} over the last 12 months, Sharpe ${num(asset.sharpe, 2)}.`);
   }
 
-  if (dna?.layers?.length) {
-    const volLayer = dna.layers.find(l => l.name === "Volatility & Options");
-    const vix = volLayer?.data?.vix_last as number | undefined;
-    const sentLayer = dna.layers.find(l => l.name === "Sentiment & Breadth");
-    const fg = sentLayer?.data?.fear_greed_score as number | undefined;
-    const breadth = sentLayer?.data?.pct_above_200ma as number | undefined;
-
-    if (vix) parts.push(`VIX em ${vix.toFixed(1)} — ${vix < 20 ? "volatilidade baixa, ambiente favorável para risco" : vix < 30 ? "volatilidade moderada, monitorar" : "volatilidade alta, cautela redobrada"}.`);
-    if (fg) parts.push(`Fear & Greed Index em ${fg.toFixed(0)} — ${fg > 75 ? "ganância extrema: historicamente precede correções" : fg > 55 ? "otimismo moderado" : fg > 40 ? "sentimento neutro" : fg > 25 ? "medo: possível oportunidade contrária" : "medo extremo: historicamente precede recuperações"}.`);
-    if (breadth) parts.push(`Breadth: ${breadth.toFixed(0)}% do S&P 500 acima da MA200 — ${breadth > 70 ? "participação ampla, rally saudável" : breadth > 50 ? "participação razoável" : "participação estreita, risco de concentração"}.`);
+  const L = dna?.layers;
+  if (L) {
+    const vix = L.volatility?.data?.vix?.current;
+    const fg = L.sentiment?.data?.score;
+    const breadth = L.breadth?.data?.pct_above_200ma;
+    if (vix != null) parts.push(`VIX at ${vix.toFixed(1)} — ${vix < 20 ? "low volatility, favorable environment for risk" : vix < 30 ? "moderate volatility, monitor" : "high volatility, heightened caution"}.`);
+    if (fg != null) parts.push(`Fear & Greed Index at ${fg.toFixed(0)} — ${fg > 75 ? "extreme greed: historically precedes corrections" : fg > 55 ? "moderate optimism" : fg > 40 ? "neutral sentiment" : fg > 25 ? "fear: possible contrarian opportunity" : "extreme fear: historically precedes recoveries"}.`);
+    if (breadth != null) parts.push(`Breadth: ${breadth.toFixed(0)}% of the S&P 500 above the MA200 — ${breadth > 70 ? "broad participation, healthy rally" : breadth > 50 ? "reasonable participation" : "narrow participation, concentration risk"}.`);
   }
 
   if (news.length > 0) {
     const topNews = news.filter(n => n.impact === "Market Moving" || n.impact === "High").slice(0, 2);
     if (topNews.length) {
-      parts.push(`Destaques de hoje: "${topNews[0].headline.slice(0, 80)}".`);
+      parts.push(`Today's highlights: "${topNews[0].headline.slice(0, 80)}".`);
     }
   }
 
-  const calNext = CALENDAR[0];
-  parts.push(`Próximo evento relevante: **${calNext.event}** em ${calNext.date} (${calNext.time}).`);
+  const calNext = (cal?.events || []).find((e) => e.importance === 3) || (cal?.events || [])[0];
+  if (calNext) {
+    parts.push(`Next relevant event: **${calNext.event}** on ${calNext.date} (${calNext.time})${calNext.forecast ? `, forecast ${calNext.forecast}` : ""}.`);
+  }
 
   return parts.join(" ");
 }
@@ -123,13 +119,15 @@ export default function Regime({ go }: { go?: (id: ScreenId, param?: string) => 
   const [asset, setAsset] = useState<AssetResp | null>(null);
   const [chartLoading, setChartLoading] = useState(true);
   const [chartErr, setChartErr] = useState(false);
-  const [dna, setDna] = useState<DnaResponse | null>(null);
+  const [dna, setDna] = useState<DnaRaw | null>(null);
   const [news, setNews] = useState<NewsHeadline[]>([]);
+  const [cal, setCal] = useState<CalendarResp | null>(null);
 
   useEffect(() => {
     fetchSnapshot().then((s) => { if (s.ok && s.regime) { setRegime(s.regime.state); setAsOf(s.as_of || ""); } });
-    fetch(`${GOV_API}/api/market-dna`).then(r => r.json()).then((d: DnaResponse) => setDna(d)).catch(() => {});
+    fetch(`${GOV_API}/api/market-dna`).then(r => r.json()).then((d: DnaRaw) => setDna(d)).catch(() => {});
     fetchNews().then(d => setNews(d.headlines || [])).catch(() => {});
+    fetchCalendar().then(setCal).catch(() => setCal({ ok: false, events: [] }));
   }, []);
 
   useEffect(() => {
@@ -146,30 +144,35 @@ export default function Regime({ go }: { go?: (id: ScreenId, param?: string) => 
 
   const toggle = (k: keyof Studies) => setStudies(s => ({ ...s, [k]: !s[k] }));
   const dnaScores = buildDnaScores(dna);
-  const jimText = generateJimMarketAnalysis(regime, asset, dna, news);
+  const jimText = generateJimMarketAnalysis(regime, asset, dna, news, cal);
+  // Detail on "why the regime is like this" — lives here, not in the summary.
+  const ariBlock = buildAri(regime, asset, dna);
   const topNews = news.filter(n => n.impact === "Market Moving" || n.impact === "High").slice(0, 5);
   const regColor = REGIME_COLOR[regime];
 
   useEffect(() => {
     publishScreenData("regime",
-      "Tela consolidada de Mercado: gráfico S&P 500, regime, DNA do mercado, calendário econômico, notícias e análise JIM.",
+      "Consolidated Market screen: S&P 500 chart, regime, market DNA, economic calendar, news, and JIM analysis.",
       { regime: REGIME_LABEL[regime], sp500: asset?.price, dayPct: asset?.dayPct, rsi: asset?.rsi, dnaScores: dnaScores.length },
       {
         briefing: jimText,
-        suggestions: ["O que o DNA do mercado está sinalizando?", "O que pode mudar o regime?", "Quais eventos econômicos são relevantes essa semana?"],
+        suggestions: ["What is the market DNA signaling?", "What could change the regime?", "Which economic events are relevant this week?"],
       }
     );
   }, [regime, asset, dnaScores.length]);
 
   return (
-    <div className="screen" style={{ overflow: "hidden" }}>
-      <div className="crumb">Mercado › <b>Visão de Mercado</b></div>
+    <div className="screen">
+      <div className="crumb">Market › <b>ARI · American Regime Index</b><BackToVisao go={go} /></div>
 
       {/* Header */}
       <div className="flex between" style={{ alignItems: "center", marginBottom: 8 }}>
         <div className="flex" style={{ alignItems: "baseline", gap: 14 }}>
-          <div className="h1" style={{ margin: 0 }}>Mercado</div>
-          <span className="muted" style={{ fontSize: 10 }}>S&P 500 + regime + inteligência{asOf && <> · {asOf}</>}</span>
+          <div className="flex" style={{ alignItems: "baseline", gap: 8 }}>
+            <div className="h1" style={{ margin: 0 }}>Market</div>
+            <span className="tag b" style={{ fontFamily: "var(--mono)", fontWeight: 700, fontSize: 11 }} title="American Regime Index — domestic counterpart to XRI (External Risk)">ARI</span>
+          </div>
+          <span className="muted" style={{ fontSize: 10 }}>S&P 500 + regime + intelligence{asOf && <> · {asOf}</>}</span>
         </div>
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px",
@@ -180,12 +183,12 @@ export default function Regime({ go }: { go?: (id: ScreenId, param?: string) => 
         </div>
       </div>
 
-      {/* Faixa topo: 4 cards de métricas + JIM, mesma altura */}
+      {/* Top strip: 4 metric cards + JIM, same height */}
       <div style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "stretch" }}>
         <div className="card" style={{ padding: "10px 14px", minWidth: 0 }}>
           <div className="muted" style={{ fontSize: 10 }}>S&P 500</div>
           <div className="big" style={{ fontSize: 22 }}>{numShort(asset?.price)}</div>
-          <div className={`muted ${pctClass(asset?.dayPct)}`} style={{ fontSize: 11 }}>{asset ? pctText(asset.dayPct) + " hoje" : "…"}</div>
+          <div className={`muted ${pctClass(asset?.dayPct)}`} style={{ fontSize: 11 }}>{asset ? pctText(asset.dayPct) + " today" : "…"}</div>
         </div>
         <div className="card" style={{ padding: "10px 14px", minWidth: 0 }}>
           <div className="muted" style={{ fontSize: 10 }}>YTD</div>
@@ -194,7 +197,7 @@ export default function Regime({ go }: { go?: (id: ScreenId, param?: string) => 
         <div className="card" style={{ padding: "10px 14px", minWidth: 0 }}>
           <div className="muted" style={{ fontSize: 10 }}>RSI (14)</div>
           <div className="big" style={{ fontSize: 22, color: (asset?.rsi ?? 50) > 70 ? "var(--red)" : (asset?.rsi ?? 50) < 30 ? "var(--green)" : "var(--tx)" }}>{asset?.rsi != null ? num(asset.rsi, 0) : "…"}</div>
-          <div className="muted" style={{ fontSize: 10 }}>{(asset?.rsi ?? 50) > 70 ? "sobrecomprado" : (asset?.rsi ?? 50) < 30 ? "sobrevendido" : "neutro"}</div>
+          <div className="muted" style={{ fontSize: 10 }}>{(asset?.rsi ?? 50) > 70 ? "overbought" : (asset?.rsi ?? 50) < 30 ? "oversold" : "neutral"}</div>
         </div>
         <div className="card" style={{ padding: "10px 14px", minWidth: 0 }}>
           <div className="muted" style={{ fontSize: 10 }}>Max DD · Sharpe</div>
@@ -220,16 +223,16 @@ export default function Regime({ go }: { go?: (id: ScreenId, param?: string) => 
               <i className="ti ti-brain" style={{ fontSize: 14, color: "#0C1930" }} />
             </div>
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--tx)" }}>JIM — Análise de Mercado</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--tx)" }}>JIM — Market Analysis</div>
             </div>
           </div>
           <div style={{ fontSize: 13, color: "var(--tx)", lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical" as const }}>{jimText}</div>
         </div>
       </div>
 
-      {/* Layout: gráfico + painel lateral (DNA + Calendário + Notícias) */}
+      {/* Layout: chart + side panel (DNA + Calendar + News) */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 400px", gap: 8 }}>
-        {/* Gráfico S&P 500 */}
+        {/* S&P 500 chart */}
         <div className="card" style={{ padding: "8px 10px" }}>
           <div className="flex between wrap" style={{ gap: 4, marginBottom: 4 }}>
             <div className="seg" style={{ margin: 0 }}>{RANGES.map(r => <span key={r.k} className={range === r.k ? "on" : ""} onClick={() => setRange(r.k)}>{r.l}</span>)}</div>
@@ -246,9 +249,9 @@ export default function Regime({ go }: { go?: (id: ScreenId, param?: string) => 
             </div>
           </div>
           {chartErr ? (
-            <div className="placeholder"><i className="ti ti-cloud-off" /><b>Erro ao carregar S&P 500</b></div>
+            <div className="placeholder"><i className="ti ti-cloud-off" /><b>Error loading S&P 500</b></div>
           ) : chartLoading || !cd ? (
-            <div className="muted" style={{ padding: 40, textAlign: "center" }}>Carregando…</div>
+            <div className="muted" style={{ padding: 40, textAlign: "center" }}>Loading…</div>
           ) : (
             <AssetChart candles={cd.candles} volume={cd.volume} studies={studies} />
           )}
@@ -258,12 +261,12 @@ export default function Regime({ go }: { go?: (id: ScreenId, param?: string) => 
           </div>
         </div>
 
-        {/* Painel lateral: DNA + Calendário + Notícias */}
+        {/* Side panel: DNA + Calendar + News */}
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {/* DNA do Mercado */}
+          {/* Market DNA */}
           <div className="card" style={{ padding: "8px 12px" }}>
             <h3 style={{ cursor: "pointer", marginBottom: 4, fontSize: 11 }} onClick={() => go?.("market-dna")}>
-              <i className="ti ti-dna" />DNA do Mercado<i className="ti ti-arrow-right" style={{ fontSize: 10, marginLeft: "auto", opacity: 0.4 }} />
+              <i className="ti ti-dna" />Market DNA<i className="ti ti-arrow-right" style={{ fontSize: 10, marginLeft: "auto", opacity: 0.4 }} />
             </h3>
             {dnaScores.length > 0 ? dnaScores.map((s, i) => (
               <div key={i} style={{ marginBottom: 5 }}>
@@ -282,24 +285,30 @@ export default function Regime({ go }: { go?: (id: ScreenId, param?: string) => 
             )}
           </div>
 
-          {/* Calendário Econômico */}
+          {/* Economic Calendar — real data (/api/calendar) */}
           <div className="card" style={{ padding: "8px 12px" }}>
-            <h3 style={{ marginBottom: 4, fontSize: 11 }}><i className="ti ti-calendar-event" />Calendário</h3>
-            {CALENDAR.slice(0, 4).map((ev, i) => (
-              <div key={i} className="flex between" style={{ marginBottom: 3, alignItems: "baseline" }}>
-                <div>
-                  <span style={{ fontSize: 10.5, color: "var(--tx)" }}>{ev.event}</span>
-                  {ev.impact === "high" && <span style={{ fontSize: 7, color: "#E74C3C", fontWeight: 700, marginLeft: 4, textTransform: "uppercase" }}>alto</span>}
+            <h3 style={{ marginBottom: 4, fontSize: 11 }}><i className="ti ti-calendar-event" />Calendar</h3>
+            {cal === null ? (
+              <div className="muted" style={{ fontSize: 10, padding: "4px 0" }}>Loading…</div>
+            ) : !cal.ok || !cal.events.length ? (
+              <div className="muted" style={{ fontSize: 10, padding: "4px 0" }}>Calendar unavailable right now.</div>
+            ) : (
+              cal.events.slice(0, 5).map((ev, i) => (
+                <div key={i} className="flex between" style={{ marginBottom: 3, alignItems: "baseline", gap: 6 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <span style={{ fontSize: 10.5, color: "var(--tx)" }}>{ev.event}</span>
+                    {ev.importance === 3 && <span style={{ fontSize: 7, color: "#E74C3C", fontWeight: 700, marginLeft: 4, textTransform: "uppercase" }}>high</span>}
+                  </div>
+                  <span style={{ fontSize: 9.5, color: "var(--gold)", fontFamily: "var(--mono)", whiteSpace: "nowrap" }}>{ev.date} {ev.time}</span>
                 </div>
-                <span style={{ fontSize: 9.5, color: "var(--gold)", fontFamily: "var(--mono)", whiteSpace: "nowrap" }}>{ev.date} {ev.time}</span>
-              </div>
-            ))}
+              ))
+            )}
           </div>
 
-          {/* Notícias */}
+          {/* News */}
           <div className="card" style={{ padding: "8px 12px", flex: 1 }}>
             <h3 style={{ cursor: "pointer", marginBottom: 4, fontSize: 11 }} onClick={() => go?.("news-broadcast")}>
-              <i className="ti ti-broadcast" />Notícias<i className="ti ti-arrow-right" style={{ fontSize: 10, marginLeft: "auto", opacity: 0.4 }} />
+              <i className="ti ti-broadcast" />News<i className="ti ti-arrow-right" style={{ fontSize: 10, marginLeft: "auto", opacity: 0.4 }} />
             </h3>
             {topNews.length > 0 ? topNews.slice(0, 4).map((n, i) => (
               <a key={i} href={n.url} target="_blank" rel="noopener noreferrer" style={{
@@ -314,6 +323,11 @@ export default function Regime({ go }: { go?: (id: ScreenId, param?: string) => 
             )}
           </div>
         </div>
+      </div>
+
+      {/* Detail: why the ARI is in this regime. Lives here, not in the summary. */}
+      <div style={{ marginTop: 8 }}>
+        <JimBlock block={ariBlock} />
       </div>
     </div>
   );

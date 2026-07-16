@@ -3,7 +3,7 @@ import { yahooChart } from "@/lib/yahoo";
 
 export const dynamic = "force-dynamic";
 
-// Períodos pedidos: YTD, 1A, 5A, 10A(2016), 20A(2006), desde 2000.
+// Requested periods: YTD, 1Y, 5Y, 10Y(2016), 20Y(2006), since 2000.
 const PERIODS: Record<string, { range: string; interval: string; since?: number }> = {
   ytd: { range: "ytd", interval: "1d" },
   "1y": { range: "1y", interval: "1d" },

@@ -1,7 +1,7 @@
-// Helpers de formatação (client-safe) — pt-BR.
+// Formatting helpers (client-safe) — en-US.
 export function pctText(v?: number | null): string {
   if (v == null) return "—";
-  return (v >= 0 ? "+" : "") + v.toFixed(1).replace(".", ",") + "%";
+  return (v >= 0 ? "+" : "") + v.toFixed(1) + "%";
 }
 export function pctClass(v?: number | null): string {
   if (v == null) return "";
@@ -9,9 +9,9 @@ export function pctClass(v?: number | null): string {
 }
 export function num(v?: number | null, dp = 2): string {
   if (v == null) return "—";
-  return v.toLocaleString("pt-BR", { maximumFractionDigits: dp, minimumFractionDigits: dp });
+  return v.toLocaleString("en-US", { maximumFractionDigits: dp, minimumFractionDigits: dp });
 }
 export function numShort(v?: number | null): string {
   if (v == null) return "—";
-  return v.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+  return v.toLocaleString("en-US", { maximumFractionDigits: 2 });
 }

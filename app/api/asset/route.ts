@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 const toDate = (ts: number) => new Date(ts * 1000).toISOString().slice(0, 10);
 
-// GET /api/asset?symbol=NVDA&bench=^GSPC → métricas completas + série normalizada (base 100)
+// GET /api/asset?symbol=NVDA&bench=^GSPC → full metrics + normalized series (base 100)
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const symbol = (sp.get("symbol") || "NVDA").toUpperCase();

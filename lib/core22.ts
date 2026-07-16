@@ -1,7 +1,7 @@
-// Backtest CORE22+ (1990–2026, base 100) + alinhamento do Nasdaq real (Yahoo) na
-// MESMA metodologia — pra comparativo sempre-3-vias (CORE22+ vs S&P vs Nasdaq).
-// Fonte oficial do fundo é só o CSV (Portfolio/SPX_buyhold); o Nasdaq é comparativo
-// nosso, calculado ao vivo com dado real, nunca fabricado.
+// CORE22+ backtest (1990-2026, base 100) + alignment of the real Nasdaq (Yahoo) using the
+// SAME methodology — for an always-3-way comparison (CORE22+ vs S&P vs Nasdaq).
+// The fund's official source is the CSV only (Portfolio/SPX_buyhold); the Nasdaq is our
+// own comparative series, computed live from real data, never fabricated.
 import { readFileSync } from "fs";
 import path from "path";
 import { yahooChart } from "./yahoo";
@@ -28,11 +28,11 @@ export function loadCore22Nav(): Core22Series {
   return CSV_CACHE;
 }
 
-const NASDAQ_TTL = 7 * 24 * 60 * 60 * 1000; // 7 dias — histórico não muda, só estende a ponta
+const NASDAQ_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days — history doesn't change, only the latest point extends
 
-// Alinha o fechamento diário do Nasdaq (^IXIC, real, Yahoo) às datas do CSV do backtest,
-// rebasado a 100 na primeira data. "Alinhar" = achar o candle do Nasdaq na mesma data
-// (ou o mais recente anterior, pra feriados/gaps) e usar esse preço.
+// Aligns the Nasdaq's daily close (^IXIC, real, Yahoo) to the backtest CSV's dates,
+// rebased to 100 on the first date. "Aligning" = find the Nasdaq candle on the same date
+// (or the most recent prior one, for holidays/gaps) and use that price.
 export async function alignedNasdaq(t: number[]): Promise<number[] | null> {
   const cached = cacheGet<{ t: number[]; close: number[] }>("nasdaq_hist_ixic", NASDAQ_TTL);
   let hist = cached;

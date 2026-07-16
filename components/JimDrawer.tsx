@@ -2,6 +2,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { getScreenContext, getScreenSuggestions } from "@/lib/jim-context";
 import { readScreenData, subscribeScreenData, type ScreenSnapshot } from "@/lib/jim-data";
+import { subscribeAskJim } from "@/lib/jim-ask";
+import { renderMarkdown } from "@/lib/markdown";
 import type { ScreenId } from "@/lib/nav";
 
 interface Msg {
@@ -84,24 +86,11 @@ function MsgBubble({ msg }: { msg: Msg }) {
   );
 }
 
-function renderMarkdown(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    .replace(/`(.+?)`/g, '<code style="background:rgba(201,160,44,.12);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:12px">$1</code>')
-    .replace(/^- (.+)/gm, "• $1")
-    .replace(/^(\d+)\. (.+)/gm, "$1. $2")
-    .replace(/\n/g, "<br/>");
-}
-
-// Monta a saudação data-aware: nomeia a tela e o item com os dados reais.
+// Builds the data-aware greeting: names the screen and item with real data.
 function buildGreeting(screen: ScreenId, snap: ScreenSnapshot | null): string {
   const ctx = getScreenContext(screen);
   const lead = snap?.briefing || ctx.description;
-  return `Você está na tela **${ctx.title}**.\n\n${lead}\n\nQual a sua dúvida sobre isso? Toque numa das perguntas abaixo ou digite a sua.`;
+  return `You're on the **${ctx.title}** screen.\n\n${lead}\n\nWhat's your question about this? Tap one of the questions below or type your own.`;
 }
 
 export default function JimDrawer({ open, onClose, screen }: Props) {
@@ -122,7 +111,7 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
     setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
   }, []);
 
-  // Carrega sessão salva ao montar o componente.
+  // Loads the saved session when the component mounts.
   useEffect(() => {
     if (sessionLoaded) return;
     loadSessionMessages().then((saved) => {
@@ -137,7 +126,7 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
     });
   }, [sessionLoaded]);
 
-  // Assina os dados da tela atual — atualiza saudação/chips quando a tela publica.
+  // Subscribes to the current screen's data — updates greeting/chips when the screen publishes.
   useEffect(() => {
     setSnap(readScreenData(screen));
     const unsub = subscribeScreenData((s) => {
@@ -146,7 +135,7 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
     return unsub;
   }, [screen]);
 
-  // Saudação ao abrir / trocar de tela — usa o melhor dado disponível na hora.
+  // Greeting on open / screen change — uses the best data available at the time.
   useEffect(() => {
     if (open && greeted !== screen && sessionLoaded) {
       const cur = readScreenData(screen);
@@ -169,7 +158,7 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
     }
   }, [open, screen, greeted, scrollToEnd, sessionLoaded]);
 
-  // Se os dados (briefing) chegarem DEPOIS da saudação, atualiza a saudação in-place.
+  // If the data (briefing) arrives AFTER the greeting, updates the greeting in place.
   useEffect(() => {
     if (!open || greeted !== screen || greetHadBriefing || !snap?.briefing) return;
     const newContent = buildGreeting(screen, snap);
@@ -220,7 +209,7 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
       });
 
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Erro desconhecido" }));
+        const err = await res.json().catch(() => ({ error: "Unknown error" }));
         throw new Error(err.error || `HTTP ${res.status}`);
       }
 
@@ -236,7 +225,7 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
       const sources: string[] = [];
       if (data.sources?.blackLibrary) sources.push("Black Library");
       if (data.sources?.news) sources.push("JD NEWS");
-      if (data.sources?.books) sources.push("Livros");
+      if (data.sources?.books) sources.push("Books");
       setKnowledgeSources(sources);
 
       setMessages((prev) => {
@@ -247,7 +236,7 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
     } catch (e) {
       const errMsg: Msg = {
         role: "assistant",
-        content: `⚠ Erro: ${e instanceof Error ? e.message : "Falha na comunicação"}.\n\nVerifique se a chave \`ANTHROPIC_API_KEY\` está configurada em \`.env.local\`.`,
+        content: `⚠ Error: ${e instanceof Error ? e.message : "Communication failure"}.\n\nCheck that the \`ANTHROPIC_API_KEY\` key is configured in \`.env.local\`.`,
         ts: Date.now(),
         screen,
       };
@@ -260,6 +249,10 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
       setLoading(false);
     }
   };
+
+  // askJim("...") from any screen injects the question directly into the chat, as if the
+  // user had clicked a chip — but without needing to open the drawer first.
+  useEffect(() => subscribeAskJim((q) => send(q)), [send]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -278,7 +271,7 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
   };
 
   const ctx = getScreenContext(screen);
-  // Perguntas prováveis: dinâmicas (data-aware) da tela, senão o fallback estático.
+  // Likely questions: dynamic (data-aware) from the screen, otherwise the static fallback.
   const suggestions = snap?.suggestions?.length ? snap.suggestions : getScreenSuggestions(screen);
 
   return (
@@ -295,10 +288,10 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
             </div>
           </div>
           <div className="jim-header-actions">
-            <button className="jim-hbtn" onClick={clearHistory} title="Limpar conversa">
+            <button className="jim-hbtn" onClick={clearHistory} title="Clear conversation">
               <i className="ti ti-trash" />
             </button>
-            <button className="jim-hbtn" onClick={onClose} title="Fechar">
+            <button className="jim-hbtn" onClick={onClose} title="Close">
               <i className="ti ti-x" />
             </button>
           </div>
@@ -309,12 +302,12 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
           <i className="ti ti-eye" />
           <span>{ctx.title}</span>
           {knowledgeSources.length > 0 && (
-            <div className="jim-sources" title={`Fontes: ${knowledgeSources.join(", ")}`}>
+            <div className="jim-sources" title={`Sources: ${knowledgeSources.join(", ")}`}>
               <i className="ti ti-database" />
               {knowledgeSources.length}
             </div>
           )}
-          <div className="jim-model-toggle" onClick={() => setUsesSonnet(!usesSonnet)} title={usesSonnet ? "Sonnet (análise profunda)" : "Haiku (rápido)"}>
+          <div className="jim-model-toggle" onClick={() => setUsesSonnet(!usesSonnet)} title={usesSonnet ? "Sonnet (deep analysis)" : "Haiku (fast)"}>
             <i className={`ti ${usesSonnet ? "ti-brain" : "ti-bolt"}`} />
             {usesSonnet ? "Sonnet" : "Haiku"}
           </div>
@@ -325,8 +318,8 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
           {messages.length === 0 && (
             <div className="jim-empty">
               <i className="ti ti-sparkles" />
-              <div>JIM está pronto para ajudar.</div>
-              <div className="jim-empty-sub">Pergunte sobre o que está vendo na tela, peça uma análise, ou tire dúvidas sobre teoria de investimentos.</div>
+              <div>JIM is ready to help.</div>
+              <div className="jim-empty-sub">Ask about what you&apos;re seeing on screen, request an analysis, or clear up questions on investment theory.</div>
             </div>
           )}
 
@@ -346,7 +339,7 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
           <div ref={endRef} />
         </div>
 
-        {/* Chips de perguntas prováveis desta tela (menu interativo) */}
+        {/* Likely-question chips for this screen (interactive menu) */}
         {!loading && (
           <div className="jim-chips">
             {suggestions.map((q, i) => (
@@ -363,7 +356,7 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
             <textarea
               ref={inputRef}
               className="jim-input"
-              placeholder="Pergunte ao JIM..."
+              placeholder="Ask JIM..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -379,7 +372,7 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
             </button>
           </div>
           <div className="jim-disclaimer">
-            JIM usa IA (Claude) e pode cometer erros. Verifique informações importantes.
+            JIM uses AI (Claude) and can make mistakes. Verify important information.
           </div>
         </div>
       </div>

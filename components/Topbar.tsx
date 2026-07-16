@@ -5,7 +5,7 @@ import { MENUS, type ScreenId } from "@/lib/nav";
 function Clock() {
   const [t, setT] = useState("--:--:--");
   useEffect(() => {
-    const tick = () => setT(new Date().toLocaleTimeString("pt-BR"));
+    const tick = () => setT(new Date().toLocaleTimeString("en-US"));
     tick();
     const iv = setInterval(tick, 1000);
     return () => clearInterval(iv);
@@ -17,7 +17,8 @@ export default function Topbar({ go, jimOpen, onJimToggle, onSettingsToggle }: {
   return (
     <div className="topbar">
       <div className="brand" onClick={() => go("painel")}>
-        <div className="lg">H</div>HARPIAN<span className="sub">ETP TERMINAL</span>
+        <img className="brand-logo brand-logo-white" src="/harpian-logo-white.svg" alt="HARPIAN" />
+        <img className="brand-logo brand-logo-navy" src="/harpian-logo-navy.svg" alt="HARPIAN" />
       </div>
 
       {MENUS.map((m) => (
@@ -52,8 +53,9 @@ export default function Topbar({ go, jimOpen, onJimToggle, onSettingsToggle }: {
 
       <div className="right">
         <div className={`jim${jimOpen ? " active" : ""}`} onClick={onJimToggle}><i className="ti ti-sparkles" />Jim AI</div>
-        <div className="jim" onClick={onSettingsToggle} title="Configurações"><i className="ti ti-settings" /></div>
-        <div className="pillstate"><span className="dot" />RISK-ON · DEFESA ARMADA</div>
+        <span className="topbar-sub">ETP TERMINAL</span>
+        <div className="jim" onClick={onSettingsToggle} title="Settings"><i className="ti ti-settings" /></div>
+        <div className="pillstate"><span className="dot" />RISK-ON · DEFENSE ARMED</div>
         <Clock />
       </div>
     </div>

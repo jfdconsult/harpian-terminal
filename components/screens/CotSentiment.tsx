@@ -62,11 +62,11 @@ function cotIndex(current: number, low: number, high: number): number {
 }
 
 function cotSignal(idx: number): { label: string; color: string; bg: string; desc: string } {
-  if (idx >= 80) return { label: "EXTREME HIGH", color: "#E74C3C", bg: "rgba(231,76,60,.12)", desc: "Posicionamento especulador em extremo de alta — historicamente, sinal contrário (bearish)" };
-  if (idx >= 65) return { label: "HIGH", color: "#E67E22", bg: "rgba(230,126,34,.10)", desc: "Especuladores fortemente comprados — risco de reversão se momentum fraquear" };
-  if (idx >= 35) return { label: "NEUTRAL", color: "#7d96b3", bg: "rgba(125,150,179,.08)", desc: "Posicionamento equilibrado — sem sinal direcional do COT" };
-  if (idx >= 20) return { label: "LOW", color: "#4A90D9", bg: "rgba(74,144,217,.10)", desc: "Especuladores reduzindo posições — atenção para oportunidade contrária (bullish)" };
-  return { label: "EXTREME LOW", color: "#2ECC71", bg: "rgba(46,204,113,.12)", desc: "Posicionamento especulador em extremo de baixa — historicamente, sinal contrário (bullish)" };
+  if (idx >= 80) return { label: "EXTREME HIGH", color: "#E74C3C", bg: "rgba(231,76,60,.12)", desc: "Speculator positioning at an extreme high — historically a contrarian signal (bearish)" };
+  if (idx >= 65) return { label: "HIGH", color: "#E67E22", bg: "rgba(230,126,34,.10)", desc: "Speculators heavily long — reversal risk if momentum weakens" };
+  if (idx >= 35) return { label: "NEUTRAL", color: "#7d96b3", bg: "rgba(125,150,179,.08)", desc: "Balanced positioning — no directional signal from COT" };
+  if (idx >= 20) return { label: "LOW", color: "#4A90D9", bg: "rgba(74,144,217,.10)", desc: "Speculators reducing positions — watch for a contrarian opportunity (bullish)" };
+  return { label: "EXTREME LOW", color: "#2ECC71", bg: "rgba(46,204,113,.12)", desc: "Speculator positioning at an extreme low — historically a contrarian signal (bullish)" };
 }
 
 function computeCotData(legacy: LegacyRow[]): CotIndexData[] {
@@ -109,24 +109,9 @@ function computeCotData(legacy: LegacyRow[]): CotIndexData[] {
   return result.sort((a, b) => b.index - a.index);
 }
 
-// ---------- Demo data ----------
-const DEMO_DATA: CotIndexData[] = [
-  { market: "S&P 500", index: 78, specNet: 142000, commNet: -128000, nonreptNet: -14000, oi: 2800000, date: "2026-06-24", specPctOi: 5.1, commPctOi: -4.6, signal: "HIGH", weekChange: 18200 },
-  { market: "Gold", index: 82, specNet: 218000, commNet: -245000, nonreptNet: 27000, oi: 520000, date: "2026-06-24", specPctOi: 41.9, commPctOi: -47.1, signal: "EXTREME HIGH", weekChange: -8400 },
-  { market: "Crude Oil WTI", index: 35, specNet: 145000, commNet: -162000, nonreptNet: 17000, oi: 1900000, date: "2026-06-24", specPctOi: 7.6, commPctOi: -8.5, signal: "NEUTRAL", weekChange: -22100 },
-  { market: "10Y Treasury", index: 18, specNet: -420000, commNet: 380000, nonreptNet: 40000, oi: 4200000, date: "2026-06-24", specPctOi: -10.0, commPctOi: 9.0, signal: "EXTREME LOW", weekChange: -31000 },
-  { market: "Euro (EUR)", index: 52, specNet: 48000, commNet: -62000, nonreptNet: 14000, oi: 680000, date: "2026-06-24", specPctOi: 7.1, commPctOi: -9.1, signal: "NEUTRAL", weekChange: 5200 },
-  { market: "Bitcoin", index: 71, specNet: 8200, commNet: -6800, nonreptNet: -1400, oi: 32000, date: "2026-06-24", specPctOi: 25.6, commPctOi: -21.3, signal: "HIGH", weekChange: 1100 },
-  { market: "NASDAQ 100", index: 85, specNet: 64000, commNet: -58000, nonreptNet: -6000, oi: 320000, date: "2026-06-24", specPctOi: 20.0, commPctOi: -18.1, signal: "EXTREME HIGH", weekChange: 4200 },
-  { market: "Yen (JPY)", index: 12, specNet: -148000, commNet: 132000, nonreptNet: 16000, oi: 280000, date: "2026-06-24", specPctOi: -52.9, commPctOi: 47.1, signal: "EXTREME LOW", weekChange: -8800 },
-  { market: "Silver", index: 68, specNet: 42000, commNet: -48000, nonreptNet: 6000, oi: 160000, date: "2026-06-24", specPctOi: 26.3, commPctOi: -30.0, signal: "HIGH", weekChange: 3100 },
-  { market: "Natural Gas", index: 28, specNet: -85000, commNet: 72000, nonreptNet: 13000, oi: 1400000, date: "2026-06-24", specPctOi: -6.1, commPctOi: 5.1, signal: "LOW", weekChange: 4500 },
-  { market: "VIX", index: 42, specNet: -62000, commNet: 58000, nonreptNet: 4000, oi: 480000, date: "2026-06-24", specPctOi: -12.9, commPctOi: 12.1, signal: "NEUTRAL", weekChange: -2200 },
-  { market: "Copper", index: 55, specNet: 22000, commNet: -28000, nonreptNet: 6000, oi: 220000, date: "2026-06-24", specPctOi: 10.0, commPctOi: -12.7, signal: "NEUTRAL", weekChange: 1800 },
-  { market: "US T-Bonds", index: 22, specNet: -180000, commNet: 165000, nonreptNet: 15000, oi: 1200000, date: "2026-06-24", specPctOi: -15.0, commPctOi: 13.8, signal: "LOW", weekChange: -12400 },
-  { market: "2Y Treasury", index: 15, specNet: -310000, commNet: 285000, nonreptNet: 25000, oi: 2100000, date: "2026-06-24", specPctOi: -14.8, commPctOi: 13.6, signal: "EXTREME LOW", weekChange: -18700 },
-  { market: "E-Mini S&P", index: 74, specNet: 98000, commNet: -92000, nonreptNet: -6000, oi: 2400000, date: "2026-06-24", specPctOi: 4.1, commPctOi: -3.8, signal: "HIGH", weekChange: 7600 },
-];
+// No DEMO_DATA: this screen used to render 15 fabricated COT markets
+// (S&P, gold, yen, VIX...) with a made-up index/signal whenever gov-data
+// went down. CFTC data or nothing.
 
 // ---------- Components ----------
 
@@ -231,13 +216,14 @@ function MarketCard({ d }: { d: CotIndexData }) {
 }
 
 // ---------- Filters ----------
-const CLASSES = ["Todos", "Equity", "Metal", "Energy", "Rates", "FX", "Crypto", "Volatility"];
+const CLASSES = ["All", "Equity", "Metal", "Energy", "Rates", "FX", "Crypto", "Volatility"];
 
 // ---------- Main ----------
 export default function CotSentiment() {
   const [data, setData] = useState<CotIndexData[]>([]);
   const [offline, setOffline] = useState(false);
-  const [filter, setFilter] = useState("Todos");
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("All");
   const [showEdu, setShowEdu] = useState(false);
 
   useEffect(() => {
@@ -246,19 +232,21 @@ export default function CotSentiment() {
       .then((rows: LegacyRow[]) => {
         setData(computeCotData(rows));
         setOffline(false);
+        setLoading(false);
       })
       .catch(() => {
-        setData(DEMO_DATA);
+        setData([]);
         setOffline(true);
+        setLoading(false);
       });
   }, []);
 
-  const filtered = filter === "Todos" ? data : data.filter((d) => (ASSET_CLASS[d.market] || "") === filter);
+  const filtered = filter === "All" ? data : data.filter((d) => (ASSET_CLASS[d.market] || "") === filter);
 
   const extremes = data.filter((d) => d.index >= 80 || d.index <= 20);
   const avgIdx = data.length ? Math.round(data.reduce((s, d) => s + d.index, 0) / data.length) : 50;
 
-  // Publica pro JIM o posicionamento COT (extremos = sinais contrários).
+  // Publishes COT positioning to JIM (extremes = contrarian signals).
   useEffect(() => {
     if (data.length === 0) return;
     const extremosTxt = extremes
@@ -266,21 +254,21 @@ export default function CotSentiment() {
       .join(", ");
     publishScreenData(
       "cot-sentiment",
-      "COT Intelligence (CFTC): COT Index 0–100 por mercado. >80 = extremo de alta (sinal contrário bearish); <20 = extremo de baixa (sinal contrário bullish). Grupos: Large Specs (smart money), Commercials (hedgers), Nonreportable (varejo). Defasagem 3 dias úteis.",
+      "COT Intelligence (CFTC): COT Index 0-100 per market. >80 = extreme high (contrarian bearish signal); <20 = extreme low (contrarian bullish signal). Groups: Large Specs (smart money), Commercials (hedgers), Nonreportable (retail). 3-business-day lag.",
       data.map((d) => ({
         mercado: d.market, cotIndex: d.index, sinal: d.signal,
         specNet: d.specNet, commNet: d.commNet, oi: d.oi, variacaoSemana: d.weekChange, data: d.date,
       })),
       {
         briefing:
-          `Você está vendo o COT de ${data.length} mercados (índice médio **${avgIdx}**). ` +
+          `You're looking at COT for ${data.length} markets (average index **${avgIdx}**). ` +
           (extremes.length
-            ? `**${extremes.length} em extremo** (sinal contrário): ${extremosTxt}.`
-            : "Nenhum mercado em extremo agora."),
+            ? `**${extremes.length} at an extreme** (contrarian signal): ${extremosTxt}.`
+            : "No market at an extreme right now."),
         suggestions: [
-          extremes.length ? "Quais mercados estão em extremo e o que significa?" : "Algum mercado perto de um extremo?",
-          "Onde o smart money está posicionado?",
-          "Como uso o COT numa decisão?",
+          extremes.length ? "Which markets are at an extreme and what does it mean?" : "Is any market close to an extreme?",
+          "Where is the smart money positioned?",
+          "How do I use COT in a decision?",
         ],
       }
     );
@@ -293,8 +281,8 @@ export default function CotSentiment() {
         <div>
           <div className="h1">COT Intelligence</div>
           <div className="sub">
-            CFTC Commitments of Traders · COT Index normalizado (3 anos) · Posicionamento como indicador antecedente.
-            {offline && <span style={{ color: "var(--orange)", marginLeft: 8 }}> [demo — API offline]</span>}
+            CFTC Commitments of Traders · normalized COT Index (3 years) · positioning as a leading indicator.
+            {offline && <span style={{ color: "var(--orange)", marginLeft: 8 }}> — gov-data offline (8877)</span>}
           </div>
         </div>
         <button
@@ -302,44 +290,60 @@ export default function CotSentiment() {
           onClick={() => setShowEdu(!showEdu)}
         >
           <i className={`ti ${showEdu ? "ti-chevron-up" : "ti-book"}`} />
-          {showEdu ? "Fechar" : "O que é COT?"}
+          {showEdu ? "Close" : "What is COT?"}
         </button>
       </div>
 
       {showEdu && (
         <div className="card" style={{ marginTop: 10, borderColor: "rgba(201,160,44,.2)" }}>
-          <h3 style={{ margin: "0 0 8px" }}><i className="ti ti-school" />Commitment of Traders — Guia rápido</h3>
+          <h3 style={{ margin: "0 0 8px" }}><i className="ti ti-school" />Commitment of Traders — Quick Guide</h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, fontSize: 12, lineHeight: 1.7, color: "var(--tx2)" }}>
             <div>
-              <div style={{ fontWeight: 600, color: "var(--tx)", marginBottom: 4 }}>Os 3 grupos</div>
-              <div><span style={{ color: "#C9A02C" }}>Commercials (Hedgers)</span> — Produtores e consumidores que usam futuros para proteger sua atividade real. Tipicamente, estão do lado oposto ao mercado.</div>
-              <div style={{ marginTop: 6 }}><span style={{ color: "#4A90D9" }}>Large Speculators</span> — Fundos, CTAs e institucionais que operam por lucro. Considerados o &ldquo;smart money&rdquo; em tendências, mas crowded nos extremos.</div>
-              <div style={{ marginTop: 6 }}><span style={{ color: "#7d96b3" }}>Nonreportable</span> — Pequenos traders. Historicamente, estão do lado errado nos pontos de inflexão.</div>
+              <div style={{ fontWeight: 600, color: "var(--tx)", marginBottom: 4 }}>The 3 groups</div>
+              <div><span style={{ color: "#C9A02C" }}>Commercials (Hedgers)</span> — Producers and consumers who use futures to hedge their actual business activity. Typically on the opposite side of the market.</div>
+              <div style={{ marginTop: 6 }}><span style={{ color: "#4A90D9" }}>Large Speculators</span> — Funds, CTAs and institutions trading for profit. Considered the &ldquo;smart money&rdquo; in trends, but crowded at the extremes.</div>
+              <div style={{ marginTop: 6 }}><span style={{ color: "#7d96b3" }}>Nonreportable</span> — Small traders. Historically on the wrong side at turning points.</div>
             </div>
             <div>
-              <div style={{ fontWeight: 600, color: "var(--tx)", marginBottom: 4 }}>COT Index (0–100)</div>
-              <div>Normaliza a posição líquida especuladora dentro de um range de 3 anos. Fórmula: <span style={{ fontFamily: "var(--mono)", fontSize: 10 }}>(Net – Mín) / (Máx – Mín) × 100</span></div>
-              <div style={{ marginTop: 6 }}><span style={{ color: "#E74C3C" }}>Acima de 80</span> — Extremo de alta. Historicamente, sinal <b>contrário</b>: risco de correção.</div>
-              <div style={{ marginTop: 3 }}><span style={{ color: "#2ECC71" }}>Abaixo de 20</span> — Extremo de baixa. Historicamente, sinal <b>contrário</b>: oportunidade de compra.</div>
+              <div style={{ fontWeight: 600, color: "var(--tx)", marginBottom: 4 }}>COT Index (0-100)</div>
+              <div>Normalizes speculator net positioning within a 3-year range. Formula: <span style={{ fontFamily: "var(--mono)", fontSize: 10 }}>(Net - Min) / (Max - Min) × 100</span></div>
+              <div style={{ marginTop: 6 }}><span style={{ color: "#E74C3C" }}>Above 80</span> — Extreme high. Historically a <b>contrarian</b> signal: correction risk.</div>
+              <div style={{ marginTop: 3 }}><span style={{ color: "#2ECC71" }}>Below 20</span> — Extreme low. Historically a <b>contrarian</b> signal: buying opportunity.</div>
               <div style={{ marginTop: 6, fontSize: 11, color: "var(--tx3)" }}>
                 <i className="ti ti-alert-circle" style={{ fontSize: 12, marginRight: 3 }} />
-                COT tem defasagem de 3 dias úteis, não mostra preço de entrada e NÃO é trigger isolado. Use como ajustador de convicção junto com trend, momentum e volatilidade.
+                COT has a 3-business-day lag, doesn&apos;t show an entry price, and is NOT a standalone trigger. Use it as a conviction adjuster alongside trend, momentum and volatility.
               </div>
             </div>
           </div>
         </div>
       )}
 
+      {loading && (
+        <div className="muted" style={{ padding: 30, textAlign: "center" }}>Loading CFTC data…</div>
+      )}
+
+      {!loading && (offline || !data.length) && (
+        <div className="placeholder" style={{ marginTop: 12 }}>
+          <i className="ti ti-cloud-off" />
+          <b style={{ display: "block", marginTop: 8 }}>COT unavailable</b>
+          <div className="muted" style={{ marginTop: 4 }}>
+            gov-data offline — <span style={{ fontFamily: "var(--mono)" }}>api_server.py</span> (port 8877).
+            I&apos;d rather show nothing than show positioning that didn&apos;t come from the CFTC.
+          </div>
+        </div>
+      )}
+
+      {!loading && !offline && data.length > 0 && (<>
       {/* Compact summary + extremes — single strip */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", padding: "8px 0", marginBottom: 6, borderBottom: "1px solid var(--line)" }}>
         <span style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--tx3)" }}>
-          Índice médio <b style={{ color: cotSignal(avgIdx).color, fontSize: 13 }}>{avgIdx}</b>
+          Average index <b style={{ color: cotSignal(avgIdx).color, fontSize: 13 }}>{avgIdx}</b>
         </span>
         <span style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--tx3)" }}>
-          {data.length} mercados
+          {data.length} markets
         </span>
         <span style={{ fontSize: 11, fontFamily: "var(--mono)", color: extremes.length ? "var(--orange)" : "var(--tx3)" }}>
-          {extremes.length} extremo{extremes.length !== 1 ? "s" : ""}
+          {extremes.length} extreme{extremes.length !== 1 ? "s" : ""}
         </span>
         <span style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--tx3)" }}>
           CFTC {data[0]?.date || "—"}
@@ -372,7 +376,7 @@ export default function CotSentiment() {
             background: filter === c ? "rgba(201,160,44,.15)" : "transparent",
             color: filter === c ? "var(--gold)" : "var(--tx3)",
           }}>
-            {c === "Todos" ? `TODOS (${data.length})` : `${c.toUpperCase()} (${data.filter((d) => (ASSET_CLASS[d.market] || "") === c).length})`}
+            {c === "All" ? `ALL (${data.length})` : `${c.toUpperCase()} (${data.filter((d) => (ASSET_CLASS[d.market] || "") === c).length})`}
           </button>
         ))}
       </div>
@@ -383,11 +387,12 @@ export default function CotSentiment() {
       </div>
 
       <div className="legend mt">
-        <i><b style={{ background: "#4A90D9" }} />Especuladores (Large Specs)</i>
-        <i><b style={{ background: "#C9A02C" }} />Comerciais (Hedgers)</i>
+        <i><b style={{ background: "#4A90D9" }} />Speculators (Large Specs)</i>
+        <i><b style={{ background: "#C9A02C" }} />Commercials (Hedgers)</i>
         <i><b style={{ background: "#7d96b3" }} />Nonreportable</i>
-        <span className="muted" style={{ marginLeft: "auto" }}>CFTC Commitments of Traders · análise Harpian · dados públicos · indicador antecedente</span>
+        <span className="muted" style={{ marginLeft: "auto" }}>CFTC Commitments of Traders · Harpian analysis · public data · leading indicator</span>
       </div>
+      </>)}
     </div>
   );
 }

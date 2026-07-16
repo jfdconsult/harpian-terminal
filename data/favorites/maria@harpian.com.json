@@ -1,0 +1,13 @@
+{
+  "email": "maria@harpian.com",
+  "tickers": [
+    "TSLA",
+    "GOOGL"
+  ],
+  "notif": {
+    "enabled": true,
+    "hour": "08:00",
+    "tz": "America/Sao_Paulo"
+  },
+  "updatedAt": 1784198415073
+}

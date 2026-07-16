@@ -1,6 +1,6 @@
-// Parser de CSV de carteira (ativo, quantidade, preço médio) — compartilhado entre
-// Importar/conectar e a edição de portfólios do cliente. Tolerante: aceita vírgula
-// ou ponto-e-vírgula, cabeçalho opcional, ignora linhas mal formadas em vez de travar.
+// Portfolio CSV parser (asset, quantity, average price) — shared between
+// Import/connect and client portfolio editing. Tolerant: accepts comma
+// or semicolon, optional header, skips malformed lines instead of failing.
 import type { ImportedPosition } from "./clients";
 
 export function parsePortfolioCsv(text: string): { rows: ImportedPosition[]; skipped: number } {
@@ -22,14 +22,14 @@ export function parsePortfolioCsv(text: string): { rows: ImportedPosition[]; ski
   return { rows, skipped };
 }
 
-export const PORTFOLIO_CSV_TEMPLATE = "ativo,quantidade,preco_medio\nPETR4,1000,32.10\nVALE3,500,68.40\nITUB4,800,29.75\n";
+export const PORTFOLIO_CSV_TEMPLATE = "asset,quantity,avg_price\nPETR4,1000,32.10\nVALE3,500,68.40\nITUB4,800,29.75\n";
 
 export function downloadPortfolioTemplate() {
   const blob = new Blob([PORTFOLIO_CSV_TEMPLATE], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "modelo-carteira-harpian.csv";
+  a.download = "portfolio-template-harpian.csv";
   a.click();
   URL.revokeObjectURL(url);
 }

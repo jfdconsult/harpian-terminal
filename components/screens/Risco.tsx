@@ -5,8 +5,8 @@ import { allClients } from "@/lib/clientStore";
 import { publishScreenData } from "@/lib/jim-data";
 import { HPC22_RN, HPC11_RN, TOLERANCE, OBJETIVO } from "@/lib/riskLevels";
 
-// Régua compacta (inline) com marcadores — usada em cada linha da tabela.
-// Exportada pra ser reaproveitada no módulo "Todos os clientes na régua" do Painel.
+// Compact (inline) ruler with markers — used on each table row.
+// Exported to be reused in the "All clients on the ruler" module of the Dashboard.
 export function MiniRegua({ portfolio, tolerance, mandate }: { portfolio: number; tolerance: number; mandate: number }) {
   const dot = (v: number, color: string, title: string) => (
     <div title={title} style={{ position: "absolute", top: -2, left: `${v}%`, transform: "translateX(-50%)", width: 8, height: 8, borderRadius: "50%", background: color, border: "1.5px solid var(--bg)" }} />
@@ -14,17 +14,17 @@ export function MiniRegua({ portfolio, tolerance, mandate }: { portfolio: number
   return (
     <div style={{ position: "relative", height: 8, width: 150 }}>
       <div style={{ position: "absolute", top: 2, left: 0, right: 0, height: 4, borderRadius: 3, background: "linear-gradient(90deg,#2ECC71,#F39C12,#E74C3C)" }} />
-      {dot(mandate, "#4A90D9", `mandato ${mandate}`)}
-      {dot(tolerance, "#EAF0F7", `tolerância ${tolerance}`)}
-      {dot(portfolio, portfolio > mandate ? "#E74C3C" : "#2ECC71", `portfólio ${portfolio}`)}
+      {dot(mandate, "#4A90D9", `mandate ${mandate}`)}
+      {dot(tolerance, "#EAF0F7", `tolerance ${tolerance}`)}
+      {dot(portfolio, portfolio > mandate ? "#E74C3C" : "#2ECC71", `portfolio ${portfolio}`)}
     </div>
   );
 }
 
 export default function Risco() {
-  const [clients, setClients] = useState<Client[]>(CLIENTS);   // seed no SSR; localStorage no client
+  const [clients, setClients] = useState<Client[]>(CLIENTS);   // seed on SSR; localStorage on client
   const [sel, setSel] = useState(CLIENTS[0].id);
-  const [migrate, setMigrate] = useState(0); // % migrado p/ o HPC22
+  const [migrate, setMigrate] = useState(0); // % migrated to HPC22
 
   useEffect(() => { setClients(allClients()); }, []);
 
@@ -39,42 +39,42 @@ export default function Risco() {
   const gap = blended - client.mandate;
   const fora = clients.filter((c) => c.riskNumber > c.mandate);
 
-  // Marcadores da régua do cliente selecionado; rótulos em 2 alturas p/ não colidir.
+  // Markers for the selected client's ruler; labels at 2 heights to avoid collision.
   const markers = [
-    { v: HPC22_RN, color: "var(--gold)", label: `produto ${HPC22_RN}` },
-    { v: client.mandate, color: "var(--blue)", label: `mandato ${client.mandate}` },
-    { v: tol, color: "var(--tx)", label: `tolerância ${tol}` },
-    { v: blended, color: gap > 0 ? "var(--red)" : "var(--green)", label: `portfólio ${blended}` },
+    { v: HPC22_RN, color: "var(--gold)", label: `product ${HPC22_RN}` },
+    { v: client.mandate, color: "var(--blue)", label: `mandate ${client.mandate}` },
+    { v: tol, color: "var(--tx)", label: `tolerance ${tol}` },
+    { v: blended, color: gap > 0 ? "var(--red)" : "var(--green)", label: `portfolio ${blended}` },
   ].sort((a, b) => a.v - b.v);
 
-  // Publica pro JIM o risco por cliente (selecionado + panorama da base).
+  // Publishes to JIM the risk per client (selected + full-base overview).
   useEffect(() => {
     publishScreenData(
       "risco",
-      "Risco por cliente na régua do Número de Risco (0–100, S&P 500 ≈ 27). Para cada cliente, 4 níveis: produto (fundo), tolerância (perfil/questionário), mandato (teto contratual) e portfólio (carteira). Tabela compara todos os clientes.",
+      "Risk per client on the Risk Number ruler (0-100, S&P 500 ≈ 72). For each client, 4 levels: product (fund), tolerance (profile/questionnaire), mandate (contractual ceiling), and portfolio (holdings). Table compares all clients.",
       {
-        clienteSelecionado: {
-          nome: client.name, perfil: client.profile, objetivo,
-          riscoProduto_HPC22: HPC22_RN, tolerancia: tol, mandato: client.mandate,
-          riscoPortfolio: client.riskNumber, acimaDoMandato: client.riskNumber - client.mandate,
+        selectedClient: {
+          name: client.name, profile: client.profile, objective: objetivo,
+          productRisk_HPC22: HPC22_RN, tolerance: tol, mandate: client.mandate,
+          portfolioRisk: client.riskNumber, aboveMandate: client.riskNumber - client.mandate,
         },
         base: clients.map((c) => ({
-          nome: c.name, perfil: c.profile, objetivo: OBJETIVO[c.profile],
-          portfolio: c.riskNumber, tolerancia: TOLERANCE[c.profile], mandato: c.mandate,
-          adequado: c.riskNumber <= c.mandate,
+          name: c.name, profile: c.profile, objective: OBJETIVO[c.profile],
+          portfolio: c.riskNumber, tolerance: TOLERANCE[c.profile], mandate: c.mandate,
+          compliant: c.riskNumber <= c.mandate,
         })),
-        foraDoMandato: fora.map((c) => c.name),
+        outsideMandate: fora.map((c) => c.name),
       },
       {
         briefing:
-          `Você está vendo o risco por cliente. Selecionado: **${client.name}** (${client.profile}, objetivo ${objetivo}) — ` +
-          `portfólio **${client.riskNumber}**, tolerância ${tol}, mandato ${client.mandate}` +
-          (client.riskNumber > client.mandate ? ` (**${client.riskNumber - client.mandate} acima do teto**).` : " (dentro do teto).") +
-          (fora.length ? ` Na base, ${fora.length} fora do mandato: ${fora.map((c) => c.name).join(", ")}.` : ""),
+          `You're looking at risk per client. Selected: **${client.name}** (${client.profile}, objective ${objetivo}) — ` +
+          `portfolio **${client.riskNumber}**, tolerance ${tol}, mandate ${client.mandate}` +
+          (client.riskNumber > client.mandate ? ` (**${client.riskNumber - client.mandate} above the ceiling**).` : " (within the ceiling).") +
+          (fora.length ? ` In the base, ${fora.length} outside the mandate: ${fora.map((c) => c.name).join(", ")}.` : ""),
         suggestions: [
-          client.riskNumber > client.mandate ? `Por que ${client.name} está fora do mandato?` : `${client.name} está bem posicionado?`,
-          "Quais clientes precisam de rebalanceamento?",
-          "Migrar pro HPC22 reduz o risco de quem?",
+          client.riskNumber > client.mandate ? `Why is ${client.name} outside the mandate?` : `Is ${client.name} well positioned?`,
+          "Which clients need rebalancing?",
+          "Migrating to HPC22 reduces whose risk?",
         ],
       }
     );
@@ -82,39 +82,39 @@ export default function Risco() {
 
   return (
     <div className="screen">
-      <div className="crumb">Risco › <b>Por cliente · 4 níveis</b></div>
+      <div className="crumb">Risk › <b>By client · 4 levels</b></div>
       <div className="flex between wrap">
         <div>
-          <div className="h1">Risco por cliente — os 4 níveis na mesma régua</div>
+          <div className="h1">Risk by client — the 4 levels on the same ruler</div>
           <div className="sub" style={{ margin: 0 }}>
-            Onde o portfólio de cada cliente está vs. a tolerância do perfil e o teto do mandato. Tudo no Número de Risco (0–100).
+            Where each client's portfolio stands vs. the profile tolerance and the mandate ceiling. All on the Risk Number (0-100).
           </div>
         </div>
         <div className="flex" style={{ gap: 8, alignItems: "center" }}>
-          <span className="flabel">Cliente:</span>
+          <span className="flabel">Client:</span>
           <select className="fsel" style={{ fontSize: 13, padding: "8px 12px", minWidth: 220 }} value={sel} onChange={(e) => { setSel(e.target.value); setMigrate(0); }}>
             {clients.map((c) => (<option key={c.id} value={c.id}>{c.name} · {c.profile}</option>))}
           </select>
         </div>
       </div>
 
-      {/* 4 níveis do cliente selecionado */}
+      {/* 4 levels of the selected client */}
       <div className="grid g4 mt mb">
-        <div className="card"><h3><i className="ti ti-coin" />Risco produto</h3><div className="big" style={{ color: "var(--orange)" }}>{HPC22_RN}</div><div className="muted mt">HPC22 (o fundo). HPC11 = {HPC11_RN}.</div></div>
-        <div className="card"><h3><i className="ti ti-user-heart" />Tolerância do cliente</h3><div className="big">{tol}</div><div className="muted mt">Perfil {client.profile} · objetivo {objetivo}.</div></div>
-        <div className="card"><h3><i className="ti ti-file-certificate" />Mandato</h3><div className="big">{client.mandate}</div><div className="muted mt">Teto contratual da conta.</div></div>
+        <div className="card"><h3><i className="ti ti-coin" />Product risk</h3><div className="big" style={{ color: "var(--orange)" }}>{HPC22_RN}</div><div className="muted mt">HPC22 (the fund). HPC11 = {HPC11_RN}.</div></div>
+        <div className="card"><h3><i className="ti ti-user-heart" />Client tolerance</h3><div className="big">{tol}</div><div className="muted mt">{client.profile} profile · objective {objetivo}.</div></div>
+        <div className="card"><h3><i className="ti ti-file-certificate" />Mandate</h3><div className="big">{client.mandate}</div><div className="muted mt">Contractual ceiling for the account.</div></div>
         <div className="card" style={{ borderColor: gap > 0 ? "rgba(231,76,60,.3)" : "var(--line2)" }}>
-          <h3><i className="ti ti-wallet" />Risco portfólio</h3>
+          <h3><i className="ti ti-wallet" />Portfolio risk</h3>
           <div className={`big ${gap > 0 ? "r" : "g"}`}>{blended}</div>
           <div className="muted mt" style={{ color: gap > 0 ? "var(--red)" : "var(--green)" }}>
-            {gap > 0 ? `▲ +${gap} acima do mandato` : "✓ dentro do mandato"}
+            {gap > 0 ? `▲ +${gap} above the mandate` : "✓ within the mandate"}
           </div>
         </div>
       </div>
 
-      {/* Régua do cliente selecionado */}
+      {/* Selected client's ruler */}
       <div className="card mb">
-        <h3><i className="ti ti-scale" />{client.name} — na mesma régua</h3>
+        <h3><i className="ti ti-scale" />{client.name} — on the same ruler</h3>
         <div style={{ position: "relative", height: 72, margin: "8px 8px 0" }}>
           <div style={{ position: "absolute", top: 48, left: 0, right: 0, height: 9, borderRadius: 5, background: "linear-gradient(90deg,#2ECC71,#F39C12,#E74C3C)" }} />
           {markers.map((m, i) => (
@@ -125,35 +125,35 @@ export default function Risco() {
           ))}
         </div>
         <div className="legend" style={{ marginTop: 10 }}>
-          <i><b style={{ background: "#C9A02C" }} />Produto {HPC22_RN}</i>
-          <i><b style={{ background: "#EAF0F7" }} />Tolerância {tol}</i>
-          <i><b style={{ background: "#4A90D9" }} />Mandato {client.mandate}</i>
-          <i><b style={{ background: gap > 0 ? "#E74C3C" : "#2ECC71" }} />Portfólio {blended}</i>
+          <i><b style={{ background: "#C9A02C" }} />Product {HPC22_RN}</i>
+          <i><b style={{ background: "#EAF0F7" }} />Tolerance {tol}</i>
+          <i><b style={{ background: "#4A90D9" }} />Mandate {client.mandate}</i>
+          <i><b style={{ background: gap > 0 ? "#E74C3C" : "#2ECC71" }} />Portfolio {blended}</i>
         </div>
         <div className="flex mt" style={{ gap: 14 }}>
-          <span className="muted" style={{ minWidth: 210 }}>Simular: migrar {client.name} para o HPC22</span>
+          <span className="muted" style={{ minWidth: 210 }}>Simulate: migrate {client.name} to HPC22</span>
           <input type="range" min={0} max={100} value={migrate} onChange={(e) => setMigrate(+e.target.value)} style={{ flex: 1 }} />
           <span style={{ fontFamily: "var(--mono)", minWidth: 46, textAlign: "right" }}>{migrate}%</span>
         </div>
         <div className="muted mt">
           {gap > 0
-            ? `Migrando ${migrate}%, o risco do portfólio cai para ${blended} — ainda ${gap} acima do teto ${client.mandate}.`
-            : `Migrando ${migrate}%, o portfólio fica em ${blended} — dentro do mandato (≤ ${client.mandate}).`}
+            ? `Migrating ${migrate}%, the portfolio risk drops to ${blended} — still ${gap} above the ceiling of ${client.mandate}.`
+            : `Migrating ${migrate}%, the portfolio lands at ${blended} — within the mandate (≤ ${client.mandate}).`}
         </div>
       </div>
 
-      {/* Panorama de todos os clientes — distribuição em colunas */}
+      {/* Overview of all clients — column distribution */}
       <div className="card">
         <div className="flex between mb">
-          <h3 style={{ margin: 0 }}><i className="ti ti-users" />Todos os clientes na régua</h3>
-          <span className={`tag ${fora.length ? "r" : "g"}`}>{fora.length ? `${fora.length} fora do mandato` : "todos dentro"}</span>
+          <h3 style={{ margin: 0 }}><i className="ti ti-users" />All clients on the ruler</h3>
+          <span className={`tag ${fora.length ? "r" : "g"}`}>{fora.length ? `${fora.length} outside the mandate` : "all within"}</span>
         </div>
         <div style={{ overflowX: "auto" }}>
           <table>
             <thead><tr>
-              <th>Cliente</th><th>Perfil</th><th>Objetivo</th>
-              <th className="num">Portfólio</th><th className="num">Tolerância</th><th className="num">Mandato</th>
-              <th>Distribuição na régua</th><th>Alinhamento</th>
+              <th>Client</th><th>Profile</th><th>Objective</th>
+              <th className="num">Portfolio</th><th className="num">Tolerance</th><th className="num">Mandate</th>
+              <th>Ruler distribution</th><th>Alignment</th>
             </tr></thead>
             <tbody>
               {clients.map((c) => {
@@ -168,7 +168,7 @@ export default function Risco() {
                     <td className="num" style={{ color: "var(--tx2)" }}>{t}</td>
                     <td className="num" style={{ color: "var(--tx2)" }}>{c.mandate}</td>
                     <td><MiniRegua portfolio={c.riskNumber} tolerance={t} mandate={c.mandate} /></td>
-                    <td>{aligned ? <span className="tag g">dentro</span> : <span className="tag r">▲ +{c.riskNumber - c.mandate}</span>}</td>
+                    <td>{aligned ? <span className="tag g">within</span> : <span className="tag r">▲ +{c.riskNumber - c.mandate}</span>}</td>
                   </tr>
                 );
               })}
@@ -176,11 +176,11 @@ export default function Risco() {
           </table>
         </div>
         <div className="legend mt">
-          <i><b style={{ background: "#4A90D9" }} />Mandato (teto)</i>
-          <i><b style={{ background: "#EAF0F7" }} />Tolerância (perfil)</i>
-          <i><b style={{ background: "#E74C3C" }} />Portfólio fora</i>
-          <i><b style={{ background: "#2ECC71" }} />Portfólio dentro</i>
-          <span className="muted" style={{ marginLeft: "auto" }}>Clique numa linha para abrir o cliente na régua acima.</span>
+          <i><b style={{ background: "#4A90D9" }} />Mandate (ceiling)</i>
+          <i><b style={{ background: "#EAF0F7" }} />Tolerance (profile)</i>
+          <i><b style={{ background: "#E74C3C" }} />Portfolio outside</i>
+          <i><b style={{ background: "#2ECC71" }} />Portfolio within</i>
+          <span className="muted" style={{ marginLeft: "auto" }}>Click a row to open the client on the ruler above.</span>
         </div>
       </div>
 
@@ -188,7 +188,7 @@ export default function Risco() {
         <div style={{ display: "flex", gap: 8 }}>
           <i className="ti ti-info-circle" style={{ color: "var(--blue)", fontSize: 15, flexShrink: 0, marginTop: 2 }} />
           <div className="muted" style={{ fontSize: 10.5, lineHeight: 1.6 }}>
-            Portfólio = Número de Risco da carteira do cliente. Tolerância vem do perfil (questionário) e o mandato do contrato. Produto vem do motor interno. Escala calibrada ao S&amp;P 500 ≈ 27.
+            Portfolio = Risk Number of the client's holdings. Tolerance comes from the profile (questionnaire) and the mandate from the contract. Product comes from the internal engine. Scale calibrated to the S&amp;P 500 ≈ 72.
           </div>
         </div>
       </div>

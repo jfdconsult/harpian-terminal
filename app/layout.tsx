@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "HARPIAN ETP Terminal",
-  description: "Terminal do produto ETP — Harpian Capital",
+  description: "ETP product terminal — Harpian Capital",
 };
 
 export default function RootLayout({
@@ -12,7 +12,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="en-US">
       <head>
         <link
           rel="stylesheet"

@@ -10,8 +10,8 @@ function fmtUsd(v: number): string {
   return "$" + Math.round(v);
 }
 
-// Gráfico de crescimento em dólar (base $10.000), escala logarítmica — igual a peça
-// final da apresentação ("A Consequência"): acompanha o cliente escolhido vs S&P vs ETP.
+// Dollar growth chart (base $10,000), logarithmic scale — same as the final
+// piece of the presentation ("The Consequence"): tracks the chosen client vs S&P vs ETP.
 export default function GrowthChart({ series, height = 320 }: { series: GrowthSeries[]; height?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const tipRef = useRef<HTMLDivElement>(null);
