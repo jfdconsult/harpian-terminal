@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
-import { readFileSync, readdirSync } from "fs";
+import { readFileSync, readdirSync, existsSync } from "fs";
 import { join } from "path";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Output folder for overnight_run.py (HC-US IG system). Configurable via env.
+// Cloud source (harpian-overnight on Fly, refreshed daily 07h UTC by background scheduler).
+// Set to empty string to force local disk mode (dev on Windows).
+const CLOUD_URL =
+  process.env.HARPIAN_OVERNIGHT_URL ?? "https://harpian-overnight.fly.dev/api/snapshot";
+
+// Local fallback: only used when CLOUD_URL is empty or unreachable. Configurable via env.
 const SNAP_DIR =
   process.env.HARPIAN_SNAPSHOT_DIR ||
   "C:\\dev\\HARPIAN\\01_HOMOLOGADO\\_SISTEMA_HC-US_IG\\overnight\\output";
@@ -27,7 +32,8 @@ function mapRegime(raw: string): "BULL" | "CAUTELA" | "BEAR" | "NEUTRO" {
   return "NEUTRO";
 }
 
-function latestSnapshot(): { file: string; data: Record<string, unknown> } {
+function latestSnapshotLocal(): { file: string; data: Record<string, unknown> } {
+  if (!existsSync(SNAP_DIR)) throw new Error(`snapshot dir not found: ${SNAP_DIR}`);
   const files = readdirSync(SNAP_DIR).filter(
     (f) => f.startsWith("snapshot_") && f.endsWith(".json")
   );
@@ -38,10 +44,31 @@ function latestSnapshot(): { file: string; data: Record<string, unknown> } {
   return { file, data };
 }
 
+async function latestSnapshotCloud(): Promise<{ file: string; data: Record<string, unknown> }> {
+  const res = await fetch(CLOUD_URL, { cache: "no-store" });
+  if (!res.ok) throw new Error(`cloud snapshot HTTP ${res.status}`);
+  const data = (await res.json()) as Record<string, unknown>;
+  // /api/snapshot from harpian-overnight returns the raw JSON directly (same schema
+  // as snapshot_<STAMP>.json). "file" is unknown from here — synthesize a marker.
+  return { file: `cloud:${(data.as_of as string) || "unknown"}`, data };
+}
+
+async function latestSnapshot(): Promise<{ file: string; data: Record<string, unknown> }> {
+  if (CLOUD_URL) {
+    try {
+      return await latestSnapshotCloud();
+    } catch (e) {
+      // fall through to local disk only if the dir actually exists (dev on Windows)
+      if (!existsSync(SNAP_DIR)) throw e;
+    }
+  }
+  return latestSnapshotLocal();
+}
+
 // GET /api/snapshot → client-safe view of the latest overnight snapshot
 export async function GET() {
   try {
-    const { file, data } = latestSnapshot();
+    const { file, data } = await latestSnapshot();
 
     // ticker→name dictionary, built from what's already in the snapshot
     const nameOf: Record<string, string> = {};
