@@ -1,139 +1,115 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// ============================================================
-// ECONOMIC CALENDAR — real data (Investing.com)
-// ------------------------------------------------------------
-// Before, the calendar was a fixed array in Painel and ARI, with July
-// dates that had already passed still being shown as the "next event".
-//
-// Source: Investing.com's calendar AJAX endpoint, which returns the
-// upcoming weeks with name, date/time, importance, forecast, and previous.
-// Runs on the SERVER (the browser couldn't do it due to CORS) and has a
-// 1h in-memory cache — the calendar changes little and there's no point
-// hitting Investing on every screen load.
-//
-// If the source goes down or changes format, this route returns ok:false
-// and the screen shows "unavailable". Never falls back to a fabricated
-// calendar.
-// ============================================================
+// Proxies to hqp-api's /v1/calendar/economic — Nasdaq's public JSON,
+// cached on the backend. Replaces the old Investing.com scrape that
+// started returning 403 (Cloudflare fingerprinting) in mid-2026.
+const HQP_API = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_HQP_API_URL || "http://localhost:8080";
 
-const URL_INVESTING = "https://www.investing.com/economic-calendar/Service/getCalendarFilteredData";
-const COUNTRY_US = "5"; // US id on Investing
-const TTL_MS = 60 * 60 * 1000; // 1h
-
-export interface CalendarEvent {
-  datetime: string;      // ISO
-  date: string;          // "23/Jul"
-  time: string;          // "08:30 ET"
-  event: string;
-  importance: 1 | 2 | 3; // 3 = high (3 bulls on Investing)
-  forecast: string | null;
-  previous: string | null;
+interface HqpEconEvent {
+  date: string;
+  time_et: string | null;
+  country: string | null;
+  event: string | null;
   actual: string | null;
+  consensus: string | null;
+  previous: string | null;
+  description: string | null;
+  source_url: string | null;
 }
 
-let cache: { at: number; events: CalendarEvent[] } | null = null;
+// A tight allow-list — only what the desk actually cares about. Anything
+// else gets dropped in high-impact filtering.
+const HIGH_IMPACT_KEYWORDS = [
+  "cpi", "consumer price", "nonfarm", "payroll", "fomc",
+  "fed funds", "gdp", "ppi", "retail sales", "core pce", "pce price",
+  "unemployment", "ism", "adp", "jobless claims", "michigan sentiment",
+  "housing starts", "durable goods", "personal income", "personal spending",
+];
 
-function stripTags(s: string): string {
-  return s
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&#39;/g, "'")
-    .replace(/&quot;/g, '"')
-    .replace(/\s+/g, " ")
-    .trim();
+function isHighImpact(country: string | null, event: string | null): boolean {
+  const c = (country || "").toLowerCase();
+  const n = (event || "").toLowerCase();
+  if (!c.includes("united states") && c !== "us") return false;
+  return HIGH_IMPACT_KEYWORDS.some((k) => n.includes(k));
 }
 
-const MES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MES_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-async function fetchWeek(tab: "thisWeek" | "nextWeek"): Promise<CalendarEvent[]> {
-  const body = new URLSearchParams();
-  body.append("country[]", COUNTRY_US);
-  body.append("timeZone", "8"); // ET
-  body.append("timeFilter", "timeRemain");
-  body.append("currentTab", tab);
-  body.append("limit_from", "0");
-
-  const r = await fetch(URL_INVESTING, {
-    method: "POST",
-    headers: {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
-      "X-Requested-With": "XMLHttpRequest",
-      "Content-Type": "application/x-www-form-urlencoded",
-      "Referer": "https://www.investing.com/economic-calendar/",
-    },
-    body: body.toString(),
-    cache: "no-store",
+function decorate(events: HqpEconEvent[]) {
+  return events.map((e) => {
+    const [y, m, d] = e.date.split("-").map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    return {
+      datetime: `${e.date}T${(e.time_et || "00:00").padStart(5, "0")}:00`,
+      date: `${MES_SHORT[dt.getUTCMonth()]} ${String(dt.getUTCDate()).padStart(2, "0")}`,
+      date_iso: e.date,
+      time: e.time_et ? `${e.time_et} ET` : "",
+      event: e.event || "",
+      country: e.country || "",
+      importance: (isHighImpact(e.country, e.event) ? 3 : 1) as 1 | 2 | 3,
+      actual: e.actual,
+      forecast: e.consensus,
+      previous: e.previous,
+      source_url: e.source_url,
+    };
   });
-  if (!r.ok) throw new Error(`Investing HTTP ${r.status}`);
-
-  const json = (await r.json()) as { data?: string };
-  const html = json.data || "";
-
-  const rows = html.match(/<tr id="eventRowId_\d+"[\s\S]*?<\/tr>/g) || [];
-  const out: CalendarEvent[] = [];
-
-  for (const row of rows) {
-    const dtM = row.match(/data-event-datetime="([^"]+)"/);
-    if (!dtM) continue;
-    // "2026/07/23 08:30:00" → ISO
-    const iso = dtM[1].replace(/\//g, "-").replace(" ", "T");
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) continue;
-
-    const importance = Math.min(3, Math.max(1, (row.match(/grayFullBullishIcon/g) || []).length)) as 1 | 2 | 3;
-
-    const tds = row.match(/<td[^>]*>[\s\S]*?<\/td>/g) || [];
-    const v = tds.map(stripTags);
-    // [0]=time [1]=currency [2]=importance [3]=event [4]=actual [5]=forecast [6]=previous
-    const name = v[3] || "";
-    if (!name) continue;
-
-    out.push({
-      datetime: iso,
-      date: `${String(d.getDate()).padStart(2, "0")}/${MES[d.getMonth()]}`,
-      time: `${v[0] || "--:--"} ET`,
-      event: name,
-      importance,
-      actual: v[4] || null,
-      forecast: v[5] || null,
-      previous: v[6] || null,
-    });
-  }
-  return out;
 }
 
-export async function GET() {
-  if (cache && Date.now() - cache.at < TTL_MS) {
-    return NextResponse.json({ ok: true, cached: true, events: cache.events });
-  }
+// GET /api/calendar?days=7                 → upcoming next N days
+// GET /api/calendar?mode=latest&days=14    → past N days, only rows with `actual`
+export async function GET(req: NextRequest) {
+  const p = req.nextUrl.searchParams;
+  const mode = (p.get("mode") || "upcoming").toLowerCase();
+  const days = Math.max(1, Math.min(45, Number(p.get("days") || 7)));
+  const highOnly = p.get("high") !== "0"; // default: high-impact only
+  const country = (p.get("country") || "").trim().toUpperCase();
 
   try {
-    // This week + next: guarantees there's always a "next event" even
-    // on a Friday night.
-    const [wk1, wk2] = await Promise.all([fetchWeek("thisWeek"), fetchWeek("nextWeek")]);
-
-    const now = Date.now();
-    const events = [...wk1, ...wk2]
-      .filter((e) => new Date(e.datetime).getTime() >= now) // only what's still upcoming
-      .sort((a, b) => a.datetime.localeCompare(b.datetime));
-
-    if (!events.length) throw new Error("no future events returned");
-
-    cache = { at: Date.now(), events };
-    return NextResponse.json({ ok: true, cached: false, events });
-  } catch (e) {
-    // Source down / changed layout: return the old cache if it exists,
-    // otherwise assume we don't know. Never fabricates data.
-    if (cache) {
-      return NextResponse.json({ ok: true, stale: true, events: cache.events });
+    let raw: HqpEconEvent[] = [];
+    if (mode === "latest") {
+      const r = await fetch(`${HQP_API}/v1/calendar/economic/latest?days=${days}`, { cache: "no-store" });
+      const d = await r.json();
+      raw = d.ok ? d.events || [] : [];
+    } else {
+      // Iterate day-by-day upcoming (backend caches each day)
+      const isos: string[] = [];
+      const today = new Date();
+      for (let i = 0; i < days; i++) {
+        const dd = new Date(today);
+        dd.setUTCDate(today.getUTCDate() + i);
+        isos.push(dd.toISOString().slice(0, 10));
+      }
+      const daily = await Promise.all(
+        isos.map((iso) =>
+          fetch(`${HQP_API}/v1/calendar/economic?date=${iso}`, { cache: "no-store" })
+            .then((r) => r.json())
+            .then((d) => (d.ok ? (d.events as HqpEconEvent[]) || [] : []))
+            .catch(() => [])
+        )
+      );
+      raw = daily.flat();
     }
+
+    let events = decorate(raw);
+    if (highOnly) events = events.filter((e) => e.importance === 3);
+    if (country) {
+      const needle = country === "US" ? "united states" : country.toLowerCase();
+      events = events.filter((e) => (e.country || "").toLowerCase().includes(needle));
+    }
+
+    return NextResponse.json({
+      ok: true,
+      mode,
+      days,
+      country: country || null,
+      high_only: highOnly,
+      n: events.length,
+      events,
+    });
+  } catch (e) {
     return NextResponse.json({ ok: false, error: String(e), events: [] }, { status: 200 });
   }
 }

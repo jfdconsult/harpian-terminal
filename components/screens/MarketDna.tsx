@@ -405,7 +405,9 @@ export function RadarSvg({ layers, size = 280 }: { layers: IntelLayer[]; size?: 
   const n = layers.length;
   const big = size >= 340;
   const cx = size / 2, cy = size / 2;
-  const maxR = cx - (big ? 58 : 20);
+  // Extra padding around the radar so the vertex labels (now bigger, 11px vs. old 8px)
+  // don't clip the SVG viewport on the small dashboard widget.
+  const maxR = cx - (big ? 58 : 34);
   const angleStep = (2 * Math.PI) / n;
 
   const gridLevels = [20, 40, 60, 80, 100];
@@ -433,7 +435,7 @@ export function RadarSvg({ layers, size = 280 }: { layers: IntelLayer[]; size?: 
           <g key={l.key}>
             <line x1={cx} y1={cy} x2={ex} y2={ey} stroke="rgba(255,255,255,0.04)" strokeWidth={1} />
             <text x={lx} y={big ? ly - 5 : ly} textAnchor="middle" dominantBaseline="middle"
-              fill={l.color} fontSize={big ? 11 : 8} fontFamily="var(--mono)" fontWeight={700}>
+              fill={l.color} fontSize={big ? 12 : 11} fontFamily="var(--mono)" fontWeight={700}>
               {big ? l.label.toUpperCase() : l.label.substring(0, 6).toUpperCase()}
             </text>
             {big && (

@@ -55,3 +55,6 @@ C*dev*harpian-terminal-next/
 
 .vercel
 .env*.local
+
+# tooling outputs (not source)
+.gstack/

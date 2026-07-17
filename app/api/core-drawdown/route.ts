@@ -36,9 +36,23 @@ export async function GET(req: NextRequest) {
       }
       return out;
     };
+    // Nasdaq's aligned series may now include leading nulls (before the ETF/index started).
+    // Underwater is only meaningful once we have a peak — start counting from the first
+    // non-null value.
+    const underwaterNullable = (arr: (number | null)[]) => {
+      let peak: number | null = null;
+      const out: { time: number; value: number }[] = [];
+      for (let i = startIdx; i < arr.length; i++) {
+        const v = arr[i];
+        if (v == null) continue;
+        if (peak == null || v > peak) peak = v;
+        out.push({ time: t[i], value: +((v / peak - 1) * 100).toFixed(2) });
+      }
+      return out;
+    };
     const coreDD = underwater(core);
     const spxDD = underwater(spx);
-    const nasdaqDD = nasdaqFull ? underwater(nasdaqFull) : null;
+    const nasdaqDD = nasdaqFull ? underwaterNullable(nasdaqFull) : null;
     const maxCore = coreDD.length ? Math.min(...coreDD.map((d) => d.value)) : 0;
     const maxSpx = spxDD.length ? Math.min(...spxDD.map((d) => d.value)) : 0;
     const maxNasdaq = nasdaqDD && nasdaqDD.length ? Math.min(...nasdaqDD.map((d) => d.value)) : null;

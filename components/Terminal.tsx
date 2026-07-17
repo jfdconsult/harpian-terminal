@@ -10,6 +10,7 @@ import { I18nProvider } from "@/lib/i18n";
 import Painel from "./screens/Painel";
 import Fundo from "./screens/Fundo";
 import Cotacoes from "./screens/Cotacoes";
+import Calendar from "./screens/Calendar";
 import Acoes from "./screens/Acoes";
 import Regime from "./screens/Regime";
 import Xri from "./screens/Xri";
@@ -75,6 +76,7 @@ export default function Terminal() {
       case "painel": return <Painel go={go} />;
       case "fundo": return <Fundo fundId={fundId} onSelectFund={setFundId} go={go} />;
       case "cotacoes": return <Cotacoes go={go} />;
+      case "calendar": return <Calendar go={go} />;
       case "acoes": return <Acoes symbol={chartArg} />;
       case "mercado-visao": return <MercadoVisao go={go} />;
       case "regime": return <Regime go={go} />;

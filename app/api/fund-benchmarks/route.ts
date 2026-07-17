@@ -68,15 +68,30 @@ function crisisMetrics(t: number[], close: number[], anchorIdx: number, windowEn
   return { declinePct: +declinePct.toFixed(1), recoveryMonths: recoveryMonths != null ? +recoveryMonths.toFixed(1) : null };
 }
 
+// alignedNasdaq now returns (number|null)[] so the frontend can plot "nothing"
+// before the ETF/index existed; for metric analysis we compact to parallel
+// (t', close') arrays where both are defined.
+function compactPair(t: number[], vals: (number | null)[] | null): { t: number[]; c: number[] } | null {
+  if (!vals) return null;
+  const tt: number[] = [], cc: number[] = [];
+  for (let i = 0; i < vals.length; i++) {
+    const v = vals[i];
+    if (v == null) continue;
+    tt.push(t[i]);
+    cc.push(v);
+  }
+  return cc.length ? { t: tt, c: cc } : null;
+}
+
 export async function GET() {
   try {
     const { t, core, spx } = loadCore22Nav();
-    const nasdaq = await alignedNasdaq(t);
+    const nasdaq = compactPair(t, await alignedNasdaq(t));
 
     const full = {
       core: fullPeriodMetrics(t, core),
       spx: fullPeriodMetrics(t, spx),
-      nasdaq: nasdaq ? fullPeriodMetrics(t, nasdaq) : null,
+      nasdaq: nasdaq ? fullPeriodMetrics(nasdaq.t, nasdaq.c) : null,
     };
 
     const crises = CRISES.map((c) => {
@@ -84,12 +99,22 @@ export async function GET() {
       // S&P peak within the window = the anchor date for "when the market topped"
       let anchorIdx = ws;
       if (ws >= 0 && we > ws) for (let i = ws; i <= we; i++) if (spx[i] > spx[anchorIdx]) anchorIdx = i;
+      // Nasdaq lives on its own compacted axis; translate anchor/we to that axis via
+      // findWindow on the same ISO dates. It only kicks in for crises that overlap
+      // Nasdaq's coverage (dot-com and beyond, i.e. all of them for ^IXIC).
+      let nasdaqCrisis: CrisisResult | null = null;
+      if (nasdaq) {
+        const [nws, nwe] = findWindow(nasdaq.t, c.start, c.end);
+        let nAnchor = nws;
+        if (nws >= 0 && nwe > nws) for (let i = nws; i <= nwe; i++) if (nasdaq.c[i] > nasdaq.c[nAnchor]) nAnchor = i;
+        nasdaqCrisis = crisisMetrics(nasdaq.t, nasdaq.c, nAnchor, nwe);
+      }
       return {
         key: c.key,
         label: c.label,
         core: crisisMetrics(t, core, anchorIdx, we),
         spx: crisisMetrics(t, spx, anchorIdx, we),
-        nasdaq: nasdaq ? crisisMetrics(t, nasdaq, anchorIdx, we) : null,
+        nasdaq: nasdaqCrisis,
       };
     });
 

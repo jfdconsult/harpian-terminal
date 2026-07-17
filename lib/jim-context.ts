@@ -48,6 +48,11 @@ const SCREEN_MAP: Record<ScreenId, Omit<ScreenContext, "id">> = {
     description: "Curated news feed relevant to portfolio and market management. Source: JD NEWS.",
     dataAvailable: ["today's news", "market impact"],
   },
+  calendar: {
+    title: "Calendar",
+    description: "Combined economic-events + earnings calendar. Economic tab shows upcoming US macro releases (CPI, NFP, FOMC, GDP, PCE) with consensus/previous/actual. Earnings tab shows upcoming report dates for the advisor's favorited tickers, with the consensus EPS. Source: Nasdaq public data via the shared backend.",
+    dataAvailable: ["upcoming economic events", "upcoming earnings for favorites", "consensus", "previous", "actual"],
+  },
   risco: {
     title: "Risk Comparison · 4 Tiers",
     description: "Visual comparison across 4 risk tiers (Conservative, Moderate, Aggressive, Ultra) with metrics: CAGR, Sharpe, Sortino, Calmar, Maximum Drawdown, Risk Number.",
@@ -187,6 +192,7 @@ const SCREEN_SUGGESTIONS: Record<ScreenId, string[]> = {
   regime: ["Why is ARI in this regime?", "What does this change in portfolio posture?", "Should I be worried about defense?"],
   xri: ["Why is external risk at this level?", "Which country is driving the XRI?", "Does this change my clients' portfolios?"],
   noticias: ["What's the most relevant news right now?", "Does anything here affect my portfolio?", "Summarize the day for me."],
+  calendar: ["What's the highest-impact event this week?", "Any earnings that could move my portfolio?", "How did the last CPI print land vs. consensus?"],
   risco: ["Which tier fits my client?", "Compare Moderate and Aggressive for me.", "What does this Risk Number mean?"],
   clientes: ["Which client is out of mandate?", "Who has the largest AUM?", "Summarize the client base."],
   cliente: ["Is this client suited to their profile?", "What's their Risk Number?", "What should I suggest to them now?"],

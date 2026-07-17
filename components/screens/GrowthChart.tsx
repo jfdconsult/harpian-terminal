@@ -23,7 +23,9 @@ export default function GrowthChart({ series, height = 320 }: { series: GrowthSe
       layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: "#7d96b3", fontSize: 11 },
       grid: { vertLines: { color: "rgba(255,255,255,0.04)" }, horzLines: { color: "rgba(255,255,255,0.04)" } },
       rightPriceScale: { borderColor: "#16304f", mode: 1 /* Logarithmic */ },
-      timeScale: { borderColor: "#16304f", timeVisible: false },
+      // minBarSpacing 0.05 (default is 0.5) so 20+ years of daily data (~6.6k bars)
+      // fit end-to-end without silently cropping the oldest years.
+      timeScale: { borderColor: "#16304f", timeVisible: false, minBarSpacing: 0.05, rightOffset: 0 },
       crosshair: { mode: 0, vertLine: { color: "#C9A02C", style: LineStyle.Dashed }, horzLine: { color: "#C9A02C", style: LineStyle.Dashed } },
       width: ref.current.clientWidth, height,
     });
@@ -37,7 +39,9 @@ export default function GrowthChart({ series, height = 320 }: { series: GrowthSe
       l.setData(s.data as never);
       return { ...s, api: l };
     });
+    const maxLen = Math.max(...series.map((s) => s.data.length), 0);
     chart.timeScale().fitContent();
+    if (maxLen > 1) chart.timeScale().setVisibleLogicalRange({ from: 0, to: maxLen - 1 });
 
     chart.subscribeCrosshairMove((param) => {
       const tip = tipRef.current;

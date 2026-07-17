@@ -87,8 +87,11 @@ export default function Xri({ go }: { go?: (id: ScreenId, param?: string) => voi
         <div className="placeholder"><i className="ti ti-cloud-off" /><b>XRI unavailable right now</b></div>
       ) : (
         <>
+          {/* Row 1: gauge + narrative + country breakdown (same height). Country
+             breakdown was previously a separate card below, in a tiny font — moving
+             it up to the same row makes the JIM analysis start higher on the page. */}
           <div className="card" style={{ marginBottom: 8 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", gap: 24, alignItems: "center" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "220px 1fr 260px", gap: 24, alignItems: "start" }}>
               <XriGauge score={v.score || 0} state={v.state || "MODERADO"} />
               <div>
                 <div style={{ fontSize: 15, lineHeight: 1.6 }}>
@@ -104,18 +107,35 @@ export default function Xri({ go }: { go?: (id: ScreenId, param?: string) => voi
                   <div>Confidence in today's data: <b>{v.confidence_pct}%</b>.</div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <div className="card" style={{ marginBottom: 8 }}>
-            <h3><i className="ti ti-world" />Where today's risk is coming from</h3>
-            <div className="flex wrap" style={{ gap: 8 }}>
-              {(v.drivers || []).length ? v.drivers!.map((d) => (
-                <div key={d.country} className="pill g" style={{ borderColor: "var(--line2)", color: "var(--tx)" }}>
-                  <span className="pd" style={{ background: d.pct >= 40 ? "#E74C3C" : d.pct >= 20 ? "#F39C12" : "#2ECC71" }} />
-                  {d.country} <b style={{ fontFamily: "var(--mono)" }}>{d.pct}%</b>
+              <div>
+                <div style={{ fontSize: 11, letterSpacing: ".4px", color: "var(--gold)", marginBottom: 8, fontWeight: 700 }}>
+                  <i className="ti ti-world" style={{ marginRight: 6 }} />WHERE TODAY'S RISK IS COMING FROM
                 </div>
-              )) : <span className="muted">No relevant concentration in any country today.</span>}
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%" }}>
+                  {(v.drivers || []).length ? v.drivers!.map((d) => (
+                    <div key={d.country} style={{
+                      display: "grid",
+                      gridTemplateColumns: "16px 1fr auto",
+                      alignItems: "center",
+                      gap: 10,
+                      width: "100%",
+                      padding: "8px 12px",
+                      borderRadius: 6,
+                      border: "1px solid var(--line2)",
+                      background: "rgba(125,150,179,.06)",
+                      fontSize: 13,
+                    }}>
+                      <span style={{
+                        width: 8, height: 8, borderRadius: "50%",
+                        background: d.pct >= 40 ? "#E74C3C" : d.pct >= 20 ? "#F39C12" : "#2ECC71",
+                        justifySelf: "center",
+                      }} />
+                      <span style={{ textAlign: "left" }}>{d.country}</span>
+                      <b style={{ fontFamily: "var(--mono)", fontSize: 14, color: "var(--tx)", textAlign: "right" }}>{d.pct}%</b>
+                    </div>
+                  )) : <span className="muted" style={{ fontSize: 12 }}>No relevant concentration in any country today.</span>}
+                </div>
+              </div>
             </div>
           </div>
 

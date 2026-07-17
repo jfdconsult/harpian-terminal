@@ -476,7 +476,7 @@ function RiscoClienteWidgetBody({ go, config }: { go: (id: ScreenId, param?: str
           <div key={m.label} title={`${m.label} ${m.v}`} style={{ position: "absolute", top: 8, left: `${m.v}%`, transform: "translateX(-50%)", width: 3, height: 12, borderRadius: 2, background: m.color }} />
         ))}
       </div>
-      <div className="legend" style={{ fontSize: 9.5, marginTop: 2 }}>
+      <div className="legend" style={{ fontSize: 11.5, marginTop: 4, rowGap: 4 }}>
         <i><b style={{ background: "#C9A02C" }} />Product {HPC22_RN}</i>
         <i><b style={{ background: "#4A90D9" }} />Mandate {client.mandate}</i>
         <i><b style={{ background: "#EAF0F7" }} />Tolerance {tol}</i>
@@ -616,8 +616,8 @@ function SocialWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }
     <>
       {posts.map((p) => (
         <div className="kv" key={p.id}>
-          <span style={{ fontSize: 12.5, color: "var(--tx2)" }}>{p.author}{p.symbols?.[0] ? <span className="muted"> ${p.symbols[0]}</span> : null}</span>
-          <span style={{ fontSize: 10, fontWeight: 700, color: SENTIMENT_COLOR[p.sentiment] || "var(--tx3)" }}>{p.sentiment}</span>
+          <span style={{ fontSize: 13, color: "var(--tx2)" }}>{p.author}{p.symbols?.[0] ? <span className="muted"> ${p.symbols[0]}</span> : null}</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: SENTIMENT_COLOR[p.sentiment] || "var(--tx3)" }}>{p.sentiment}</span>
         </div>
       ))}
       <div className="mt"><button className="btn ghost" onClick={() => go("social-radar")}><i className="ti ti-arrow-right" />See Social Radar</button></div>
@@ -708,10 +708,24 @@ const CATALOG: Record<string, WidgetDef> = {
   alertas: {
     id: "alertas", title: "Alerts", icon: "ti-bell",
     render: (go) => {
-      const fora = CLIENTS.filter((c) => c.riskNumber > c.mandate);
+      // Rules, worst-first, so the widget shows SOMETHING useful even when
+      // no one is outside mandate (previous version rendered blank).
+      const outside = CLIENTS.filter((c) => c.riskNumber > c.mandate);
+      const nearMandate = CLIENTS
+        .filter((c) => c.riskNumber <= c.mandate && c.mandate - c.riskNumber <= 8)
+        .sort((a, b) => (a.mandate - a.riskNumber) - (b.mandate - b.riskNumber));
+      const items: { key: string; tag: string; tone: "r" | "a" | "g"; text: string }[] = [];
+      outside.slice(0, 3).forEach((c) => items.push({ key: `o-${c.id}`, tag: "outside", tone: "r", text: `${c.name} · RN ${c.riskNumber} vs mandate ${c.mandate}` }));
+      nearMandate.slice(0, 3 - items.length).forEach((c) => items.push({ key: `n-${c.id}`, tag: "watch", tone: "a", text: `${c.name} · RN ${c.riskNumber} · ${c.mandate - c.riskNumber} pt below mandate ${c.mandate}` }));
       return (
         <>
-          {fora.slice(0, 3).map((c) => (<div className="kv" key={c.id}><span style={{ fontSize: 12.5 }}><span className="tag r">risk</span> {c.name}</span></div>))}
+          {items.length ? items.map((it) => (
+            <div className="kv" key={it.key}>
+              <span style={{ fontSize: 12.5 }}><span className={`tag ${it.tone}`}>{it.tag}</span> {it.text}</span>
+            </div>
+          )) : (
+            <div className="muted" style={{ padding: "10px 0", fontSize: 12.5 }}>All clients within mandate · nothing to flag right now.</div>
+          )}
           <div className="mt"><button className="btn ghost" onClick={() => go("alertas")}><i className="ti ti-arrow-right" />See alerts</button></div>
         </>
       );

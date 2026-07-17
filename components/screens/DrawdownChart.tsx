@@ -16,7 +16,12 @@ export default function DrawdownChart({ series, height = 300 }: { series: DDSeri
       layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: "#7d96b3", fontSize: 11 },
       grid: { vertLines: { color: "rgba(255,255,255,0.04)" }, horzLines: { color: "rgba(255,255,255,0.04)" } },
       rightPriceScale: { borderColor: "#16304f" },
-      timeScale: { borderColor: "#16304f", timeVisible: false },
+      // minBarSpacing < default (0.5) so ~26 years of daily data (~6.6k bars) fits without
+      // silently cropping the oldest years. Without this, "Since 2000" was hiding the entire
+      // 2000-2012 window on wide screens, so the S&P's -56% (2009) and Nasdaq's -66% (2002)
+      // never appeared — the client saw only the post-2013 slice where CORE22+ visually
+      // looks worse than the benchmarks. rightOffset: 0 removes the empty future gutter.
+      timeScale: { borderColor: "#16304f", timeVisible: false, minBarSpacing: 0.05, rightOffset: 0 },
       crosshair: { mode: 0, vertLine: { color: "#C9A02C", style: LineStyle.Dashed }, horzLine: { color: "#C9A02C", style: LineStyle.Dashed } },
       width: ref.current.clientWidth, height,
     });
@@ -36,7 +41,14 @@ export default function DrawdownChart({ series, height = 300 }: { series: DDSeri
       l.setData(s.data as never);
       return { ...s, api: l };
     });
+    // Belt-and-suspenders: fitContent + explicit logical range covering every bar. Either
+    // one alone can under-fill when there are thousands of points; together they guarantee
+    // the oldest date is rendered.
+    const maxLen = Math.max(...series.map((s) => s.data.length), 0);
     chart.timeScale().fitContent();
+    if (maxLen > 1) {
+      chart.timeScale().setVisibleLogicalRange({ from: 0, to: maxLen - 1 });
+    }
 
     chart.subscribeCrosshairMove((param) => {
       const tip = tipRef.current;

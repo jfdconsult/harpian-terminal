@@ -5,6 +5,7 @@ export type ScreenId =
   | "painel"
   | "fundo"
   | "cotacoes"
+  | "calendar"
   | "mercado-visao"
   | "risco"
   | "clientes"
@@ -108,6 +109,7 @@ export const MENUS: Menu[] = [
           { id: "xri", label: "External Regime Index (XRI)", icon: "ti-world-exclamation" },
           { id: "market-dna", label: "Market DNA", icon: "ti-dna-2" },
           { id: "snowflake", label: "Snowflake", icon: "ti-snowflake" },
+          { id: "calendar", label: "Calendar", icon: "ti-calendar-event", tag: "new" },
           { id: "cotacoes", label: "Quotes", icon: "ti-table" },
           { id: "screener", label: "Screener", icon: "ti-filter" },
         ],
