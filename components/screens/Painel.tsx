@@ -10,7 +10,7 @@ import { GOV_API } from "@/lib/data";
 import { fetchNews, fetchSocialTrending, IMPACT_COLOR, SENTIMENT_COLOR, type NewsHeadline, type SocialPost } from "@/lib/feeds";
 import { RadarSvg, buildLayersFromApi, regimeLabel, type IntelLayer } from "./MarketDna";
 import RegimeGauge from "../RegimeGauge";
-import { fetchSnapshot, type RegimeState } from "@/lib/snapshot";
+import { fetchSnapshot, type RegimeState, type Snapshot } from "@/lib/snapshot";
 import { fetchCalendar, type CalendarResp } from "@/lib/calendar";
 import { type DnaRaw } from "@/lib/jim-market-analysis";
 import { CLIENTS, brl } from "@/lib/clients";
@@ -33,7 +33,24 @@ import { MiniRegua } from "./Risco";
 interface BriefingSection { title: string; icon: string; color: string; screenId?: ScreenId; items: BriefingItem[] }
 interface BriefingItem { label: string; value: string; color?: string; detail?: string }
 
-function generateBriefingSections(dna: DnaRaw | null, cal: CalendarResp | null): BriefingSection[] {
+// Live regime → label + color + narrative for the Regime & Defense card.
+// Kept confidentiality-safe: only names and directional labels, no CRS/thresholds.
+const REGIME_VIEW: Record<RegimeState, { label: string; color: string; detail: string; defenseLabel: string; defenseColor: string; defenseDetail: string }> = {
+  BULL:    { label: "RISK-ON",  color: "var(--green)", detail: "Sustained trend — favorable environment for risk",
+             defenseLabel: "Disarmed", defenseColor: "var(--tx2)", defenseDetail: "Full risk exposure — no rotation to protection" },
+  CAUTELA: { label: "CAUTION",  color: "var(--gold)",  detail: "Adverse environment — active defense in place",
+             defenseLabel: "Active",   defenseColor: "var(--gold)", defenseDetail: "Defensive rotation engaged — reduced exposure" },
+  NEUTRO:  { label: "NEUTRAL",  color: "var(--tx2)",   detail: "Mixed signals — neither trend nor stress dominates",
+             defenseLabel: "Monitoring", defenseColor: "var(--tx2)", defenseDetail: "No defensive rotation — watching for direction" },
+  BEAR:    { label: "RISK-OFF", color: "var(--red)",   detail: "Broad stress — full defense mandate",
+             defenseLabel: "Active",   defenseColor: "var(--red)",  defenseDetail: "Defensive rotation engaged — maximum protection" },
+};
+
+function generateBriefingSections(
+  dna: DnaRaw | null,
+  cal: CalendarResp | null,
+  snap: Snapshot | null,
+): BriefingSection[] {
   const sections: BriefingSection[] = [];
 
   // 1) PORTFOLIO STATUS
@@ -46,13 +63,28 @@ function generateBriefingSections(dna: DnaRaw | null, cal: CalendarResp | null):
     ],
   });
 
-  // 2) REGIME & DEFENSE
+  // 2) REGIME & DEFENSE — real values from /api/snapshot (overnight cloud)
+  const regimeState = snap?.regime?.state ?? null;
+  const view = regimeState ? REGIME_VIEW[regimeState] : null;
+  const defenseLabelFromSnap = snap?.defense?.label?.trim();
+
   sections.push({
-    title: "Regime & Defense", icon: "ti-shield-check", color: "var(--green)", screenId: "regime" as ScreenId,
+    title: "Regime & Defense", icon: "ti-shield-check", color: view?.color ?? "var(--tx2)", screenId: "regime" as ScreenId,
     items: [
-      { label: "Current regime", value: "RISK-ON", color: "var(--green)", detail: "StormGuard positive — sustained trend" },
-      { label: "Defense", value: "Disarmed", color: "var(--tx2)", detail: "Full risk exposure — no rotation to protection" },
-      { label: "Recent change?", value: "No", detail: "Regime stable for 14 consecutive days" },
+      view
+        ? { label: "Current regime", value: view.label, color: view.color, detail: view.detail }
+        : { label: "Current regime", value: "unavailable", color: "var(--tx2)", detail: "Overnight feed not yet updated" },
+      view
+        ? {
+            label: "Defense",
+            value: defenseLabelFromSnap && regimeState !== "BULL" ? defenseLabelFromSnap : view.defenseLabel,
+            color: view.defenseColor,
+            detail: view.defenseDetail,
+          }
+        : { label: "Defense", value: "unavailable", color: "var(--tx2)", detail: "Waiting for overnight snapshot" },
+      snap?.as_of
+        ? { label: "As of", value: snap.as_of, detail: `Source: ${snap.source_file ?? "overnight"}` }
+        : { label: "As of", value: "unknown", detail: "No timestamp on snapshot" },
     ],
   });
 
@@ -208,7 +240,7 @@ function generateHeadline(dna: DnaRaw | null, regime: RegimeState | null): { tex
 function JimMorningBriefing({ go }: { go: (id: ScreenId, param?: string) => void }) {
   const [dna, setDna] = useState<DnaRaw | null>(null);
   const [cal, setCal] = useState<CalendarResp | null>(null);
-  const [regime, setRegime] = useState<RegimeState | null>(null);
+  const [snap, setSnap] = useState<Snapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(true);
 
@@ -218,10 +250,11 @@ function JimMorningBriefing({ go }: { go: (id: ScreenId, param?: string) => void
       .then((d: DnaRaw) => { setDna(d); setLoading(false); })
       .catch(() => setLoading(false));
     fetchCalendar().then(setCal).catch(() => setCal({ ok: false, events: [] }));
-    fetchSnapshot().then((s) => { if (s.ok && s.regime) setRegime(s.regime.state); }).catch(() => {});
+    fetchSnapshot().then((s) => setSnap(s)).catch(() => setSnap({ ok: false, offline: true }));
   }, []);
 
-  const sections = generateBriefingSections(dna, cal);
+  const regime = snap?.ok && snap.regime ? snap.regime.state : null;
+  const sections = generateBriefingSections(dna, cal, snap);
   const headline = generateHeadline(dna, regime);
   const now = new Date();
   const hora = now.getHours();
