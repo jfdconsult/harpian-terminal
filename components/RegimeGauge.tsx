@@ -7,23 +7,41 @@
 // must match the regime state strings returned by the server — only
 // the rendered labels are translated via DISPLAY_LABEL below.
 // ============================================================
+// STATE_MAP aceita AMBAS taxonomias:
+//   - Backend keys (PT): CAUTELA / NEUTRO / BULL / BEAR (RegimeState do lib/snapshot)
+//   - Display labels (EN): CAUTION / NEUTRAL / RISK-ON / RISK-OFF
+// Antes eram só as EN mais CAUTELA/NEUTRO em PT, o que fazia CAUTION/NEUTRAL
+// caírem no fallback NEUTRO — ponteiro na zona errada + cor azul.
 const STATE_MAP: Record<string, [number, string]> = {
+  // Zona 1 — vermelha (RISK-OFF)
   "RISK-OFF": [0.13, "#E74C3C"],
-  CAUTELA: [0.38, "#F39C12"],
-  NEUTRO: [0.62, "#4A90D9"],
+  BEAR:      [0.13, "#E74C3C"],
+  // Zona 2 — laranja (CAUTION)
+  CAUTELA:   [0.38, "#F39C12"],
+  CAUTION:   [0.38, "#F39C12"],
+  // Zona 3 — azul (NEUTRAL)
+  NEUTRO:    [0.62, "#4A90D9"],
+  NEUTRAL:   [0.62, "#4A90D9"],
+  // Zona 4 — verde (RISK-ON)
   "RISK-ON": [0.88, "#2ECC71"],
+  BULL:      [0.88, "#2ECC71"],
 };
 
 const DISPLAY_LABEL: Record<string, string> = {
   "RISK-OFF": "RISK-OFF",
+  BEAR: "RISK-OFF",
   CAUTELA: "CAUTION",
+  CAUTION: "CAUTION",
   NEUTRO: "NEUTRAL",
+  NEUTRAL: "NEUTRAL",
   "RISK-ON": "RISK-ON",
+  BULL: "RISK-ON",
 };
 
 export default function RegimeGauge({ state, sub }: { state: string; sub?: string }) {
-  const [frac, col] = STATE_MAP[state] || STATE_MAP["NEUTRO"];
-  const label = DISPLAY_LABEL[state] || state;
+  const key = (state || "").toUpperCase();
+  const [frac, col] = STATE_MAP[key] || STATE_MAP["NEUTRO"];
+  const label = DISPLAY_LABEL[key] || state;
   const ang = ((180 - frac * 180) * Math.PI) / 180;
   const L = 118;
   const nx = 200 + L * Math.cos(ang);
