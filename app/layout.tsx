@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import MobileHint from "@/components/MobileHint";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,7 +20,10 @@ export default function RootLayout({
           href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <MobileHint />
+        {children}
+      </body>
     </html>
   );
 }

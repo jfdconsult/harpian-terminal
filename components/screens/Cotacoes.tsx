@@ -76,7 +76,7 @@ export default function Cotacoes({ go }: { go?: (id: ScreenId, param?: string) =
 
   return (
     <div className="screen">
-      <div className="crumb">Market › <b>Quotes{tab === FAV ? " · Favorites" : ` · ${tab}`}</b><BackToVisao go={go} /></div>
+      <div className="crumb"><BackToVisao go={go} /></div>
       <div className="flex between wrap">
         <div><div className="h1">Quotes</div><div className="sub">Stocks, indices, ETFs, sectors, commodities, crypto, and FX — live from Yahoo. Click an asset for the chart · ★ marks a favorite.</div></div>
         <div className="eodlabel"><i className="ti ti-clock" />Yahoo Finance · close (EOD)</div>

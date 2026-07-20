@@ -162,3 +162,47 @@ export const MENUS: Menu[] = [
   },
   { label: "Tutorial", icon: "ti-help-circle", direct: "tutorial" },
 ];
+
+// Screen → top-menu mapping. Used by Topbar to highlight the active menu in gold
+// so the header doesn't need to repeat the section name in a breadcrumb below.
+// Some screens live under multiple menus (e.g. `carteira` in Clients + Risk);
+// this table encodes the PRIMARY home for each screen.
+const SCREEN_TO_MENU: Record<ScreenId, string> = {
+  painel: "Dashboard",
+  fundo: "Funds",
+  ordem: "Funds",
+  clientes: "Clients",
+  cliente: "Clients",
+  carteira: "Clients",
+  importar: "Clients",
+  alertas: "Clients",
+  "portfolio-detalhe": "Clients",
+  "mercado-visao": "Market",
+  regime: "Market",
+  xri: "Market",
+  "market-dna": "Market",
+  snowflake: "Market",
+  calendar: "Market",
+  cotacoes: "Market",
+  screener: "Market",
+  acoes: "Market",
+  noticias: "Intelligence",
+  "social-radar": "Intelligence",
+  "news-broadcast": "Intelligence",
+  "insider-orders": "Intelligence",
+  institutional: "Intelligence",
+  "cot-sentiment": "Intelligence",
+  "cot-legacy": "Intelligence",
+  "filings-search": "Intelligence",
+  risco: "Risk",
+  "cliente-risco": "Risk",
+  integracoes: "Settings",
+  api: "Settings",
+  marca: "Settings",
+  config: "Settings",
+  tutorial: "Tutorial",
+};
+
+export function activeMenuFor(screen: ScreenId): string {
+  return SCREEN_TO_MENU[screen] || "Dashboard";
+}

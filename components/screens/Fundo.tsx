@@ -6,16 +6,20 @@ import { allClients } from "@/lib/clientStore";
 import { publishScreenData } from "@/lib/jim-data";
 import type { ScreenId } from "@/lib/nav";
 import RiskJourney from "./RiskJourney";
-import ComposicaoAoVivo from "./ComposicaoAoVivo";
+import ComposicaoSnapshot5W from "./ComposicaoSnapshot5W";
+import TheVault from "./TheVault";
 import GrowthChart, { type GrowthSeries } from "./GrowthChart";
 
-type Tab = "visao" | "comp" | "perf" | "risco" | "defesa" | "econ" | "comprar";
+type Tab = "visao" | "vault" | "perf" | "risco" | "defesa" | "comp" | "econ" | "comprar";
+// Nova ordem (VOP-first): The Vault vira o default. "Live Composition" saiu do slot 2
+// e virou "Composition · 5w snapshot" no final, com delay de 35 dias.
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "visao", label: "Overview", icon: "ti-eye" },
-  { id: "comp", label: "Live Composition", icon: "ti-layout-grid" },
+  { id: "vault", label: "The Vault", icon: "ti-shield-lock" },
   { id: "perf", label: "Performance", icon: "ti-chart-line" },
   { id: "risco", label: "Risk & Journey", icon: "ti-activity" },
   { id: "defesa", label: "Crisis Defense", icon: "ti-shield" },
+  { id: "comp", label: "Composition · 5w", icon: "ti-layout-grid" },
   { id: "econ", label: "Economics & Architecture", icon: "ti-building-bank" },
   { id: "comprar", label: "How to Buy", icon: "ti-send" },
 ];
@@ -53,6 +57,18 @@ interface Benchmarks {
   crises: CrisisRow2[];
   nasdaqAvailable: boolean;
   note: string;
+}
+
+// Next Monday 06:00 BRT (09:00 UTC), formatted pt-BR — mirrors the server's
+// rotation schedule for the Vault tab chip. Client-side compute (deterministic).
+function nextMondayBrtLabel(): string {
+  const now = new Date();
+  const day = now.getUTCDay();
+  const daysUntilMon = day === 1 && now.getUTCHours() < 9 ? 0 : (8 - day) % 7 || 7;
+  const d = new Date(now);
+  d.setUTCDate(d.getUTCDate() + daysUntilMon);
+  d.setUTCHours(9, 0, 0, 0);
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }) + " 06:00 BRT";
 }
 
 const pct = (v: number | null) => v == null ? "—" : (v >= 0 ? "+" : "") + v.toFixed(1) + "%";
@@ -230,7 +246,7 @@ function PortfolioGrowthCard() {
 }
 
 export default function Fundo({ fundId, onSelectFund, go }: { fundId: string; onSelectFund: (id: string) => void; go: (id: ScreenId) => void }) {
-  const [tab, setTab] = useState<Tab>("visao");
+  const [tab, setTab] = useState<Tab>("vault");
   const fund: Fund = FUNDS[fundId] || FUNDS.HPC22;
   const [bench, setBench] = useState<Benchmarks | null>(null);
 
@@ -246,7 +262,7 @@ export default function Fundo({ fundId, onSelectFund, go }: { fundId: string; on
   // sub-component (ComposicaoAoVivo/RiskJourney) that already publishes the more specific
   // context for that tab; if this effect also ran there, it would overwrite the richer snapshot.
   useEffect(() => {
-    if (tab === "comp" || tab === "risco") return;
+    if (tab === "comp" || tab === "risco" || tab === "vault") return;
     const destaques = fund.highlights.map((h) => `${h.label}: ${h.value}`).join("; ");
     const nasdaqLine = bench?.full.nasdaq
       ? ` Comparison with Nasdaq (calculated, real data): CAGR ${pct(bench.full.nasdaq.cagrPct)}, max drawdown ${pct(bench.full.nasdaq.maxDrawdownPct)}, Sortino ${num2(bench.full.nasdaq.sortino)}.`
@@ -277,8 +293,6 @@ export default function Fundo({ fundId, onSelectFund, go }: { fundId: string; on
 
   return (
     <div className="screen">
-      <div className="crumb">Funds › <b>{fund.ticker}</b></div>
-
       {/* Fund header */}
       <div className="fhhead">
         <div>
@@ -310,12 +324,24 @@ export default function Fundo({ fundId, onSelectFund, go }: { fundId: string; on
       )}
 
       {/* Tabs */}
-      <div className="tabs">
+      <div className="tabs" style={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>
         {TABS.map((t) => (
           <div key={t.id} className={`tab${tab === t.id ? " on" : ""}`} onClick={() => setTab(t.id)}>
             <i className={`ti ${t.icon}`} />{t.label}
           </div>
         ))}
+        {tab === "vault" && (
+          <div style={{
+            marginLeft: "auto",
+            display: "inline-flex", alignItems: "center", gap: 8,
+            padding: "5px 12px", borderRadius: 999,
+            background: "var(--panel2)", border: "1px solid var(--line2)",
+            fontSize: 11, color: "var(--tx3)",
+          }}>
+            <i className="ti ti-refresh" style={{ color: "var(--gold)", fontSize: 12 }} />
+            Next rotation · <b style={{ color: "var(--tx)" }}>{nextMondayBrtLabel()}</b>
+          </div>
+        )}
       </div>
 
       {/* ===== OVERVIEW ===== */}
@@ -363,37 +389,55 @@ export default function Fundo({ fundId, onSelectFund, go }: { fundId: string; on
         </>
       )}
 
-      {/* ===== LIVE COMPOSITION ===== */}
-      {tab === "comp" && <ComposicaoAoVivo />}
+      {/* ===== COMPOSITION SNAPSHOT · 5-WEEK DELAY ===== */}
+      {tab === "comp" && <ComposicaoSnapshot5W />}
+
+      {/* ===== THE VAULT (Verified Opacity Protocol) ===== */}
+      {tab === "vault" && <TheVault />}
 
       {/* ===== PERFORMANCE ===== */}
       {tab === "perf" && (
-        <div className="card">
-          <h3><i className="ti ti-chart-line" />Performance · gross vs net of fees</h3>
-          <table>
-            <thead><tr><th>Metric</th><th className="num">Gross</th><th className="num">Net</th><th className="num">S&P 500 TR</th></tr></thead>
-            <tbody>
-              {fund.performance.map((r, i) => (
-                <tr key={i}>
-                  <td style={{ color: "var(--tx)" }}>{r.metric}</td>
-                  <td className="num" style={{ color: "var(--tx2)" }}>{r.gross}</td>
-                  <td className="num" style={{ color: "var(--gold)", fontWeight: 600 }}>{r.net}</td>
-                  <td className="num" style={{ color: "var(--tx3)" }}>{r.spx}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="muted mt" style={{ lineHeight: 1.6 }}>{fund.perfNote}</div>
-          {bench && <BenchmarkPerf b={bench} />}
-          {bench && <PortfolioGrowthCard />}
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14, alignItems: "start" }}>
+          {/* LEFT · 2/3 — dollar-growth chart (client vs S&P vs CORE22+) */}
+          <div style={{ minWidth: 0 }}>
+            {bench ? <PortfolioGrowthCard /> : (
+              <div className="card"><div className="placeholder"><i className="ti ti-chart-line" /><b>Loading growth chart…</b></div></div>
+            )}
+          </div>
+          {/* RIGHT · 1/3 — perf table + benchmark stacked */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
+            <div className="card">
+              <h3><i className="ti ti-chart-line" />Performance · gross vs net</h3>
+              <table>
+                <thead><tr><th>Metric</th><th className="num">Gross</th><th className="num">Net</th><th className="num">S&P TR</th></tr></thead>
+                <tbody>
+                  {fund.performance.map((r, i) => (
+                    <tr key={i}>
+                      <td style={{ color: "var(--tx)" }}>{r.metric}</td>
+                      <td className="num" style={{ color: "var(--tx2)" }}>{r.gross}</td>
+                      <td className="num" style={{ color: "var(--gold)", fontWeight: 600 }}>{r.net}</td>
+                      <td className="num" style={{ color: "var(--tx3)" }}>{r.spx}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="muted mt" style={{ lineHeight: 1.6, fontSize: 11 }}>{fund.perfNote}</div>
+            </div>
+            {bench && <BenchmarkPerf b={bench} />}
+          </div>
         </div>
       )}
 
       {/* ===== RISK & JOURNEY ===== */}
       {tab === "risco" && (
         fund.journeyRisk.length === 0 ? <Empty label="Risk analysis for HPC11" /> : (
-          <>
-            <div className="grid g2 mb">
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14, alignItems: "start" }}>
+            {/* LEFT · 2/3 — journey chart with defense overlay */}
+            <div style={{ minWidth: 0 }}>
+              <RiskJourney />
+            </div>
+            {/* RIGHT · 1/3 — two tables stacked (Dimension 1 & 2) */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
               <div className="card">
                 <h3><i className="ti ti-clock" />Dimension 1 · journey risk</h3>
                 <div className="muted mb">Declines ≥ 5% (1990–2025)</div>
@@ -420,8 +464,7 @@ export default function Fundo({ fundId, onSelectFund, go }: { fundId: string; on
                 <div className="muted mt" style={{ lineHeight: 1.6 }}>{fund.endpointNote}</div>
               </div>
             </div>
-            <RiskJourney />
-          </>
+          </div>
         )
       )}
 

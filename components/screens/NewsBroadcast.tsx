@@ -59,9 +59,10 @@ export default function NewsBroadcast() {
 
   return (
     <div className="screen">
-      <div className="crumb">Intelligence › <b>News Broadcast</b></div>
-      <div className="h1">News Broadcast</div>
-      <div className="sub">Live consolidated feed · free financial RSS (CNBC · MarketWatch · Yahoo).</div>
+      <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
+        <div className="h1" style={{ margin: 0 }}>News Broadcast</div>
+        <div className="sub" style={{ margin: 0 }}>Live consolidated feed · free financial RSS (CNBC · MarketWatch · Yahoo).</div>
+      </div>
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "14px 0", alignItems: "center" }}>
         <span className="flabel">Source:</span>

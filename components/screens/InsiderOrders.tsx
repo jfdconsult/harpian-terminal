@@ -89,15 +89,14 @@ export default function InsiderOrders({ go }: { go?: (id: ScreenId, param?: stri
 
   return (
     <div className="screen">
-      <div className="crumb">Intelligence › <b>Insider Orders</b><BackToVisao go={go} /></div>
-      <div className="flex between wrap" style={{ alignItems: "flex-start" }}>
-        <div>
-          <div className="h1">Insider &amp; Executive Orders</div>
-          <div className="sub">
-            SEC Form 4 · buys and sells by officers, executives, and 10%+ shareholders — straight from EDGAR.
-            Click a row to open the original filing.
+      <div className="flex between wrap" style={{ alignItems: "flex-start", gap: 10 }}>
+        <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap", flex: 1 }}>
+          <div className="h1" style={{ margin: 0 }}>Insider &amp; Executive Orders</div>
+          <div className="sub" style={{ margin: 0 }}>
+            SEC Form 4 · buys/sells by officers, executives, and 10%+ shareholders — straight from EDGAR. Click a row for the filing.
           </div>
         </div>
+        <BackToVisao go={go} />
         {data?.collected_at && (
           <div className="eodlabel"><i className="ti ti-clock" />
             {data.source || "SEC EDGAR"} · collected {new Date(data.collected_at).toLocaleString("en-US")}

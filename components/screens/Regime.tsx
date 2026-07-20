@@ -163,24 +163,17 @@ export default function Regime({ go }: { go?: (id: ScreenId, param?: string) => 
 
   return (
     <div className="screen">
-      <div className="crumb">Market › <b>ARI · American Regime Index</b><BackToVisao go={go} /></div>
-
-      {/* Header */}
-      <div className="flex between" style={{ alignItems: "center", marginBottom: 8 }}>
-        <div className="flex" style={{ alignItems: "baseline", gap: 14 }}>
+      {/* Header — title + subtitle + Back button all on one line to reclaim vertical space.
+          Regime pill was moved down into the metric strip. */}
+      <div className="flex between" style={{ alignItems: "baseline", gap: 14, marginBottom: 8, flexWrap: "wrap" }}>
+        <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
           <div className="flex" style={{ alignItems: "baseline", gap: 8 }}>
             <div className="h1" style={{ margin: 0 }}>Market</div>
             <span className="tag b" style={{ fontFamily: "var(--mono)", fontWeight: 700, fontSize: 11 }} title="American Regime Index — domestic counterpart to XRI (External Risk)">ARI</span>
           </div>
           <span className="muted" style={{ fontSize: 10 }}>S&P 500 + regime + intelligence{asOf && <> · {asOf}</>}</span>
         </div>
-        <div style={{
-          display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px",
-          borderRadius: 6, border: `1px solid ${regColor}40`, background: `${regColor}15`,
-        }}>
-          <div style={{ width: 8, height: 8, borderRadius: "50%", background: regColor, boxShadow: `0 0 6px ${regColor}60` }} />
-          <span style={{ fontFamily: "var(--mono)", fontSize: 12, fontWeight: 700, color: regColor }}>{REGIME_LABEL[regime]}</span>
-        </div>
+        <BackToVisao go={go} />
       </div>
 
       {/* Top strip: 4 metric cards + JIM, same height */}
@@ -203,6 +196,17 @@ export default function Regime({ go }: { go?: (id: ScreenId, param?: string) => 
           <div className="muted" style={{ fontSize: 10 }}>Max DD · Sharpe</div>
           <div className="big r" style={{ fontSize: 22 }}>{pctText(asset?.maxDD)}</div>
           <div className="muted" style={{ fontSize: 10 }}>Sharpe {num(asset?.sharpe, 2)}</div>
+        </div>
+        <div className="card" style={{
+          padding: "10px 14px", minWidth: 0,
+          borderLeft: `3px solid ${regColor}`,
+        }}>
+          <div className="muted" style={{ fontSize: 10 }}>Regime</div>
+          <div className="big" style={{ fontSize: 16, color: regColor, fontFamily: "var(--mono)", letterSpacing: 0.5 }}>{REGIME_LABEL[regime]}</div>
+          <div className="muted" style={{ fontSize: 10, display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: regColor, boxShadow: `0 0 6px ${regColor}60` }} />
+            ARI · live
+          </div>
         </div>
 
         {/* JIM ao lado dos cards, mesma altura */}

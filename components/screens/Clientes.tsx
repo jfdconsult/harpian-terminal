@@ -74,9 +74,11 @@ export default function Clientes({ go }: { go: (id: ScreenId, param?: string) =>
 
   return (
     <div className="screen">
-      <div className="crumb">Clients › <b>List</b></div>
       <div className="flex between mb">
-        <div><div className="h1">My clients</div><div className="sub" style={{ margin: 0 }}>Your MFO client base: portfolios, mandate alignment, and Harpian allocation. Add clients and send the profile questionnaire.</div></div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
+          <div className="h1" style={{ margin: 0 }}>My clients</div>
+          <div className="sub" style={{ margin: 0 }}>Your MFO client base: portfolios, mandate alignment, and Harpian allocation. Add clients and send the profile questionnaire.</div>
+        </div>
         <button className="btn" style={{ background: "var(--gold)", color: "#000", fontWeight: 600 }} onClick={() => setModal(true)}>
           <i className="ti ti-user-plus" style={{ marginRight: 6 }} />Add client
         </button>

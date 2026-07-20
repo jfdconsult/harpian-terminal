@@ -73,12 +73,11 @@ export default function CotLegacy() {
 
   return (
     <div className="screen">
-      <div className="crumb">Intelligence › <b>COT Data Explorer</b></div>
-      <div className="flex between wrap" style={{ alignItems: "flex-start" }}>
-        <div>
-          <div className="h1">COT Data Explorer</div>
-          <div className="sub">
-            Raw CFTC data · Long/Short positions by group · Net and % of Open Interest.
+      <div className="flex between wrap" style={{ alignItems: "flex-start", gap: 10 }}>
+        <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap", flex: 1 }}>
+          <div className="h1" style={{ margin: 0 }}>COT Data Explorer</div>
+          <div className="sub" style={{ margin: 0 }}>
+            Raw CFTC · Long/Short positions by group · Net and % of Open Interest.
             {offline && <span style={{ color: "var(--orange)", marginLeft: 8 }}> — gov-data offline (8877)</span>}
           </div>
         </div>

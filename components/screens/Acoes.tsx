@@ -82,7 +82,6 @@ export default function Acoes({ symbol: initial }: { symbol?: string }) {
 
   return (
     <div className="screen">
-      <div className="crumb">Market › <b>Stocks, ETFs &amp; Commodities</b></div>
       <div className="flex between wrap">
         <div><div className="h1">{name}</div><div className="sub" style={{ margin: 0 }}>{symbol.replace("^", "")} · Yahoo Finance data</div></div>
         <div className="flex" style={{ gap: 10, alignItems: "center" }}>

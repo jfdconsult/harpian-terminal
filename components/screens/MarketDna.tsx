@@ -626,15 +626,15 @@ export default function MarketDna({ go }: { go?: (id: ScreenId, param?: string) 
 
   return (
     <div className="screen">
-      <div className="crumb">Market &rsaquo; <b>Market DNA</b><BackToVisao go={go} /></div>
-      <div className="flex between wrap" style={{ alignItems: "flex-start" }}>
-        <div>
-          <div className="h1">Market DNA</div>
-          <div className="sub">
+      <div className="flex between wrap" style={{ alignItems: "flex-start", gap: 10 }}>
+        <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap", flex: 1 }}>
+          <div className="h1" style={{ margin: 0 }}>Market DNA</div>
+          <div className="sub" style={{ margin: 0 }}>
             {layers.length || "—"} layers with real data &middot; Score 0&ndash;100 per dimension &middot; Quantitative synthesis for allocation decisions
             {loading && <span style={{ marginLeft: 8, color: "#C9A02C" }}> Loading data...</span>}
           </div>
         </div>
+        <BackToVisao go={go} />
       </div>
 
       {/* gov-data down: say we don't know, instead of showing 50 */}
@@ -650,28 +650,8 @@ export default function MarketDna({ go }: { go?: (id: ScreenId, param?: string) 
       )}
 
       {!loading && !err && layers.length > 0 && (<>
-      {/* Top summary strip */}
-      <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", padding: "10px 0", marginBottom: 8, borderBottom: "1px solid var(--line)" }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-          <span style={{ fontSize: 32, fontWeight: 800, fontFamily: "var(--mono)", color: scoreColor(avgScore) }}>
-            {avgScore}
-          </span>
-          <span style={{ fontSize: 11, color: "var(--tx3)", fontFamily: "var(--mono)" }}>CONVICTION</span>
-        </div>
-        <span style={{
-          fontSize: 12, fontWeight: 700, padding: "5px 14px", borderRadius: 5,
-          background: `${regime.color}18`, color: regime.color, fontFamily: "var(--mono)",
-        }}>
-          <i className={`ti ${regime.icon}`} style={{ fontSize: 14, marginRight: 5 }} />
-          {regime.label}
-        </span>
-        <span style={{ width: 1, height: 22, background: "var(--line)" }} />
-        <span style={{ fontSize: 12, fontFamily: "var(--mono)", color: "#2ECC71" }}>{liveCount} LIVE</span>
-        <span style={{ fontSize: 12, fontFamily: "var(--mono)", color: "#E67E22" }}>{partialCount} PARTIAL</span>
-        <span style={{ fontSize: 10, color: "var(--tx3)", marginLeft: "auto" }}>
-          Conviction = average of the {layers.length} layers with real data
-        </span>
-      </div>
+      {/* Top summary strip moved INTO the "Score per Layer" card header (below)
+          — reclaims a full row of vertical space at the top of the page. */}
 
       {/* Three thirds: radar | score per layer | JIM. The first two thirds
           form the left column — charts at the top, and the indicator cards
@@ -690,8 +670,36 @@ export default function MarketDna({ go }: { go?: (id: ScreenId, param?: string) 
             </div>
 
             <div className="card" style={{ padding: "12px 16px", display: "flex", flexDirection: "column" }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "var(--tx2)", marginBottom: 10, fontFamily: "var(--mono)", letterSpacing: ".06em" }}>
-                SCORE PER LAYER
+              {/* Rich header — absorbs the old top summary strip (conviction score,
+                  regime pill, live/partial counters, formula note) so the top of the
+                  page gains a full row of vertical space. */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10, paddingBottom: 10, borderBottom: "1px solid var(--line2)" }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--tx2)", fontFamily: "var(--mono)", letterSpacing: ".06em" }}>
+                  SCORE PER LAYER
+                </div>
+                <span style={{ width: 1, height: 18, background: "var(--line)" }} />
+                <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
+                  <span style={{ fontSize: 22, fontWeight: 800, fontFamily: "var(--mono)", color: scoreColor(avgScore), lineHeight: 1 }}>
+                    {avgScore}
+                  </span>
+                  <span style={{ fontSize: 9.5, color: "var(--tx3)", fontFamily: "var(--mono)" }}>CONVICTION</span>
+                </div>
+                <span style={{
+                  fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 4,
+                  background: `${regime.color}18`, color: regime.color, fontFamily: "var(--mono)",
+                  display: "inline-flex", alignItems: "center", gap: 4,
+                }}>
+                  <i className={`ti ${regime.icon}`} style={{ fontSize: 11 }} />
+                  {regime.label}
+                </span>
+                <span style={{ fontSize: 10.5, fontFamily: "var(--mono)", color: "#2ECC71" }}>{liveCount} LIVE</span>
+                <span style={{ fontSize: 10.5, fontFamily: "var(--mono)", color: "#E67E22" }}>{partialCount} PART</span>
+                <span
+                  title={`Conviction = average of the ${layers.length} layers with real data`}
+                  style={{ fontSize: 9.5, color: "var(--tx3)", marginLeft: "auto", cursor: "help" }}
+                >
+                  avg of {layers.length}
+                </span>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 7, flex: 1, justifyContent: "center" }}>
                 {[...layers].sort((a, b) => b.score - a.score).map((l) => (

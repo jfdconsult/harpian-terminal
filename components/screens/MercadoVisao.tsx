@@ -151,7 +151,6 @@ export default function MercadoVisao({ go }: { go?: (id: ScreenId, param?: strin
 
   return (
     <div className="screen" style={{ overflow: "hidden" }}>
-      <div className="crumb">Market › <b>Market Overview</b></div>
 
       <div className="flex between" style={{ alignItems: "baseline", marginBottom: 8 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>

@@ -115,7 +115,7 @@ export default function Terminal() {
     <I18nProvider>
     <div className="app">
       <Ticker go={go} />
-      <Topbar go={go} jimOpen={jimOpen} onJimToggle={() => setJimOpen((v) => !v)} onSettingsToggle={() => setSettingsOpen((v) => !v)} />
+      <Topbar go={go} screen={screen} jimOpen={jimOpen} onJimToggle={() => setJimOpen((v) => !v)} onSettingsToggle={() => setSettingsOpen((v) => !v)} />
       <div className="main">{renderScreen()}</div>
       <JimDrawer open={jimOpen} onClose={() => setJimOpen(false)} screen={screen} />
       <SettingsDrawer open={settingsOpen} onClose={() => setSettingsOpen(false)} />

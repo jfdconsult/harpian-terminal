@@ -82,12 +82,11 @@ export default function Risco() {
 
   return (
     <div className="screen">
-      <div className="crumb">Risk › <b>By client · 4 levels</b></div>
-      <div className="flex between wrap">
-        <div>
-          <div className="h1">Risk by client — the 4 levels on the same ruler</div>
+      <div className="flex between wrap" style={{ gap: 10 }}>
+        <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap", flex: 1 }}>
+          <div className="h1" style={{ margin: 0 }}>Risk by client — the 4 levels on the same ruler</div>
           <div className="sub" style={{ margin: 0 }}>
-            Where each client's portfolio stands vs. the profile tolerance and the mandate ceiling. All on the Risk Number (0-100).
+            Where each client&apos;s portfolio stands vs. the profile tolerance and the mandate ceiling. All on the Risk Number (0-100).
           </div>
         </div>
         <div className="flex" style={{ gap: 8, alignItems: "center" }}>

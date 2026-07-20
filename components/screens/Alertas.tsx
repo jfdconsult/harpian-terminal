@@ -112,9 +112,10 @@ export default function Alertas({ go }: { go: (id: ScreenId, param?: string) => 
 
   return (
     <div className="screen">
-      <div className="crumb">Clients › <b>Alerts</b></div>
-      <div className="h1">Alerts</div>
-      <div className="sub">What needs action — client risk, high-impact news, and the economic calendar.</div>
+      <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
+        <div className="h1" style={{ margin: 0 }}>Alerts</div>
+        <div className="sub" style={{ margin: 0 }}>What needs action — client risk, high-impact news, and the economic calendar.</div>
+      </div>
 
       <div className="card">
         {all.length === 0 ? (

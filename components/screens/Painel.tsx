@@ -285,11 +285,11 @@ function JimMorningBriefing({ go }: { go: (id: ScreenId, param?: string) => void
           }}>
             <i className="ti ti-brain" style={{ fontSize: 22, color: "#0C1930" }} />
           </div>
-          <div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: "var(--tx)", letterSpacing: "0.5px" }}>
               JIM — Morning Briefing
             </div>
-            <div style={{ fontSize: 11.5, color: "var(--tx3)", marginTop: 2 }}>
+            <div style={{ fontSize: 11.5, color: "var(--tx3)" }}>
               {saudacao}, João · {dataStr} · Updated {now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
             </div>
           </div>
@@ -658,30 +658,248 @@ function SocialWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }
   );
 }
 
+// ---- VEREDITO — 3 tiles: internal regime (ARI) + external (XRI) + defense ----
+// Merges the previous Regime & Defense card with the Market Regime gauge into
+// one "daily verdict" strip. Fetches the same overnight snapshot + /api/xri.
+interface XriMini { ok: boolean; state?: string; score?: number; streak_days?: number }
+const REGIME_TILE: Record<RegimeState, { label: string; color: string; sub: string }> = {
+  BULL:    { label: "RISK-ON",  color: "var(--green)", sub: "sustained trend" },
+  CAUTELA: { label: "CAUTION",  color: "var(--gold)",  sub: "active defense" },
+  NEUTRO:  { label: "NEUTRAL",  color: "var(--tx2)",   sub: "mixed signals" },
+  BEAR:    { label: "RISK-OFF", color: "var(--red)",   sub: "broad stress" },
+};
+function VereditoWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }) {
+  const [snap, setSnap] = useState<Snapshot | null>(null);
+  const [xri, setXri] = useState<XriMini | null>(null);
+  useEffect(() => {
+    fetchSnapshot().then(setSnap).catch(() => setSnap({ ok: false, offline: true }));
+    fetch("/api/xri").then((r) => r.json()).then(setXri).catch(() => setXri({ ok: false }));
+  }, []);
+  const ari = snap?.ok && snap.regime ? REGIME_TILE[snap.regime.state] : null;
+  const xriColor = xri?.state === "BULL" ? "var(--green)"
+    : xri?.state === "CAUTELA" ? "var(--gold)"
+    : xri?.state === "BEAR" ? "var(--red)"
+    : "var(--tx2)";
+  const defenseArmed = snap?.regime?.state === "CAUTELA" || snap?.regime?.state === "BEAR";
+  return (
+    <>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+        <div style={{
+          background: "var(--panel2)", borderRadius: 8, padding: "12px 10px", textAlign: "center",
+          borderTop: `3px solid ${ari?.color || "var(--tx3)"}`,
+        }}>
+          <div style={{ fontSize: 9.5, color: "var(--tx3)", fontWeight: 700, letterSpacing: 1 }}>INTERNAL · ARI</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: ari?.color || "var(--tx2)", marginTop: 6 }}>{ari?.label || "—"}</div>
+          <div style={{ fontSize: 10, color: "var(--tx3)", marginTop: 3 }}>{ari?.sub || "waiting…"}</div>
+        </div>
+        <div style={{
+          background: "var(--panel2)", borderRadius: 8, padding: "12px 10px", textAlign: "center",
+          borderTop: `3px solid ${xriColor}`,
+        }}>
+          <div style={{ fontSize: 9.5, color: "var(--tx3)", fontWeight: 700, letterSpacing: 1 }}>EXTERNAL · XRI</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: xriColor, marginTop: 6 }}>{xri?.state || "—"}</div>
+          <div style={{ fontSize: 10, color: "var(--tx3)", marginTop: 3 }}>
+            {xri?.score != null ? `score ${xri.score.toFixed(0)}` : "waiting…"}
+          </div>
+        </div>
+        <div style={{
+          background: "var(--panel2)", borderRadius: 8, padding: "12px 10px", textAlign: "center",
+          borderTop: `3px solid ${defenseArmed ? "var(--gold)" : "var(--tx2)"}`,
+        }}>
+          <div style={{ fontSize: 9.5, color: "var(--tx3)", fontWeight: 700, letterSpacing: 1 }}>DEFENSE</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: defenseArmed ? "var(--gold)" : "var(--tx2)", marginTop: 6 }}>
+            {defenseArmed ? "ARMED" : "DISARMED"}
+          </div>
+          <div style={{ fontSize: 10, color: "var(--tx3)", marginTop: 3 }}>
+            {snap?.defense?.label || (defenseArmed ? "rotating in" : "full exposure")}
+          </div>
+        </div>
+      </div>
+      <div className="mt"><button className="btn ghost" onClick={() => go("regime")}><i className="ti ti-arrow-right" />See Market Overview</button></div>
+    </>
+  );
+}
+
+// ---- XRI — External Regime Index (standalone widget) ----
+// Peer to the internal ARI (regime gauge). Compact view of the XRI engine
+// (score 0–100, state, direction, top 2 country drivers). Full detail lives
+// in the XRI tab under Market.
+interface XriFull {
+  ok: boolean; state?: string; score?: number; direction?: string;
+  confidence_pct?: number;
+  drivers?: { country: string; pct: number }[];
+}
+const XRI_STATE_COLOR: Record<string, string> = {
+  BULL: "var(--green)", MODERADO: "var(--gold)", CAUTELA: "var(--gold)",
+  BEAR: "var(--red)",  STRESS: "var(--red)",
+};
+function XriWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }) {
+  const [data, setData] = useState<XriFull | null>(null);
+  useEffect(() => {
+    fetch("/api/xri").then((r) => r.json()).then(setData).catch(() => setData({ ok: false }));
+  }, []);
+  if (!data?.ok) return <div className="muted" style={{ padding: "10px 0", fontSize: 12 }}>Loading XRI…</div>;
+  const color = XRI_STATE_COLOR[data.state || ""] || "var(--tx2)";
+  const topDrivers = (data.drivers || []).slice(0, 2);
+  return (
+    <>
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{
+          width: 64, height: 64, borderRadius: "50%",
+          border: `3px solid ${color}`, display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center", flexShrink: 0,
+          background: "var(--panel2)",
+        }}>
+          <div style={{ fontSize: 20, fontWeight: 700, color, lineHeight: 1 }}>{data.score}</div>
+          <div style={{ fontSize: 8, color: "var(--tx3)", marginTop: 2, letterSpacing: 0.5 }}>SCORE</div>
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color, letterSpacing: 0.5 }}>{data.state}</div>
+          <div className="muted" style={{ fontSize: 11, marginTop: 2 }}>
+            Direction: <b style={{ color: "var(--tx2)" }}>{data.direction || "—"}</b>
+            {data.confidence_pct != null && <> · Conf. <b style={{ color: "var(--tx2)" }}>{data.confidence_pct}%</b></>}
+          </div>
+        </div>
+      </div>
+      {topDrivers.length > 0 && (
+        <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid var(--line2)" }}>
+          <div style={{ fontSize: 9.5, color: "var(--tx3)", fontWeight: 700, letterSpacing: 0.8, marginBottom: 6 }}>TOP DRIVERS</div>
+          {topDrivers.map((d) => (
+            <div key={d.country} className="kv" style={{ fontSize: 12 }}>
+              <span>{d.country}</span>
+              <span className="v" style={{ color: "var(--tx2)" }}>{d.pct}%</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="mt"><button className="btn ghost" onClick={() => go("xri")}><i className="ti ti-arrow-right" />See XRI detail</button></div>
+    </>
+  );
+}
+
+// ---- VAULT PREVIEW — aggregate KPIs of the ETP, VOP-compliant ----
+// Same numbers surfaced in the fund's Vault tab, condensed to a dashboard card.
+// The CTA lands on the fund page — Vault is already the default tab there.
+interface VaultMini {
+  ok: boolean;
+  vault?: { n_positions: number; aum_alloc_pct: number; hit_rate_90d_pct: number; avg_holding_days: number };
+  next_rotation?: string;
+}
+function VaultPreviewWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }) {
+  const [data, setData] = useState<VaultMini | null>(null);
+  useEffect(() => {
+    fetch("/api/etp-vault").then((r) => r.json()).then(setData).catch(() => setData({ ok: false }));
+  }, []);
+  const v = data?.ok ? data.vault : null;
+  const nextFmt = data?.next_rotation
+    ? new Date(data.next_rotation).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })
+    : null;
+  return (
+    <>
+      {v ? (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8 }}>
+            {[
+              { l: "POSITIONS", v: String(v.n_positions), c: "var(--gold)" },
+              { l: "AUM INV.", v: v.aum_alloc_pct + "%", c: "var(--gold)" },
+              { l: "HIT 90d", v: v.hit_rate_90d_pct + "%", c: "var(--green)" },
+              { l: "AVG HOLD", v: v.avg_holding_days + "d", c: "var(--gold)" },
+            ].map((k) => (
+              <div key={k.l} style={{ background: "var(--panel2)", borderRadius: 6, padding: "8px 4px", textAlign: "center" }}>
+                <div style={{ fontSize: 9, color: "var(--tx3)", fontWeight: 700, letterSpacing: 0.5 }}>{k.l}</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: k.c, marginTop: 3 }}>{k.v}</div>
+              </div>
+            ))}
+          </div>
+          {nextFmt && (
+            <div className="muted" style={{ fontSize: 10.5, marginTop: 8, textAlign: "right" }}>
+              Next Showcase rotation · <b style={{ color: "var(--tx2)" }}>{nextFmt} · 06:00 BRT</b>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="muted" style={{ padding: "10px 0", fontSize: 12 }}>Loading Vault…</div>
+      )}
+      <div className="mt"><button className="btn ghost" onClick={() => go("fundo", "HPC22")}><i className="ti ti-arrow-right" />Open The Vault</button></div>
+    </>
+  );
+}
+
 const CATALOG: Record<string, WidgetDef> = {
   fundos: {
-    id: "fundos", title: "Your funds today", icon: "ti-coin",
-    render: (go) => (
-      <>
-        <div className="flex between mb"><span>HPC22 · Aggressive</span><span className="big g" style={{ fontSize: 24 }}>+2.31%</span></div>
-        <div className="flex between"><span>HPC11 · I.G.</span><span className="big g" style={{ fontSize: 24 }}>+1.44%</span></div>
-        <div className="mt"><button className="btn ghost" onClick={() => go("fundo", "HPC22")}><i className="ti ti-arrow-right" />Open HPC22</button></div>
-      </>
-    ),
+    id: "fundos", title: "Your funds", icon: "ti-coin",
+    render: (go) => {
+      // Mock periodic performance — replace with /api/fund-perf endpoint later.
+      // Same schema for both funds so the card stays uniform.
+      const F = [
+        { id: "HPC22", name: "HPC22 · Aggressive", d: 2.31, w: 4.20, m: 6.80, y: 24.30, vsSpxYtd: 13.10 },
+        { id: "HPC11", name: "HPC11 · I.G.",       d: 1.44, w: 2.10, m: 3.20, y: 7.50,  vsSpxYtd: -3.70 },
+      ];
+      const cell = (v: number) => ({
+        color: v >= 0 ? "var(--green)" : "var(--red)",
+        text: (v >= 0 ? "+" : "") + v.toFixed(2) + "%",
+      });
+      return (
+        <>
+          {F.map((f, i) => (
+            <div key={f.id} style={{
+              padding: i === 0 ? "0 0 12px 0" : "12px 0 0 0",
+              borderTop: i > 0 ? "1px solid var(--line2)" : undefined,
+            }}>
+              <div className="flex between mb" style={{ alignItems: "baseline" }}>
+                <span style={{ fontWeight: 600, color: "var(--tx)", fontSize: 13 }}>{f.name}</span>
+                <span className="big" style={{ fontSize: 20, color: cell(f.d).color }}>{cell(f.d).text}</span>
+              </div>
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(4, 1fr)",
+                gap: 8, marginTop: 4,
+              }}>
+                {[
+                  { l: "1D", v: f.d },
+                  { l: "5D", v: f.w },
+                  { l: "MTD", v: f.m },
+                  { l: "YTD", v: f.y },
+                ].map((p) => (
+                  <div key={p.l} style={{
+                    background: "var(--panel2)", borderRadius: 6, padding: "6px 4px",
+                    textAlign: "center",
+                  }}>
+                    <div style={{ fontSize: 9.5, color: "var(--tx3)", fontWeight: 600, letterSpacing: 0.5 }}>{p.l}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: cell(p.v).color, marginTop: 2 }}>{cell(p.v).text}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="muted" style={{ fontSize: 10, marginTop: 6, textAlign: "right" }}>
+                vs S&amp;P YTD ·{" "}
+                <b style={{ color: f.vsSpxYtd >= 0 ? "var(--green)" : "var(--red)" }}>
+                  {(f.vsSpxYtd >= 0 ? "+" : "") + f.vsSpxYtd.toFixed(1)}pp
+                </b>
+              </div>
+            </div>
+          ))}
+          <div className="mt"><button className="btn ghost" onClick={() => go("fundo", "HPC22")}><i className="ti ti-arrow-right" />Open HPC22</button></div>
+        </>
+      );
+    },
   },
-  etp: {
-    id: "etp", title: "Held in the ETP", icon: "ti-basket",
-    render: () => (
-      <>
-        {[["NVDA", "+2.4%"], ["AVGO", "+1.9%"], ["XOM", "+1.1%"], ["JPM", "−0.4%"]].map(([t, c]) => (
-          <div className="kv" key={t}><span>{t} <span className="muted">5.0%</span></span><span className="v" style={{ color: c.startsWith("−") ? "var(--red)" : "var(--green)" }}>{c}</span></div>
-        ))}
-        <div className="muted mt">+16 positions · see composition ›</div>
-      </>
-    ),
+  // Removed: 'etp' widget (Held in the ETP) — showed active tickers with weights,
+  // which contradicts the Verified Opacity Protocol on the fund page. The Vault
+  // Preview widget below is the VOP-compliant replacement.
+  veredito: {
+    id: "veredito", title: "Verdict — ARI · XRI · Defense", icon: "ti-checkbox",
+    Component: VereditoWidgetBody,
+  },
+  "vault-preview": {
+    id: "vault-preview", title: "The Vault — aggregate", icon: "ti-shield-lock",
+    Component: VaultPreviewWidgetBody,
+  },
+  xri: {
+    id: "xri", title: "XRI — External Regime", icon: "ti-world",
+    Component: XriWidgetBody,
   },
   regime: {
-    id: "regime", title: "Market Regime", icon: "ti-gauge",
+    id: "regime", title: "Market Regime (gauge)", icon: "ti-gauge",
     Component: RegimeGaugeWidgetBody,
   },
   "intel-radar": {
@@ -781,18 +999,31 @@ const CATALOG: Record<string, WidgetDef> = {
 };
 
 const uid = () => Math.random().toString(36).slice(2, 9);
+// Inverted-pyramid default layout:
+//  Row 1 (verdict + performance) — the daily comfort check
+//  Row 2 (alerts + vault preview) — action items + bridge to The Vault
+//  Row 3 (context: intel radar / news) — added by user on demand via Customize
 const DEFAULT_INSTANCES: WidgetInstance[] = [
-  { instanceId: "fundos", catalogId: "fundos" },
-  { instanceId: "etp", catalogId: "etp" },
-  { instanceId: "regime", catalogId: "regime" },
+  { instanceId: "veredito",      catalogId: "veredito" },
+  { instanceId: "fundos",        catalogId: "fundos" },
+  { instanceId: "xri",           catalogId: "xri" },
+  { instanceId: "alertas",       catalogId: "alertas" },
+  { instanceId: "vault-preview", catalogId: "vault-preview" },
+  { instanceId: "clientes",      catalogId: "clientes" },
 ];
 
 const WIDGETS_KEY = "harpian_painel_widgets";
+// Widget catalog IDs that were removed and must be stripped from any saved layout.
+const REMOVED_CATALOG_IDS = new Set(["etp"]);
 function loadWidgets(): WidgetInstance[] {
   if (typeof window === "undefined") return DEFAULT_INSTANCES;
   try {
     const raw = JSON.parse(localStorage.getItem(WIDGETS_KEY) || "null");
-    return Array.isArray(raw) && raw.length ? raw : DEFAULT_INSTANCES;
+    if (!Array.isArray(raw) || !raw.length) return DEFAULT_INSTANCES;
+    // Migration: strip removed widgets (e.g. old 'etp' Held-in-the-ETP that
+    // violated VOP). If the resulting layout is empty, fall back to default.
+    const cleaned = (raw as WidgetInstance[]).filter((w) => w && !REMOVED_CATALOG_IDS.has(w.catalogId));
+    return cleaned.length ? cleaned : DEFAULT_INSTANCES;
   } catch {
     return DEFAULT_INSTANCES;
   }
@@ -915,9 +1146,11 @@ export default function Painel({ go }: { go: (id: ScreenId, param?: string) => v
 
   return (
     <div className={`screen${editing ? " editing" : ""}`}>
-      <div className="crumb"><b>Dashboard</b></div>
       <div className="flex between" style={{ alignItems: "flex-start" }}>
-        <div><div className="h1">Good morning, João</div><div className="sub">The essentials of the day. {editing ? "Drag to reorganize, add modules (Quotes and Portfolio can repeat, each with its own configuration — click the gear) or remove them." : "Everything else is a click away in the top menus."}</div></div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
+          <div className="h1" style={{ margin: 0 }}>Good morning, João</div>
+          <div className="sub" style={{ margin: 0 }}>The essentials of the day. {editing ? "Drag to reorganize, add modules (Quotes and Portfolio can repeat, each with its own configuration — click the gear) or remove them." : "Everything else is a click away in the top menus."}</div>
+        </div>
         <div className="flex" style={{ gap: 8, alignItems: "center" }}>
           {editing && (
             <>

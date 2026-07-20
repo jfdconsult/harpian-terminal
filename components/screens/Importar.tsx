@@ -127,9 +127,10 @@ export default function Importar() {
 
   return (
     <div className="screen">
-      <div className="crumb">Clients › <b>Import</b></div>
-      <div className="h1">Import / connect</div>
-      <div className="sub">Phase 1: client spreadsheet (CSV). Phase 2: management system API.</div>
+      <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
+        <div className="h1" style={{ margin: 0 }}>Import / connect</div>
+        <div className="sub" style={{ margin: 0 }}>Phase 1: client spreadsheet (CSV). Phase 2: management system API.</div>
+      </div>
 
       <input ref={inputRef} type="file" accept=".csv,.txt" style={{ display: "none" }}
         onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }} />

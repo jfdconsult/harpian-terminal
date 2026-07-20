@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { MENUS, type ScreenId } from "@/lib/nav";
+import { MENUS, activeMenuFor, type ScreenId } from "@/lib/nav";
 
 function Clock() {
   const [t, setT] = useState("--:--:--");
@@ -13,7 +13,8 @@ function Clock() {
   return <div className="clock">{t}</div>;
 }
 
-export default function Topbar({ go, jimOpen, onJimToggle, onSettingsToggle }: { go: (id: ScreenId, param?: string) => void; jimOpen?: boolean; onJimToggle?: () => void; onSettingsToggle?: () => void }) {
+export default function Topbar({ go, screen, jimOpen, onJimToggle, onSettingsToggle }: { go: (id: ScreenId, param?: string) => void; screen: ScreenId; jimOpen?: boolean; onJimToggle?: () => void; onSettingsToggle?: () => void }) {
+  const activeMenu = activeMenuFor(screen);
   return (
     <div className="topbar">
       <div className="brand" onClick={() => go("painel")}>
@@ -21,14 +22,16 @@ export default function Topbar({ go, jimOpen, onJimToggle, onSettingsToggle }: {
         <img className="brand-logo brand-logo-navy" src="/harpian-logo-navy.svg" alt="HARPIAN" />
       </div>
 
-      {MENUS.map((m) => (
+      {MENUS.map((m) => {
+        const isActive = m.label === activeMenu;
+        return (
         <div className="menu" key={m.label}>
           {m.direct ? (
-            <div className="mtab" onClick={() => go(m.direct!)}>
+            <div className={`mtab${isActive ? " on" : ""}`} onClick={() => go(m.direct!)}>
               <i className={`ti ${m.icon}`} />{m.label}
             </div>
           ) : (
-            <div className="mtab">
+            <div className={`mtab${isActive ? " on" : ""}`}>
               <i className={`ti ${m.icon}`} />{m.label}
               <i className="ti ti-chevron-down" style={{ fontSize: 13 }} />
             </div>
@@ -49,7 +52,8 @@ export default function Topbar({ go, jimOpen, onJimToggle, onSettingsToggle }: {
             </div>
           )}
         </div>
-      ))}
+      );
+      })}
 
       <div className="right">
         <div className={`jim${jimOpen ? " active" : ""}`} onClick={onJimToggle}><i className="ti ti-sparkles" />Jim AI</div>

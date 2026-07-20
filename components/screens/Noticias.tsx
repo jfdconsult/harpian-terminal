@@ -42,7 +42,6 @@ export default function Noticias({ go }: { go: (id: ScreenId, param?: string) =>
 
   return (
     <div className="screen">
-      <div className="crumb">Market › <b>News</b></div>
       <div className="flex between wrap">
         <div><div className="h1">News that matters</div><div className="sub" style={{ margin: 0 }}>Filtered by impact on the fund · live RSS feed (CNBC · MarketWatch · Yahoo).</div></div>
         <button className="btn ghost" onClick={() => go("news-broadcast")}><i className="ti ti-broadcast" />Full News Broadcast</button>

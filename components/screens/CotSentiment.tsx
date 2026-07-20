@@ -276,12 +276,11 @@ export default function CotSentiment() {
 
   return (
     <div className="screen">
-      <div className="crumb">Intelligence › <b>COT Intelligence</b></div>
-      <div className="flex between wrap" style={{ alignItems: "flex-start" }}>
-        <div>
-          <div className="h1">COT Intelligence</div>
-          <div className="sub">
-            CFTC Commitments of Traders · normalized COT Index (3 years) · positioning as a leading indicator.
+      <div className="flex between wrap" style={{ alignItems: "flex-start", gap: 10 }}>
+        <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap", flex: 1 }}>
+          <div className="h1" style={{ margin: 0 }}>COT Intelligence</div>
+          <div className="sub" style={{ margin: 0 }}>
+            CFTC Commitments of Traders · normalized COT Index (3y) · positioning as leading indicator.
             {offline && <span style={{ color: "var(--orange)", marginLeft: 8 }}> — gov-data offline (8877)</span>}
           </div>
         </div>

@@ -60,7 +60,7 @@ export default function Screener({ go }: { go: (id: ScreenId, param?: string) =>
 
   return (
     <div className="screen">
-      <div className="crumb">Market › <b>Screener</b><BackToVisao go={go} /></div>
+      <div className="crumb"><BackToVisao go={go} /></div>
       <div className="h1">Screener</div>
       <div className="sub">Finviz / StockAnalysis.com equivalent · Fundamentals for the curated universe of liquid US tickers (Yahoo Finance).</div>
 

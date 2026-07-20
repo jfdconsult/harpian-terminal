@@ -57,9 +57,11 @@ export default function Marca() {
 
   return (
     <div className="screen">
-      <div className="crumb">Settings › <b>Brand</b></div>
-      <div className="flex between wrap" style={{ alignItems: "flex-start" }}>
-        <div><div className="h1">Brand (white-label)</div><div className="sub" style={{ margin: 0 }}>The advisor's identity in reports generated for the end client.</div></div>
+      <div className="flex between wrap" style={{ alignItems: "flex-start", gap: 10 }}>
+        <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap", flex: 1 }}>
+          <div className="h1" style={{ margin: 0 }}>Brand (white-label)</div>
+          <div className="sub" style={{ margin: 0 }}>The advisor&apos;s identity in reports generated for the end client.</div>
+        </div>
         {saved && <span className="muted" style={{ fontSize: 11, color: "var(--green)", display: "flex", alignItems: "center", gap: 4 }}><i className="ti ti-circle-check" />saved</span>}
       </div>
 

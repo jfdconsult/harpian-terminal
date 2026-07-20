@@ -53,9 +53,10 @@ export default function ApiIntegracao() {
 
   return (
     <div className="screen">
-      <div className="crumb">Settings › <b>API &amp; Integration</b></div>
-      <div className="h1">API &amp; Integration</div>
-      <div className="sub">REST endpoints to integrate the Terminal's data into MFO systems, spreadsheets, or in-house apps.</div>
+      <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
+        <div className="h1" style={{ margin: 0 }}>API &amp; Integration</div>
+        <div className="sub" style={{ margin: 0 }}>REST endpoints to integrate the Terminal&apos;s data into MFO systems, spreadsheets, or in-house apps.</div>
+      </div>
 
       <div className="grid g4 mb">
         <div className="card" style={{ textAlign: "center", padding: 14 }}><div className="big" style={{ fontSize: 22, color: "var(--gold)" }}>REST</div><div style={{ fontSize: 10, color: "var(--tx3)", marginTop: 4, textTransform: "uppercase", letterSpacing: ".5px" }}>Architecture</div></div>

@@ -61,12 +61,11 @@ export default function Integracoes() {
 
   return (
     <div className="screen">
-      <div className="crumb">Settings › <b>Integrations</b></div>
-      <div className="flex between wrap" style={{ alignItems: "flex-start" }}>
-        <div>
-          <div className="h1">Integrations</div>
-          <div className="sub">
-            Each source is genuinely queried when this screen opens — the status below is measured now, not declared.
+      <div className="flex between wrap" style={{ alignItems: "flex-start", gap: 10 }}>
+        <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap", flex: 1 }}>
+          <div className="h1" style={{ margin: 0 }}>Integrations</div>
+          <div className="sub" style={{ margin: 0 }}>
+            Each source is genuinely queried when this screen opens — status below is measured now, not declared.
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

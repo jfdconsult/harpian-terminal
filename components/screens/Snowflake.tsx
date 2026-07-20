@@ -353,7 +353,7 @@ function SnowflakeDetail({ symbol, isFav, onToggleFav, onBack, go }: { symbol: s
 
   return (
     <div className="screen">
-      <div className="crumb">Market › Snowflake › <b>{symbol}</b><BackToVisao go={go} /></div>
+      <div className="crumb"><b style={{ color: "var(--tx2)" }}>{symbol}</b><BackToVisao go={go} /></div>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <button className="btn ghost" style={{ padding: "5px 12px", fontSize: 11 }} onClick={onBack}>
           <i className="ti ti-arrow-left" /> Favorites
@@ -439,7 +439,7 @@ export default function Snowflake({ symbol, go }: { symbol?: string; go?: (id: S
 
   return (
     <div className="screen">
-      <div className="crumb">Market › <b>Snowflake</b><BackToVisao go={go} /></div>
+      <div className="crumb"><BackToVisao go={go} /></div>
       <div className="h1">Snowflake</div>
       <div className="sub">Simply Wall St equivalent · Always opens with your favorites (same as Quotes) — search a new ticker below to view it or start following it.</div>
 

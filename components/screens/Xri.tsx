@@ -61,7 +61,7 @@ export default function Xri({ go }: { go?: (id: ScreenId, param?: string) => voi
 
   return (
     <div className="screen">
-      <div className="crumb">Market › <b>XRI · External Regime Index</b><BackToVisao go={go} /></div>
+      <div className="crumb"><BackToVisao go={go} /></div>
 
       <div className="flex between" style={{ alignItems: "center", marginBottom: 8 }}>
         <div className="flex" style={{ alignItems: "baseline", gap: 14 }}>

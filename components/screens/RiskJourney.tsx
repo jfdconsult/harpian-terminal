@@ -3,8 +3,9 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { publishScreenData } from "@/lib/jim-data";
 import type { GrowthSeries } from "./GrowthChart";
+import type { DefensePeriod } from "./JourneyChart";
 
-const GrowthChart = dynamic(() => import("./GrowthChart"), { ssr: false });
+const JourneyChart = dynamic(() => import("./JourneyChart"), { ssr: false });
 
 const PERIODS = [
   { k: "ytd", l: "YTD" },
@@ -56,6 +57,7 @@ export default function RiskJourney() {
   const [period, setPeriod] = useState("5y");
   const [data, setData] = useState<Resp | null>(null);
   const [loading, setLoading] = useState(true);
+  const [defense, setDefense] = useState<DefensePeriod[]>([]);
 
   useEffect(() => {
     setLoading(true);
@@ -65,8 +67,16 @@ export default function RiskJourney() {
       .catch(() => setLoading(false));
   }, [period]);
 
-  const series: GrowthSeries[] = [];
-  if (data?.core) series.push({ name: "CORE22+", color: "#C9A02C", data: data.core });
+  // Fixed historical periods — fetch once
+  useEffect(() => {
+    fetch("/api/etp-defense-periods")
+      .then((r) => r.json())
+      .then((j: { ok: boolean; periods: DefensePeriod[] }) => { if (j.ok) setDefense(j.periods); })
+      .catch(() => {});
+  }, []);
+
+  const series: (GrowthSeries & { defenseAware?: boolean })[] = [];
+  if (data?.core) series.push({ name: "CORE22+", color: "#C9A02C", data: data.core, defenseAware: true });
   if (data?.spx) series.push({ name: "S&P 500", color: "#E74C3C", data: data.spx });
   if (data?.dji && data.dji.length) series.push({ name: "Dow Jones", color: "#4A90D9", data: data.dji });
   if (data?.tsy && data.tsy.length) series.push({ name: "Treasuries (TLT)", color: "#16A085", data: data.tsy });
@@ -114,7 +124,7 @@ export default function RiskJourney() {
       {loading ? (
         <div className="muted" style={{ padding: 70, textAlign: "center" }}>Loading curve…</div>
       ) : series.length ? (
-        <GrowthChart series={series} />
+        <JourneyChart series={series} defensePeriods={defense} height={380} />
       ) : (
         <div className="placeholder"><i className="ti ti-cloud-off" /><b>Curve unavailable</b></div>
       )}
@@ -141,6 +151,7 @@ export default function RiskJourney() {
 
       <div className="legend" style={{ marginTop: 12 }}>
         <i><b style={{ background: "#C9A02C" }} />CORE22+ {data ? `(${fmtPct(data.coreReturn)})` : ""}</i>
+        <i><b style={{ background: "#F39C12" }} />CORE22+ · Defense armed</i>
         <i><b style={{ background: "#E74C3C" }} />S&P 500 {data ? `(${fmtPct(data.spxReturn)})` : ""}</i>
         {data?.djiReturn != null && <i><b style={{ background: "#4A90D9" }} />Dow Jones ({fmtPct(data.djiReturn)})</i>}
         {data?.tsyReturn != null && <i><b style={{ background: "#16A085" }} />Treasuries · TLT ({fmtPct(data.tsyReturn)})</i>}

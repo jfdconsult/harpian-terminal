@@ -62,9 +62,10 @@ export default function SocialRadar() {
 
   return (
     <div className="screen" style={{ display: "flex", flexDirection: "column" }}>
-      <div className="crumb">Intelligence › <b>Social Radar</b></div>
-      <div className="h1">Social Media Radar</div>
-      <div className="sub">Live StockTwits · most-discussed cashtags · sentiment declared by the author.</div>
+      <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
+        <div className="h1" style={{ margin: 0 }}>Social Media Radar</div>
+        <div className="sub" style={{ margin: 0 }}>Live StockTwits · most-discussed cashtags · sentiment declared by the author.</div>
+      </div>
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "14px 0", alignItems: "center" }}>
         <span className="flabel" style={{ marginRight: 4 }}>Filter:</span>

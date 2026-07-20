@@ -227,7 +227,6 @@ export default function Cliente({ clientId, go }: { clientId: string; go: (id: S
   const client = findClient(clientId);
   return (
     <div className="screen">
-      <div className="crumb">Clients › <b>{client.name}</b></div>
       <ClientDetail client={client} go={go} />
     </div>
   );

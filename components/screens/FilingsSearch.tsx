@@ -43,9 +43,10 @@ export default function FilingsSearch() {
 
   return (
     <div className="screen">
-      <div className="crumb">Intelligence › <b>Filings Search</b></div>
-      <div className="h1">Filings Search</div>
-      <div className="sub">SEC EDGAR Full-Text Search · Keyword search across 10-K/10-Q/8-K/etc since 2001.</div>
+      <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
+        <div className="h1" style={{ margin: 0 }}>Filings Search</div>
+        <div className="sub" style={{ margin: 0 }}>SEC EDGAR Full-Text Search · Keyword search across 10-K/10-Q/8-K/etc since 2001.</div>
+      </div>
 
       <div style={{ display: "flex", gap: 8, alignItems: "center", margin: "14px 0", flexWrap: "wrap" }}>
         <input

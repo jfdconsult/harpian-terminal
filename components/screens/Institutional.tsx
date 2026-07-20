@@ -68,9 +68,10 @@ export default function Institutional() {
 
   return (
     <div className="screen">
-      <div className="crumb">Intelligence › <b>13F Holdings</b></div>
-      <div className="h1">Institutional Holdings</div>
-      <div className="sub">SEC Form 13F · What the largest hedge funds are buying and selling.</div>
+      <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
+        <div className="h1" style={{ margin: 0 }}>Institutional Holdings</div>
+        <div className="sub" style={{ margin: 0 }}>SEC Form 13F · What the largest hedge funds are buying and selling.</div>
+      </div>
 
       <div style={{ display: "flex", gap: 8, alignItems: "center", margin: "14px 0", flexWrap: "wrap" }}>
         <span className="flabel">Fund:</span>

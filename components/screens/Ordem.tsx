@@ -80,9 +80,11 @@ export default function Ordem({ preselect }: { preselect?: string }) {
 
   return (
     <div className="screen">
-      <div className="crumb">Orders › <b>via Lynk</b></div>
-      <div className="flex between mb">
-        <div><div className="h1">Orders</div><div className="sub" style={{ margin: 0 }}>Pending, history, and submission — ETP subscription/redemption via Lynk.</div></div>
+      <div className="flex between mb" style={{ gap: 10 }}>
+        <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap", flex: 1 }}>
+          <div className="h1" style={{ margin: 0 }}>Orders · via Lynk</div>
+          <div className="sub" style={{ margin: 0 }}>Pending, history, and submission — ETP subscription/redemption via Lynk.</div>
+        </div>
         <div className="flex" style={{ gap: 8 }}>
           {view === "nova"
             ? <button className="btn ghost" onClick={() => { setView("hist"); setSent(null); }}><i className="ti ti-arrow-left" />Back to history</button>

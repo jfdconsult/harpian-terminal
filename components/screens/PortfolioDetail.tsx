@@ -100,7 +100,7 @@ export default function PortfolioDetail({ arg, go }: { arg?: string; go: (id: Sc
   if (!portfolio) {
     return (
       <div className="screen">
-        <div className="crumb">Clients › <b>{client.name}</b> › <b>Portfolio</b></div>
+        <div className="crumb"><b>{client.name}</b> › Portfolio</div>
         <div className="placeholder"><i className="ti ti-briefcase-off" /><b>This client has no portfolios registered.</b></div>
       </div>
     );
@@ -108,7 +108,7 @@ export default function PortfolioDetail({ arg, go }: { arg?: string; go: (id: Sc
 
   return (
     <div className="screen">
-      <div className="crumb">Clients › <b onClick={() => go("cliente", client.id)} style={{ cursor: "pointer" }}>{client.name}</b> › <b>{portfolio.name}</b></div>
+      <div className="crumb"><b onClick={() => go("cliente", client.id)} style={{ cursor: "pointer" }}>{client.name}</b> › {portfolio.name}</div>
 
       <div className="flex between wrap" style={{ alignItems: "flex-start" }}>
         <div>

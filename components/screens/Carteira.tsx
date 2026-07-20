@@ -11,7 +11,7 @@ export default function Carteira({ clientId = "joao-daniel", go }: { clientId?: 
   return (
     <div className="screen">
       <div className="flex between" style={{ alignItems: "center", marginBottom: 4 }}>
-        <div className="crumb" style={{ margin: 0 }}>Clients › <b>Portfolio · {client.name}</b></div>
+        <div style={{ fontSize: 11, color: "var(--tx3)" }}>Portfolio</div>
         <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
           Client
           <select className="input" style={{ minWidth: 200 }} value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>

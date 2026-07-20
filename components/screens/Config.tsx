@@ -50,9 +50,10 @@ export default function Config() {
 
   return (
     <div className="screen">
-      <div className="crumb">Settings › <b>Settings</b></div>
-      <div className="h1">Settings</div>
-      <div className="sub">Account and preferences. Whatever you change here applies to the whole terminal, immediately.</div>
+      <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
+        <div className="h1" style={{ margin: 0 }}>Settings</div>
+        <div className="sub" style={{ margin: 0 }}>Account and preferences. Whatever you change here applies to the whole terminal, immediately.</div>
+      </div>
 
       <div className="grid g2">
         <div className="card">
