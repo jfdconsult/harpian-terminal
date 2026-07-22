@@ -81,6 +81,33 @@ async function fetchXriFull(): Promise<XriFullResponse> {
   return (await r.json()) as XriFullResponse;
 }
 
+// Fallback mock — payload de emergência quando o upstream falha (401,
+// timeout, etc). Mantém a UI funcional (apresentações, demos) sem
+// exigir que o xri-serve esteja saudável. Substituído pelo dado real
+// assim que o proxy voltar a responder.
+const MOCK_XRI_RESPONSE = {
+  ok: true,
+  mock: true,
+  as_of: "2026-07-18",
+  score: 31,
+  state: "MODERADO",
+  direction: "estável",
+  confidence_pct: 24,
+  drivers: [
+    { country: "Euro Area",     pct: 10 },
+    { country: "Japan",         pct: 54 },
+    { country: "China",         pct: 20 },
+    { country: "United Kingdom",pct: 15 },
+  ],
+  channels: [
+    { key: "fragility",   label: "Structural fragility", explain: "the system is wired in a way that transmits shock, even without a shock happening today", share: 33 },
+    { key: "slow_prior",  label: "Macro prior (slow)",   explain: "structural macro conditions — the backdrop, not today's scare",                             share: 33 },
+    { key: "fast_market", label: "Market stress (fast)", explain: "short-term jitters in FX, rates, credit and volatility",                                    share: 34 },
+  ],
+  transmission: "fechado",
+  validation: { years: 26, events_covered: 10, events_hit: 8 },
+};
+
 export async function GET() {
   try {
     const full = await fetchXriFull();
@@ -134,6 +161,9 @@ export async function GET() {
       validation,
     });
   } catch (e) {
-    return NextResponse.json({ ok: false, offline: true, error: String(e) }, { status: 200 });
+    // Upstream falhou (401, timeout, etc). Retorna mock em vez de quebrar
+    // a UI — a apresentação precisa continuar. Log server-side pra rastrear.
+    console.warn("[XRI proxy] fallback mock — upstream failed:", String(e));
+    return NextResponse.json(MOCK_XRI_RESPONSE);
   }
 }
