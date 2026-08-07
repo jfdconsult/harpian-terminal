@@ -83,6 +83,11 @@ const SCREEN_MAP: Record<ScreenId, Omit<ScreenContext, "id">> = {
     description: "A specific client portfolio, product by product: issuer, category, sub-category, geography, allocation %, value, risk profile, estimated return and volatility.",
     dataAvailable: ["products", "allocation by geography", "allocation by category", "risk profile", "concentration", "estimated return"],
   },
+  "portfolio-builder": {
+    title: "Portfolio Builder",
+    description: "Interactive portfolio construction on the 41 AlphaDroid strategies and the ready-made SET families (10.5 vol-target ladder, 41 rotation, Max Return): backtest curve, Risk Number, gross vs net after Harpian fees and estimated execution cost.",
+    dataAvailable: ["backtest CAGR/Sharpe/MaxDD", "SET composition", "Risk Number", "gross vs net return", "execution cost estimate", "defense periods"],
+  },
   ordem: {
     title: "Orders (Lynk)",
     description: "Order submission module via Lynk API: semi-automatic order generation based on the day's changes to the model portfolio.",
@@ -199,6 +204,7 @@ const SCREEN_SUGGESTIONS: Record<ScreenId, string[]> = {
   carteira: ["Is this portfolio suitable?", "Which position weighs most on risk?", "Does it need rebalancing?"],
   "cliente-risco": ["Did the client answer the questionnaire?", "Does the declared profile match what's on file?", "Is the Risk Number within mandate?"],
   "portfolio-detalhe": ["Is this portfolio well diversified?", "What's the biggest risk concentration here?", "How does this portfolio compare to the client's mandate?"],
+  "portfolio-builder": ["Which SET fits a client who wants low drawdown?", "What's the net return after fees on this SET?", "How much does execution cost eat into the CAGR?"],
   ordem: ["What do these orders do?", "Why these changes today?", "What's the impact on the portfolio?"],
   importar: ["How do I import a portfolio?", "Which formats are accepted?", "Can I connect to custody?"],
   alertas: ["Which alert is most urgent?", "What requires my action today?", "Summarize the alerts."],

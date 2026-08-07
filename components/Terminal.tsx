@@ -22,6 +22,7 @@ import Cliente from "./screens/Cliente";
 import Carteira from "./screens/Carteira";
 import ClienteRisco from "./screens/ClienteRisco";
 import PortfolioDetail from "./screens/PortfolioDetail";
+import PortfolioBuilderScreen from "./screens/PortfolioBuilderScreen";
 import Alertas from "./screens/Alertas";
 import Ordem from "./screens/Ordem";
 import Importar from "./screens/Importar";
@@ -40,7 +41,7 @@ import MarketDna from "./screens/MarketDna";
 import Screener from "./screens/Screener";
 import Snowflake from "./screens/Snowflake";
 import FilingsSearch from "./screens/FilingsSearch";
-import type { ScreenId } from "@/lib/nav";
+import { isScreenId, type ScreenId } from "@/lib/nav";
 
 export default function Terminal() {
   const [screen, setScreen] = useState<ScreenId>("painel");
@@ -61,8 +62,31 @@ export default function Terminal() {
     if (id === "acoes" && param) setChartArg(param);
     if (id === "portfolio-detalhe" && param) setPortfolioArg(param);
     if (id === "snowflake" && param) setSnowflakeArg(param);
-    if (typeof window !== "undefined") window.scrollTo(0, 0);
+    if (typeof window !== "undefined") {
+      // deixa a tela no endereco: permite mandar link direto e recarregar sem
+      // voltar para o dashboard. Os menus abrem por hover, entao sem isso a
+      // unica forma de chegar numa tela e passar o mouse pelo menu certo.
+      const alvo = "#" + id + (param ? "/" + encodeURIComponent(param) : "");
+      if (window.location.hash !== alvo) {
+        window.history.replaceState(null, "", window.location.pathname + window.location.search + alvo);
+      }
+      window.scrollTo(0, 0);
+    }
   };
+
+  // abre direto na tela pedida pelo endereco (#regime, #fundo/HPC22, ...)
+  useEffect(() => {
+    const abrirDoHash = () => {
+      const h = window.location.hash.replace(/^#/, "");
+      if (!h) return;
+      const [id, param] = h.split("/");
+      if (isScreenId(id)) go(id, param ? decodeURIComponent(param) : undefined);
+    };
+    abrirDoHash();
+    window.addEventListener("hashchange", abrirDoHash);
+    return () => window.removeEventListener("hashchange", abrirDoHash);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // askJim() from any screen opens the drawer automatically (JimDrawer.tsx handles sending the question).
   useEffect(() => subscribeAskJim(() => setJimOpen(true)), []);
@@ -86,6 +110,7 @@ export default function Terminal() {
       case "carteira": return <Carteira clientId={clientId} go={go} />;
       case "cliente-risco": return <ClienteRisco clientId={clientId} go={go} />;
       case "portfolio-detalhe": return <PortfolioDetail arg={portfolioArg} go={go} />;
+      case "portfolio-builder": return <PortfolioBuilderScreen />;
       case "clientes": return <Clientes go={go} />;
       case "cliente": return <Cliente clientId={clientId} go={go} />;
       case "ordem": return <Ordem preselect={orderArg} />;

@@ -14,6 +14,7 @@ export type ScreenId =
   | "carteira"
   | "cliente-risco"
   | "portfolio-detalhe"
+  | "portfolio-builder"
   | "regime"
   | "xri"
   | "acoes"
@@ -78,6 +79,7 @@ export const MENUS: Menu[] = [
           { id: "fundo", label: "Performance", icon: "ti-chart-line" },
           { id: "fundo", label: "Composition", icon: "ti-chart-pie" },
           { id: "fundo", label: "Defense & risk", icon: "ti-shield" },
+          { id: "portfolio-builder", label: "Portfolio Builder", icon: "ti-adjustments-horizontal", tag: "new" },
           { id: "ordem", label: "Send order (Lynk)", icon: "ti-send", tag: "new" },
         ],
       },
@@ -177,6 +179,7 @@ const SCREEN_TO_MENU: Record<ScreenId, string> = {
   importar: "Clients",
   alertas: "Clients",
   "portfolio-detalhe": "Clients",
+  "portfolio-builder": "Funds",
   "mercado-visao": "Market",
   regime: "Market",
   xri: "Market",
@@ -205,4 +208,9 @@ const SCREEN_TO_MENU: Record<ScreenId, string> = {
 
 export function activeMenuFor(screen: ScreenId): string {
   return SCREEN_TO_MENU[screen] || "Dashboard";
+}
+
+/** O texto veio do endereco (#tela): so aceita se for uma tela que existe. */
+export function isScreenId(v: string): v is ScreenId {
+  return Object.prototype.hasOwnProperty.call(SCREEN_TO_MENU, v);
 }
