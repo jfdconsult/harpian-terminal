@@ -256,10 +256,16 @@ function JimMorningBriefing({ go }: { go: (id: ScreenId, param?: string) => void
   const regime = snap?.ok && snap.regime ? snap.regime.state : null;
   const sections = generateBriefingSections(dna, cal, snap);
   const headline = generateHeadline(dna, regime);
-  const now = new Date();
-  const hora = now.getHours();
-  const saudacao = hora < 12 ? "Good morning" : hora < 18 ? "Good afternoon" : "Good evening";
-  const dataStr = now.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+  // `now` só é preenchido no client, depois do mount — new Date() direto no
+  // render diverge entre o timezone do server (SSR) e do browser, causando
+  // hydration mismatch (React #418) sempre que a hora vira o dia em fusos
+  // diferentes. Mesmo padrão do <Clock /> do Topbar.
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => { setNow(new Date()); }, []);
+  const hora = now ? now.getHours() : null;
+  const saudacao = hora === null ? "Welcome" : hora < 12 ? "Good morning" : hora < 18 ? "Good afternoon" : "Good evening";
+  const dataStr = now ? now.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "";
 
   return (
     <div style={{
@@ -290,7 +296,7 @@ function JimMorningBriefing({ go }: { go: (id: ScreenId, param?: string) => void
               JIM — Morning Briefing
             </div>
             <div style={{ fontSize: 11.5, color: "var(--tx3)" }}>
-              {saudacao}, João · {dataStr} · Updated {now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+              {saudacao}, João{dataStr ? ` · ${dataStr}` : ""}{now ? ` · Updated ${now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}` : ""}
             </div>
           </div>
         </div>
