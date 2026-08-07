@@ -141,7 +141,11 @@ export default function Terminal() {
     <div className="app">
       <Ticker go={go} />
       <Topbar go={go} screen={screen} jimOpen={jimOpen} onJimToggle={() => setJimOpen((v) => !v)} onSettingsToggle={() => setSettingsOpen((v) => !v)} />
-      <div className="main">{renderScreen()}</div>
+      {/* --pb-sticky-top: altura do cabecalho fixo do Terminal (ticker 34px +
+          topbar 52px = 86px). Sem isto, a regua de KPIs sticky do Portfolio
+          Builder tenta colar em top:0 da viewport e fica escondida atras do
+          ticker+topbar em vez de ficar visivel logo abaixo deles. */}
+      <div className="main" style={{ ["--pb-sticky-top" as unknown as string]: "86px" } as React.CSSProperties}>{renderScreen()}</div>
       <JimDrawer open={jimOpen} onClose={() => setJimOpen(false)} screen={screen} />
       <SettingsDrawer open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
