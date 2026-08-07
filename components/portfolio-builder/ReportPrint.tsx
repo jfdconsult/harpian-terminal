@@ -663,10 +663,9 @@ export default function ReportPrint(props: ReportData) {
                 {" "}O capital líquido do fim do ano é o que compõe o rendimento do ano seguinte.
                 {custosExec ? (
                   <>
-                    {" "}O líquido também já desconta{" "}
-                    <b style={{ color: "#333" }}>{fmtPct(custosExec.dragAno)} ao ano de custo de
-                    execução</b> (corretagem + spread cobrado cheio em cada ordem, cenário de
-                    pior caso) — detalhamento na análise técnica adiante.
+                    {" "}O líquido também já desconta {fmtPct(custosExec.dragAno)} ao ano de
+                    custo de execução (corretagem + spread cobrado cheio em cada ordem, cenário
+                    de pior caso — não é taxa da Harpian) — detalhamento na análise técnica adiante.
                   </>
                 ) : null}
               </p>
@@ -1092,54 +1091,20 @@ export default function ReportPrint(props: ReportData) {
               logo acima quer saber quanto aquilo custou. O disclosure diz que
               custos nao estao modelados; aqui damos a ordem de grandeza. */}
           {custosExec && (
-            <div style={{
-              padding: "10px 12px", background: "#fafafa", border: "1px solid #eee",
-              borderRadius: 5, marginBottom: 14,
-            }}>
-              <div style={{ fontSize: 13.5, color: "#333", marginBottom: 6 }}>
-                <b style={{ color: "#c9a02c" }}>Custo estimado de execução:</b>{" "}
-                <b style={{ fontFamily: MONO }}>{(custosExec.dragAno * 100).toFixed(2).replace(".", ",")}% ao ano</b>
-                {" "}· {Math.round(custosExec.ordensAno).toLocaleString("pt-BR")} ordens/ano ·
-                {" "}ordem média de {money(custosExec.notionalMedioOrdem)} a um custo de
-                {" "}US$ {custosExec.custoMedioOrdem.toFixed(2).replace(".", ",")} por ordem
-              </div>
-              <table style={{ borderCollapse: "collapse", fontSize: 11.5, fontFamily: MONO, marginBottom: 6 }}>
-                <tbody>
-                  {[
-                    ["Spread (cheio, cobrado em cada ordem)", custosExec.custoSpreadAno],
-                    ["Corretagem", custosExec.custoComissaoAno],
-                    ["Taxas regulatórias (só na venda)", custosExec.custoRegulatorioAno],
-                  ].map(([rot, v]) => (
-                    <tr key={rot as string}>
-                      <td style={{ padding: "2px 14px 2px 0", color: "#666" }}>{rot as string}</td>
-                      <td style={{ padding: "2px 0", textAlign: "right", color: "#333" }}>
-                        US$ {Math.round(v as number).toLocaleString("pt-BR")}/ano
-                      </td>
-                      <td style={{ padding: "2px 0 2px 14px", textAlign: "right", color: "#999" }}>
-                        {(((v as number) / custosExec.custoTotalAno) * 100).toFixed(0)}%
-                      </td>
-                    </tr>
-                  ))}
-                  <tr style={{ borderTop: "1px solid #ddd" }}>
-                    <td style={{ padding: "3px 14px 2px 0", color: "#333", fontWeight: 700 }}>Total</td>
-                    <td style={{ padding: "3px 0 2px", textAlign: "right", color: "#333", fontWeight: 700 }}>
-                      US$ {Math.round(custosExec.custoTotalAno).toLocaleString("pt-BR")}/ano
-                    </td>
-                    <td />
-                  </tr>
-                </tbody>
-              </table>
-              <p style={{ margin: 0, fontSize: 9.5, color: "#888", lineHeight: 1.45 }}>
-                <b style={{ color: "#666" }}>Já deduzido</b> do retorno líquido — entra como
-                custo diário antes das taxas, e a taxa de performance incide sobre o retorno
-                já livre dele. Base: giro real de {estatSet ? estatSet.giros.toLocaleString("pt-BR") : "—"} trocas
-                de ticker na janela (cada troca = 2 ordens), dimensionadas pelo peso de cada
-                estratégia sobre o patrimônio médio de {money(patrimonioMedio)} e
-                notional de {money(custosExec.notionalAno)}/ano ({custosExec.giroAno.toFixed(1)}× o
-                patrimônio). Premissas: {descreverPremissas(custosExec.premissas)}. Custos reais
-                variam com tier de comissão, tamanho da conta, liquidez do papel no dia e tipo de ordem.
-              </p>
-            </div>
+            <p style={{ margin: "0 0 14px", fontSize: 10.5, color: "#888", lineHeight: 1.5 }}>
+              Custo estimado de execução: {(custosExec.dragAno * 100).toFixed(2).replace(".", ",")}%
+              ao ano ({Math.round(custosExec.ordensAno).toLocaleString("pt-BR")} ordens/ano, ordem
+              média de {money(custosExec.notionalMedioOrdem)} a um custo de US${" "}
+              {custosExec.custoMedioOrdem.toFixed(2).replace(".", ",")} por ordem — spread cheio +
+              corretagem + taxas regulatórias). Já deduzido do retorno líquido acima; é custo de
+              corretagem, não taxa da Harpian. Base: giro real de{" "}
+              {estatSet ? estatSet.giros.toLocaleString("pt-BR") : "—"} trocas de ticker na janela
+              (cada troca = 2 ordens), dimensionadas pelo peso de cada estratégia sobre o patrimônio
+              médio de {money(patrimonioMedio)} e notional de {money(custosExec.notionalAno)}/ano
+              ({custosExec.giroAno.toFixed(1)}× o patrimônio). Premissas: {descreverPremissas(custosExec.premissas)}.
+              Custos reais variam com tier de comissão, tamanho da conta, liquidez do papel no dia e
+              tipo de ordem.
+            </p>
           )}
 
           {/* Top 3 melhor e pior retorno — decomposto por estrategia quando ha SET */}
