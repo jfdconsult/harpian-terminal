@@ -267,8 +267,9 @@ export default function ReportPrint(props: ReportData) {
    * inicial — numa janela de 20 anos a carteira quintuplica, e dimensionar
    * pelo inicial subestimaria o custo dos anos finais.
    *
-   * So existe quando ha SET carregado: o giro de um portfolio montado a mao
-   * esta nos proprios sleeves, e o dado por estrategia nao esta disponivel.
+   * Com SET carregado, usa a atribuicao por bloco (estatisticasBloco). Sem
+   * SET (portfolio montado a mao), usa o `trades_ano` do proprio catalogo
+   * por sleeve, escalado pelo peso medio no portfolio e pelos anos da janela.
    */
   const patrimonioMedio = useMemo(() => {
     if (!sim.equity?.length) return 0;
@@ -383,14 +384,33 @@ export default function ReportPrint(props: ReportData) {
 
   /** Semanas da janela simulada — divisor de "trades por semana". */
   const custosExec = useMemo(() => {
-    if (!estatSet || patrimonioMedio <= 0) return null;
+    if (patrimonioMedio <= 0) return null;
     const anos = sim.dates.length / 252;
-    return estimarCustos(
-      estatSet.relevantes.map((l) => ({ pesoPortfolio: l.pesoPortfolio, trocas: l.trocas })),
-      patrimonioMedio,
-      anos,
-    );
-  }, [estatSet, patrimonioMedio, sim.dates.length]);
+    if (anos <= 0) return null;
+
+    if (estatSet) {
+      return estimarCustos(
+        estatSet.relevantes.map((l) => ({ pesoPortfolio: l.pesoPortfolio, trocas: l.trocas })),
+        patrimonioMedio,
+        anos,
+      );
+    }
+
+    // Sem SET (portfolio montado a mao): nao ha atribuicao por bloco, mas
+    // cada estrategia do catalogo ja traz o proprio giro anual (trades_ano,
+    // medido no backtest oficial) — so escalar pelo peso medio no portfolio
+    // (media diaria de sim.weights) e pelos anos da janela.
+    const nDias = sim.weights.length;
+    if (nDias === 0) return null;
+    const linhas = sleeves.map((s, i) => {
+      const somaPeso = sim.weights.reduce((acc, dia) => acc + (dia[i] ?? 0), 0);
+      const pesoPortfolio = somaPeso / nDias;
+      const tradesAno = parseFloat(meta[s.id]?.trades_ano ?? "0") || 0;
+      return { pesoPortfolio, trocas: tradesAno * anos };
+    }).filter((l) => l.pesoPortfolio >= 0.002 && l.trocas > 0);
+
+    return estimarCustos(linhas, patrimonioMedio, anos);
+  }, [estatSet, patrimonioMedio, sim.dates.length, sim.weights, sleeves, meta]);
 
   const semanasJanela = Math.max(1, (sim.to - sim.from + 1) / 5);
 
@@ -1098,7 +1118,7 @@ export default function ReportPrint(props: ReportData) {
               {custosExec.custoMedioOrdem.toFixed(2).replace(".", ",")} por ordem — spread cheio +
               corretagem + taxas regulatórias). Já deduzido do retorno líquido acima; é custo de
               corretagem, não taxa da Harpian. Base: giro real de{" "}
-              {estatSet ? estatSet.giros.toLocaleString("pt-BR") : "—"} trocas de ticker na janela
+              {Math.round(custosExec.ordensAno * (sim.dates.length / 252) / 2).toLocaleString("pt-BR")} trocas de ticker na janela
               (cada troca = 2 ordens), dimensionadas pelo peso de cada estratégia sobre o patrimônio
               médio de {money(patrimonioMedio)} e notional de {money(custosExec.notionalAno)}/ano
               ({custosExec.giroAno.toFixed(1)}× o patrimônio). Premissas: {descreverPremissas(custosExec.premissas)}.

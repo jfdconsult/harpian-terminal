@@ -160,6 +160,8 @@ export interface StrategyMeta {
   bornon: string;
   score: string;
   r_risk: string;
+  /** giros de ticker por ano, medido no backtest oficial (ex.: "6.9") */
+  trades_ano?: string;
   universo: string[];
   start: number;
   n: number;
