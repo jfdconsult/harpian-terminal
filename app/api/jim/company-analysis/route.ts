@@ -115,7 +115,7 @@ ${macroNews || "no macro news available right now"}`;
       MODEL_HAIKU,
       "You extract objective facts from raw financial data, no opinion and no fluff. " +
         "Respond with only a list of up to 8 short bullets covering the most relevant facts in this data " +
-        "for someone evaluating the company. English.",
+        "for someone evaluating the company. Escreva os bullets em português brasileiro.",
       rawContext,
       500
     );
@@ -127,15 +127,15 @@ ${macroNews || "no macro news available right now"}`;
   // Stage 2 — SONNET interprets and writes the analysis (where the actual reasoning happens).
   const sonnetSystem = `You are JIM, the Harpian Terminal's AI assistant, writing a proactive read on ${symbol} for the manager.
 
-Respond in English, in markdown, straight to the point — no filler. Structure:
-## ${symbol} — JIM's Read
-**Thesis in 1 sentence**
-**Strengths** (2-3 bullets)
-**Points of attention / risks** (2-3 bullets)
-**Valuation read** (do the multiples make sense for what the company delivers?)
-**Verdict** — not a buy/sell recommendation, it's context for the manager to decide.
+Responda em português brasileiro, em markdown, direto ao ponto — sem enrolação. Estrutura:
+## ${symbol} — Leitura do JIM
+**Tese em 1 frase**
+**Pontos fortes** (2-3 bullets)
+**Pontos de atenção / riscos** (2-3 bullets)
+**Leitura de valuation** (os múltiplos fazem sentido para o que a empresa entrega?)
+**Veredito** — não é recomendação de compra/venda, é contexto para o gestor decidir.
 
-Base this SOLELY on the data provided — never invent a number that isn't there. Be honest about the limitation: this is a heuristic over public fundamentals (Yahoo Finance) + SEC filings, it is not the HCE, not a proprietary Harpian signal.`;
+Baseie-se EXCLUSIVAMENTE nos dados fornecidos — nunca invente um número que não está ali. Seja honesto sobre a limitação: isto é uma heurística sobre fundamentos públicos (Yahoo Finance) + filings da SEC, não é o HCE, não é um sinal proprietário da Harpian.`;
 
   try {
     const r = await callAnthropic(apiKey, MODEL_SONNET, sonnetSystem, `Extracted facts:\n${digest}`, 2000);
