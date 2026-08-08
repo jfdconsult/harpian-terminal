@@ -90,7 +90,7 @@ function MsgBubble({ msg }: { msg: Msg }) {
 function buildGreeting(screen: ScreenId, snap: ScreenSnapshot | null): string {
   const ctx = getScreenContext(screen);
   const lead = snap?.briefing || ctx.description;
-  return `You're on the **${ctx.title}** screen.\n\n${lead}\n\nWhat's your question about this? Tap one of the questions below or type your own.`;
+  return `Você está na tela **${ctx.title}**.\n\n${lead}\n\nO que você quer saber sobre isto? Toque em uma das perguntas abaixo ou digite a sua.`;
 }
 
 export default function JimDrawer({ open, onClose, screen }: Props) {
@@ -288,10 +288,10 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
             </div>
           </div>
           <div className="jim-header-actions">
-            <button className="jim-hbtn" onClick={clearHistory} title="Clear conversation">
+            <button className="jim-hbtn" onClick={clearHistory} title="Limpar conversa">
               <i className="ti ti-trash" />
             </button>
-            <button className="jim-hbtn" onClick={onClose} title="Close">
+            <button className="jim-hbtn" onClick={onClose} title="Fechar">
               <i className="ti ti-x" />
             </button>
           </div>
@@ -356,7 +356,7 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
             <textarea
               ref={inputRef}
               className="jim-input"
-              placeholder="Ask JIM..."
+              placeholder="Pergunte ao JIM..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -372,7 +372,7 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
             </button>
           </div>
           <div className="jim-disclaimer">
-            JIM uses AI (Claude) and can make mistakes. Verify important information.
+            O JIM usa IA (Claude) e pode cometer erros. Confira informações importantes.
           </div>
         </div>
       </div>

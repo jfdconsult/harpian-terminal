@@ -58,7 +58,7 @@ export default function Topbar({ go, screen, jimOpen, onJimToggle, onSettingsTog
       <div className="right">
         <div className={`jim${jimOpen ? " active" : ""}`} onClick={onJimToggle}><i className="ti ti-sparkles" />Jim AI</div>
         <span className="topbar-sub">ETP TERMINAL</span>
-        <div className="jim" onClick={onSettingsToggle} title="Settings"><i className="ti ti-settings" /></div>
+        <div className="jim" onClick={onSettingsToggle} title="Configurações"><i className="ti ti-settings" /></div>
         <div className="pillstate"><span className="dot" />RISK-ON · DEFENSE ARMED</div>
         <Clock />
       </div>

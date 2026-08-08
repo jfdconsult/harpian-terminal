@@ -304,13 +304,13 @@ function CompanyAnalysisPanel({ symbol, name, axes, raw, isFav }: { symbol: stri
         <div className="placeholder" style={{ padding: 30, textAlign: "center" }}>
           <div className="muted" style={{ marginBottom: 12 }}>JIM analyzes favorites automatically. This ticker is a one-off — request the analysis on demand.</div>
           <button className="btn ghost" style={{ padding: "8px 16px", fontSize: 11 }} onClick={() => setRequested(true)}>
-            <i className="ti ti-sparkles" /> Ask JIM for analysis
+            <i className="ti ti-sparkles" /> Perguntar análise ao JIM
           </button>
         </div>
       ) : loading ? (
         <div style={{ padding: "30px 10px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
           <div className="jim-typing"><span /><span /><span /></div>
-          <div className="muted">Hold on while JIM analyzes all the numbers…</div>
+          <div className="muted">Um instante enquanto o JIM analisa os números…</div>
         </div>
       ) : error ? (
         <div className="placeholder">{error}</div>

@@ -163,7 +163,7 @@ export default function MercadoVisao({ go }: { go?: (id: ScreenId, param?: strin
             fontFamily: "var(--mono)", fontSize: 10, padding: "4px 10px", borderRadius: 5, cursor: "pointer",
             border: "1px solid rgba(201,160,44,.4)", background: "rgba(201,160,44,.12)", color: "var(--gold)",
           }}>
-          <i className="ti ti-sparkles" style={{ fontSize: 11, marginRight: 4 }} />Ask JIM
+          <i className="ti ti-sparkles" style={{ fontSize: 11, marginRight: 4 }} />Perguntar ao JIM
         </button>
       </div>
 

@@ -27,397 +27,397 @@ interface Node {
 // ── QUICK-START ────────────────────────────────────────────────────────
 interface QuickStep { n: number; title: string; blurb: string; go: ScreenId; param?: string; icon: string }
 const QUICK_START: QuickStep[] = [
-  { n: 1, title: "Read JIM's morning briefing",   blurb: "Open Dashboard. JIM's headline tells you the regime, defense state, and if any client needs attention today.",           go: "painel",        icon: "ti-sun" },
-  { n: 2, title: "Check the Verdict (ARI · XRI · Defense)", blurb: "Same page, 3 tiles. If both regimes agree and defense is disarmed, it's a calm day. Otherwise, dig in.",         go: "painel",        icon: "ti-checkbox" },
-  { n: 3, title: "Open the fund → The Vault",      blurb: "Funds › HPC22 → tab \"The Vault\". This is what your clients see: how many positions, hit rate, 3 rotating closed trades.", go: "fundo", param: "HPC22", icon: "ti-shield-lock" },
-  { n: 4, title: "Verify a client on the 4-level ruler", blurb: "Risk › Comparison. Every client on the same scale — you spot who is drifting above their mandate immediately.",   go: "risco",         icon: "ti-scale" },
-  { n: 5, title: "Ask JIM anything",               blurb: "Jim AI button (top-right). It sees the exact screen you are on and answers in context — even the private data.",         go: "painel",        icon: "ti-sparkles" },
+  { n: 1, title: "Leia o briefing matinal do JIM",   blurb: "Abra o Painel. A manchete do JIM informa o regime, o estado de defesa e se algum cliente precisa de atenção hoje.",           go: "painel",        icon: "ti-sun" },
+  { n: 2, title: "Confira o Veredito (ARI · XRI · Defesa)", blurb: "Mesma página, 3 cartões. Se os dois regimes concordam e a defesa está desarmada, é um dia calmo. Caso contrário, investigue.",         go: "painel",        icon: "ti-checkbox" },
+  { n: 3, title: "Abra o fundo → The Vault",      blurb: "Fundos › HPC22 → aba \"The Vault\". É o que seus clientes veem: quantas posições, taxa de acerto, 3 trades encerrados em rodízio.", go: "fundo", param: "HPC22", icon: "ti-shield-lock" },
+  { n: 4, title: "Confira um cliente na régua de 4 níveis", blurb: "Risco › Comparação. Todos os clientes na mesma escala — você identifica na hora quem está acima do mandato.",   go: "risco",         icon: "ti-scale" },
+  { n: 5, title: "Pergunte qualquer coisa ao JIM",               blurb: "Botão Jim AI (canto superior direito). Ele vê exatamente a tela em que você está e responde no contexto — inclusive os dados privados.",         go: "painel",        icon: "ti-sparkles" },
 ];
 
 const NODES: Node[] = [
   {
-    key: "painel", label: "Dashboard", icon: "ti-home", fase: "Day 1 · start here", cor: "var(--gold)", startHere: true,
-    importa: "Your 30-second daily check-in. Open it first thing. JIM up top, verdict + funds + alerts below. Drag & drop the boxes to make it yours (like Bloomberg).",
+    key: "painel", label: "Painel", icon: "ti-home", fase: "Dia 1 · comece aqui", cor: "var(--gold)", startHere: true,
+    importa: "Seu check-in diário de 30 segundos. Abra logo de manhã. JIM no topo, veredito + fundos + alertas abaixo. Arraste e solte os blocos para deixar do seu jeito (como no Bloomberg).",
     telas: [
       {
-        nome: "Dashboard", go: "painel",
-        why: "One page with everything you need to decide whether today is a normal day or one that needs action.",
+        nome: "Painel", go: "painel",
+        why: "Uma página com tudo o que você precisa para decidir se hoje é um dia normal ou um dia que exige ação.",
         boxes: [
-          { t: "JIM — Morning Briefing", d: "Greeting + headline of the day + collapsible sections: portfolio, regime, market DNA, clients & risk, calendar. Click any section header to open the full screen." },
-          { t: "Verdict — ARI · XRI · Defense", d: "Three tiles: internal regime (ARI, our engine), external regime (XRI, the 26-country stress index), and whether Defense is armed. All three green = risk-on. Any amber/red = read carefully." },
-          { t: "Your Funds", d: "HPC22 and HPC11 side by side, with 1D / 5D / MTD / YTD chips and delta vs S&P YTD. Click to open the fund page." },
-          { t: "XRI — External Regime", d: "Score 0–100 + state (MODERADO/CAUTELA/BEAR), direction, confidence, and top 2 country drivers pushing the index." },
-          { t: "Alerts", d: "Real-time flags: clients outside mandate, clients within 8 points of their mandate, high-impact market events (Fed, CPI…)." },
-          { t: "The Vault — aggregate", d: "4 KPIs of the ETP right now: active positions, % of AUM invested, 90-day hit rate, average holding days. CTA opens the full Vault tab." },
-          { t: "Clients", d: "Total AUM, active client count, number outside mandate." },
+          { t: "JIM — Briefing Matinal", d: "Saudação + manchete do dia + seções recolhíveis: portfólio, regime, market DNA, clientes e risco, calendário. Clique no cabeçalho de qualquer seção para abrir a tela completa." },
+          { t: "Veredito — ARI · XRI · Defesa", d: "Três cartões: regime interno (ARI, nosso motor), regime externo (XRI, o índice de estresse de 26 países) e se a Defesa está armada. Os três verdes = risk-on. Qualquer âmbar/vermelho = leia com atenção." },
+          { t: "Seus Fundos", d: "HPC22 e HPC11 lado a lado, com chips 1D / 5D / MTD / YTD e o delta vs S&P no ano. Clique para abrir a página do fundo." },
+          { t: "XRI — Regime Externo", d: "Score 0–100 + estado (MODERADO/CAUTELA/BEAR), direção, confiança e os 2 principais países que empurram o índice." },
+          { t: "Alertas", d: "Sinalizações em tempo real: clientes fora do mandato, clientes a 8 pontos do mandato, eventos de mercado de alto impacto (Fed, CPI…)." },
+          { t: "The Vault — agregado", d: "4 KPIs do ETP agora: posições ativas, % do AUM investido, taxa de acerto em 90 dias, média de dias em posição. O CTA abre a aba completa do Vault." },
+          { t: "Clientes", d: "AUM total, número de clientes ativos, quantos estão fora do mandato." },
         ],
       },
     ],
   },
   {
-    key: "mercado", label: "Market", icon: "ti-chart-candle", fase: "Read the scenario", cor: "var(--blue)", startHere: true,
-    importa: "Before you open a client or a fund, understand the environment. Live prices, both regime indices (internal and external), the 10-layer market DNA, and the calendar.",
+    key: "mercado", label: "Mercado", icon: "ti-chart-candle", fase: "Leia o cenário", cor: "var(--blue)", startHere: true,
+    importa: "Antes de abrir um cliente ou um fundo, entenda o ambiente. Preços ao vivo, os dois índices de regime (interno e externo), o market DNA de 10 camadas e o calendário.",
     telas: [
       {
-        nome: "Market Overview (ARI)", go: "regime",
-        why: "The S&P 500 read + internal regime + what shifts our risk posture. Start here on days that feel weird.",
+        nome: "Visão de Mercado (ARI)", go: "regime",
+        why: "A leitura do S&P 500 + o regime interno + o que muda a nossa postura de risco. Comece por aqui nos dias que parecem estranhos.",
         boxes: [
           {
-            t: "5 header cards", d: "S&P 500 price + day change · YTD · RSI(14) · Max DD & Sharpe · Regime pill (ARI live).",
-            w: "Price alone lies. Price + RSI + drawdown together tells you if you're buying strength or catching a falling knife. The Regime pill collapses 40+ signals into one word — that's the shortcut."
+            t: "5 cartões de cabeçalho", d: "Preço do S&P 500 + variação do dia · YTD · RSI(14) · Max DD e Sharpe · Pílula de regime (ARI ao vivo).",
+            w: "O preço sozinho engana. Preço + RSI + drawdown juntos dizem se você está comprando força ou aparando uma faca caindo. A pílula de regime condensa mais de 40 sinais em uma palavra — esse é o atalho."
           },
           {
-            t: "JIM — Market Analysis", d: "One paragraph consolidating regime, S&P, VIX, Fear & Greed, breadth and next event.",
-            w: "JIM cross-reads 5 unrelated inputs. When they agree, conviction is high; when they diverge, that's usually where alpha hides — and that's what JIM will point out."
+            t: "JIM — Análise de Mercado", d: "Um parágrafo consolidando regime, S&P, VIX, Fear & Greed, amplitude e o próximo evento.",
+            w: "O JIM cruza 5 fontes não relacionadas. Quando concordam, a convicção é alta; quando divergem, costuma ser onde o alfa se esconde — e é isso que o JIM vai apontar."
           },
           {
-            t: "S&P 500 chart", d: "Candles with 3M–5Y toggle and indicator overlays (EMA, Bollinger, Volume, RSI, Momentum).",
-            w: "You can't manage risk on a chart you can't see. Overlaying EMAs lets you spot regime shifts before CNBC calls them — the price crosses the EMA before the narrative catches up."
+            t: "Gráfico do S&P 500", d: "Candles com alternância 3M–5Y e sobreposição de indicadores (EMA, Bollinger, Volume, RSI, Momentum).",
+            w: "Não dá para gerir risco em um gráfico que você não consegue ver. Sobrepor as EMAs permite identificar mudanças de regime antes de a CNBC anunciar — o preço cruza a EMA antes de a narrativa alcançar."
           },
           {
-            t: "Market DNA summary", d: "Score bars per dimension: Volatility, Sentiment, Breadth, Macro, Positioning.",
-            w: "One dimension is anecdote; five agreeing is a regime. This mini-view is your gut-check before diving into the full Market DNA screen."
+            t: "Resumo do Market DNA", d: "Barras de score por dimensão: Volatilidade, Sentimento, Amplitude, Macro, Posicionamento.",
+            w: "Uma dimensão é anedota; cinco concordando é um regime. Esta miniatura é a sua conferência rápida antes de mergulhar na tela completa do Market DNA."
           },
           {
-            t: "Calendar + News (side rail)", d: "Upcoming high-impact events + market-moving headlines.",
-            w: "Half the yearly moves happen on 10 dates. Knowing which 10 — and being positioned BEFORE, not after — is the whole game."
+            t: "Calendário + Notícias (barra lateral)", d: "Próximos eventos de alto impacto + manchetes que movem o mercado.",
+            w: "Metade dos movimentos do ano acontece em 10 datas. Saber quais são as 10 — e estar posicionado ANTES, não depois — é o jogo inteiro."
           },
         ],
       },
       {
-        nome: "XRI — External Regime", go: "xri",
-        why: "The 26-country external stress index. When it flips before ARI, the shock is coming from abroad — that's usually the first warning.",
+        nome: "XRI — Regime Externo", go: "xri",
+        why: "O índice de estresse externo de 26 países. Quando ele vira antes do ARI, o choque vem de fora — costuma ser o primeiro aviso.",
         boxes: [
           {
-            t: "Score + state + confidence", d: "0–100 score, state (MODERADO/CAUTELA/BEAR/BULL), direction (estável / deteriorando / melhorando), confidence % (how many countries agree).",
-            w: "US markets don't move in a vacuum. A shock in Japan, China or the Eurozone can hit SPY 24–48h later. XRI is the early warning that beats the domestic news cycle."
+            t: "Score + estado + confiança", d: "Score 0–100, estado (MODERADO/CAUTELA/BEAR/BULL), direção (estável / deteriorando / melhorando), confiança % (quantos países concordam).",
+            w: "Os mercados americanos não se movem no vácuo. Um choque no Japão, na China ou na Zona do Euro pode atingir o SPY 24–48h depois. O XRI é o alerta antecipado que se adianta ao noticiário doméstico."
           },
           {
-            t: "Country drivers", d: "Top contributors to the current score (Japan, China, Euro Area…) with % contribution.",
-            w: "Knowing WHERE the stress originates tells you which SECTOR to hedge. Japan-driven fear hits semis; China-driven hits consumer discretionary; Euro-driven hits luxury and banks."
+            t: "Países que puxam o índice", d: "Principais contribuintes para o score atual (Japão, China, Zona do Euro…) com a % de contribuição.",
+            w: "Saber DE ONDE o estresse se origina diz qual SETOR proteger. Medo puxado pelo Japão atinge semicondutores; pela China, consumo discricionário; pela Europa, luxo e bancos."
           },
           {
-            t: "Transmission channels", d: "Fragility (structural) vs Macro prior (slow) vs Market stress (fast) — where the risk is coming from mechanically.",
-            w: "Fragility means the system will crack under stress even without stress today. Fast means FX/rates are already breaking. Same score, completely different playbook."
+            t: "Canais de transmissão", d: "Fragilidade (estrutural) vs prior macro (lento) vs estresse de mercado (rápido) — de onde o risco vem mecanicamente.",
+            w: "Fragilidade significa que o sistema vai rachar sob estresse mesmo sem estresse hoje. Rápido significa que câmbio/juros já estão quebrando. Mesmo score, manual de ação completamente diferente."
           },
         ],
       },
       {
         nome: "Market DNA", go: "market-dna",
-        why: "The 10-layer institutional read. Each layer scored 0–100. The AVERAGE is Conviction; the SPREAD is where it gets interesting.",
+        why: "A leitura institucional de 10 camadas. Cada camada pontuada de 0–100. A MÉDIA é a Convicção; a DISPERSÃO é onde fica interessante.",
         boxes: [
           {
-            t: "Summary header (inside Score per Layer)", d: "Conviction score + regime pill (CAUTIOUS/HEALTHY/…) + live/partial counters. Formula shown on hover of the header.",
-            w: "The average is what the crowd talks about. The disagreement is where alpha hides. LIVE vs PARTIAL tells you how much of the score is real-time data vs stale."
+            t: "Cabeçalho de resumo (dentro de Score por Camada)", d: "Score de convicção + pílula de regime (CAUTIOUS/HEALTHY/…) + contadores live/partial. A fórmula aparece ao passar o mouse no cabeçalho.",
+            w: "A média é sobre o que a multidão fala. A discordância é onde o alfa se esconde. LIVE vs PARTIAL diz quanto do score é dado em tempo real vs defasado."
           },
           {
-            t: "Intelligence Radar", d: "Polygon with the 7 layers' scores at once — you see shape, not just numbers.",
-            w: "Numbers hide the shape. A polygon shows instantly if the market is uniformly good, uniformly bad, or lopsided — the lopsided case is usually the interesting one."
+            t: "Radar de Inteligência", d: "Polígono com os scores das 7 camadas de uma vez — você vê a forma, não só os números.",
+            w: "Os números escondem a forma. Um polígono mostra na hora se o mercado está uniformemente bom, uniformemente ruim ou desequilibrado — o caso desequilibrado costuma ser o interessante."
           },
           {
-            t: "Score per Layer", d: "Bars sorted by score, each with LIVE/PART badge (data source status).",
-            w: "If Positioning is 90 (extreme long) and Sentiment is 20 (extreme fear), someone is bluffing. That contradiction is the trade the mainstream misses."
+            t: "Score por Camada", d: "Barras ordenadas por score, cada uma com selo LIVE/PART (status da fonte de dados).",
+            w: "Se Posicionamento está 90 (comprado extremo) e Sentimento está 20 (medo extremo), alguém está blefando. Essa contradição é o trade que o mercado convencional perde."
           },
           {
-            t: "Cards per layer", d: "Positioning, Volatility, Options, Liquidity, Breadth, Sentiment, Macro — each with 4 indicators (VIX, IV Rank, Yield Curve, Credit Spread…).",
-            w: "Each score is built on 4 sub-indicators. Auditing them tells you if the score is fragile (1 indicator dominating) or robust (4 agreeing) — same 60 score means very different things."
+            t: "Cartões por camada", d: "Posicionamento, Volatilidade, Opções, Liquidez, Amplitude, Sentimento, Macro — cada um com 4 indicadores (VIX, IV Rank, Curva de Juros, Spread de Crédito…).",
+            w: "Cada score é construído sobre 4 subindicadores. Auditá-los diz se o score é frágil (1 indicador dominando) ou robusto (4 concordando) — o mesmo score 60 significa coisas muito diferentes."
           },
           {
-            t: "JIM Intelligence panel", d: "Where the layers CONTRADICT each other — those disagreements hide the real signal.",
-            w: "Any dashboard shows averages. JIM specifically highlights the CONTRADICTIONS — because that's the information no single number would surface."
+            t: "Painel JIM Intelligence", d: "Onde as camadas se CONTRADIZEM — essas discordâncias escondem o sinal de verdade.",
+            w: "Qualquer painel mostra médias. O JIM destaca especificamente as CONTRADIÇÕES — porque essa é a informação que nenhum número isolado revelaria."
           },
         ],
       },
       {
         nome: "Snowflake", go: "snowflake",
-        why: "Multi-dimensional view of a single asset (value, future, past, health, dividend).",
+        why: "Visão multidimensional de um único ativo (valor, futuro, passado, saúde, dividendo).",
         boxes: [
           {
-            t: "Snowflake per asset", d: "5-point radar per company with the qualitative read on each axis.",
-            w: "Companies aren't just their P/E ratio. A 5-dimension view forces you to see health + past + dividend + value + future together — one weak axis is a red flag no single ratio catches."
+            t: "Snowflake por ativo", d: "Radar de 5 pontos por empresa com a leitura qualitativa de cada eixo.",
+            w: "Empresas não são só o seu P/L. Uma visão de 5 dimensões força você a ver saúde + passado + dividendo + valor + futuro juntos — um eixo fraco é um alerta que nenhum índice isolado capta."
           },
         ],
       },
       {
-        nome: "Calendar", go: "calendar",
-        why: "Only high-impact economic events (Fed, CPI, NFP, ECB…). Ignores noise.",
+        nome: "Calendário", go: "calendar",
+        why: "Só eventos econômicos de alto impacto (Fed, CPI, NFP, BCE…). Ignora o ruído.",
         boxes: [
           {
-            t: "Events feed", d: "Date, time, event, forecast, previous. Filter by country and impact.",
-            w: "Fed, CPI and NFP explain more short-term vol than any earnings season. You want to be positioned BEFORE they hit — not chasing after."
+            t: "Feed de eventos", d: "Data, hora, evento, previsão, anterior. Filtre por país e impacto.",
+            w: "Fed, CPI e NFP explicam mais volatilidade de curto prazo do que qualquer temporada de resultados. Você quer estar posicionado ANTES de eles saírem — não correndo atrás depois."
           },
         ],
       },
       {
-        nome: "Quotes", go: "cotacoes",
-        why: "Live prices across all classes in one panel.",
+        nome: "Cotações", go: "cotacoes",
+        why: "Preços ao vivo de todas as classes em um único painel.",
         boxes: [
           {
-            t: "Tabs by class", d: "Favorites + stocks, indices, ETFs, sectors, commodities, crypto, forex.",
-            w: "Cross-asset context: if bonds and gold are up while stocks fall, that's risk-off. Only side-by-side class-tabs let you see it in one glance."
+            t: "Abas por classe", d: "Favoritos + ações, índices, ETFs, setores, commodities, cripto, forex.",
+            w: "Contexto entre classes: se títulos e ouro sobem enquanto as ações caem, é risk-off. Só as abas de classes lado a lado deixam você ver isso num relance."
           },
           {
-            t: "Quotes table", d: "Last price, Day / 1M / YTD / 1Y and 1-year Sharpe per asset. Click opens the chart.",
-            w: "1-year Sharpe next to the price is your quick filter for 'is this cheap by luck or by process'. High price + low Sharpe = expensive lottery ticket."
+            t: "Tabela de cotações", d: "Último preço, Dia / 1M / YTD / 1A e o Sharpe de 1 ano por ativo. Clicar abre o gráfico.",
+            w: "O Sharpe de 1 ano ao lado do preço é o seu filtro rápido para 'isto está barato por sorte ou por processo'. Preço alto + Sharpe baixo = bilhete de loteria caro."
           },
         ],
       },
       {
         nome: "Screener", go: "screener",
-        why: "Filter the universe with your own criteria (momentum, valuation, sector…). Client-safe — the filters here are NOT the ones the ETP uses internally.",
+        why: "Filtre o universo com seus próprios critérios (momentum, valuation, setor…). Seguro para o cliente — os filtros aqui NÃO são os que o ETP usa internamente.",
         boxes: [
           {
-            t: "Multi-filter", d: "Combine market cap, sector, momentum, valuation. Results in a sortable table.",
-            w: "Every gestor needs a personal watchlist. The Screener is your microscope. The ETP's engine stays proprietary — this one is yours to explore, not to reverse-engineer ours."
+            t: "Multifiltro", d: "Combine market cap, setor, momentum, valuation. Resultados em uma tabela ordenável.",
+            w: "Todo gestor precisa de uma watchlist pessoal. O Screener é o seu microscópio. O motor do ETP permanece proprietário — este é seu para explorar, não para fazer engenharia reversa do nosso."
           },
         ],
       },
     ],
   },
   {
-    key: "intelligence", label: "Intelligence", icon: "ti-building", fase: "Institutional edge", cor: "var(--blue)",
-    importa: "The differentiator vs a home broker: what the big players are doing (SEC 13F, insider Form 4, CFTC COT), retail sentiment (StockTwits), and the raw filings — all in one place.",
+    key: "intelligence", label: "Inteligência", icon: "ti-building", fase: "Vantagem institucional", cor: "var(--blue)",
+    importa: "O diferencial frente a uma corretora de varejo: o que os grandes players estão fazendo (SEC 13F, Form 4 de insiders, COT da CFTC), o sentimento do varejo (StockTwits) e os documentos brutos — tudo em um só lugar.",
     telas: [
       {
         nome: "Social Radar", go: "social-radar",
-        why: "Retail's declared sentiment, live, with the reach of who is speaking.",
+        why: "O sentimento declarado do varejo, ao vivo, com o alcance de quem está falando.",
         boxes: [
           {
-            t: "Post feed (StockTwits)", d: "Author + verified badge, reach tier, sentiment (Bullish/Bearish/Neutral), cashtags.",
-            w: "Retail is right at the turn and wrong at the tail. Volume of a name exploding on StockTwits with weak fundamentals = short-squeeze setup you can trade against."
+            t: "Feed de posts (StockTwits)", d: "Autor + selo de verificado, faixa de alcance, sentimento (Bullish/Bearish/Neutral), cashtags.",
+            w: "O varejo acerta na virada e erra na cauda. Volume de um nome explodindo no StockTwits com fundamentos fracos = setup de short-squeeze contra o qual você pode operar."
           },
           {
-            t: "Intelligence panel", d: "Click a post: assets mentioned + our read on sentiment reliability.",
-            w: "Sentiment is direction; reach is amplitude. High reach + wrong sentiment = the contra-trade opportunity institutional desks live for."
+            t: "Painel de inteligência", d: "Clique num post: ativos mencionados + a nossa leitura da confiabilidade do sentimento.",
+            w: "Sentimento é direção; alcance é amplitude. Alto alcance + sentimento errado = a oportunidade de contra-trade pela qual as mesas institucionais vivem."
           },
         ],
       },
       {
         nome: "News Broadcast", go: "news-broadcast",
-        why: "Consolidated financial feed, filterable by source and impact.",
+        why: "Feed financeiro consolidado, filtrável por fonte e impacto.",
         boxes: [
           {
-            t: "Headline grid", d: "Source, impact tag (Market Moving / High / Normal), time, title.",
-            w: "You can't react to what you didn't see. Filtering by 'Market Moving' cuts through 95% of noise so you only spend attention where it counts."
+            t: "Grade de manchetes", d: "Fonte, etiqueta de impacto (Market Moving / High / Normal), horário, título.",
+            w: "Você não reage ao que não viu. Filtrar por 'Market Moving' corta 95% do ruído para você gastar atenção só onde importa."
           },
         ],
       },
       {
         nome: "Insider Orders", go: "insider-orders",
-        why: "SEC Form 4 — when a director or officer buys/sells their own shares.",
+        why: "SEC Form 4 — quando um diretor ou executivo compra/vende as próprias ações.",
         boxes: [
           {
-            t: "Filings table", d: "Date, insider name + role, company, ticker, side (buy/sell), share count, $ value. Click for the original filing.",
-            w: "Officers know their business better than any analyst. Clusters of insider BUYS have historically beaten SPX by 6–8% p.a. Insider sells are noisier (stock comp, diversification) — the BUY signal is stronger."
+            t: "Tabela de filings", d: "Data, nome do insider + cargo, empresa, ticker, lado (compra/venda), quantidade de ações, valor em $. Clique para o filing original.",
+            w: "Executivos conhecem o próprio negócio melhor que qualquer analista. Aglomerados de COMPRAS de insiders historicamente superaram o SPX em 6–8% a.a. As vendas de insiders são mais ruidosas (remuneração em ações, diversificação) — o sinal de COMPRA é mais forte."
           },
         ],
       },
       {
-        nome: "13F Holdings", go: "institutional",
-        why: "SEC Form 13F — what the largest hedge funds hold every quarter.",
+        nome: "Posições 13F", go: "institutional",
+        why: "SEC Form 13F — o que os maiores hedge funds detêm a cada trimestre.",
         boxes: [
           {
-            t: "4 KPIs", d: "Total 13F AUM, holdings count, filing date, period.",
-            w: "The SIZE of a fund tells you if their trades are informative or just moves in the water. A $100B fund adding 1% of a small-cap is a real conviction bet."
+            t: "4 KPIs", d: "AUM total do 13F, número de posições, data do filing, período.",
+            w: "O TAMANHO de um fundo diz se as operações dele são informativas ou só marolas. Um fundo de US$ 100 bi adicionando 1% de uma small-cap é uma aposta de convicção real."
           },
           {
-            t: "Top 10 + All holdings", d: "Issuer, class, CUSIP, $ value, share count, put/call.",
-            w: "When Bridgewater or Berkshire adds a position, they had to justify it internally. Their portfolio is a leaked memo of their conviction — legally free to read, most gestores don't."
+            t: "Top 10 + Todas as posições", d: "Emissor, classe, CUSIP, valor em $, quantidade de ações, put/call.",
+            w: "Quando a Bridgewater ou a Berkshire adiciona uma posição, tiveram de justificá-la internamente. O portfólio deles é um memorando vazado da convicção — legalmente livre para ler, e a maioria dos gestores não lê."
           },
         ],
       },
       {
         nome: "COT Intelligence", go: "cot-sentiment",
-        why: "CFTC Commitments of Traders — big players' futures positioning, normalized (COT Index 0–100).",
+        why: "CFTC Commitments of Traders — o posicionamento em futuros dos grandes players, normalizado (COT Index 0–100).",
         boxes: [
           {
-            t: "Guide + extreme flags", d: "The 3 groups (Commercials · Large Specs · Nonreportable) and which markets are at extreme.",
-            w: "Large Speculators at extreme long is a classic reversal signal. Commercials at extreme SHORT means producers are hedging heavy — same reversal, mirrored. When both point one way, the reversal is imminent."
+            t: "Guia + sinalizações de extremo", d: "Os 3 grupos (Commercials · Large Specs · Nonreportable) e quais mercados estão em extremo.",
+            w: "Large Speculators em compra extrema é um sinal clássico de reversão. Commercials em venda extrema significa produtores fazendo hedge pesado — a mesma reversão, espelhada. Quando ambos apontam na mesma direção, a reversão é iminente."
           },
           {
-            t: "Cards by market", d: "COT Index 0–100, weekly change, net position by group (% of OI), Open Interest, contrarian alert when extreme.",
-            w: "Same principle across all major futures. When 3+ markets hit extreme simultaneously, that's a systemic warning — not a single-market anomaly."
+            t: "Cartões por mercado", d: "COT Index 0–100, variação semanal, posição líquida por grupo (% do OI), Open Interest, alerta contrário quando em extremo.",
+            w: "O mesmo princípio em todos os principais futuros. Quando 3 ou mais mercados atingem o extremo ao mesmo tempo, é um aviso sistêmico — não uma anomalia de um único mercado."
           },
         ],
       },
       {
         nome: "COT Data Explorer", go: "cot-legacy",
-        why: "Raw CFTC data — straight to the number, no interpretation.",
+        why: "Dados brutos da CFTC — direto ao número, sem interpretação.",
         boxes: [
           {
-            t: "Raw table", d: "Date, market, Spec Net, Comm Net (and % of OI), longs/shorts by group, Open Interest, 4–52 week window.",
-            w: "The normalized COT Index hides jumps in raw open interest. Explorer lets you drill for the exception the smooth score erases."
+            t: "Tabela bruta", d: "Data, mercado, Spec Net, Comm Net (e % do OI), longs/shorts por grupo, Open Interest, janela de 4–52 semanas.",
+            w: "O COT Index normalizado esconde saltos no open interest bruto. O Explorer permite garimpar a exceção que o score suavizado apaga."
           },
         ],
       },
       {
         nome: "Filings Search", go: "filings-search",
-        why: "SEC EDGAR full-text search across 10-K, 10-Q, 8-K since 2001.",
+        why: "Busca de texto completo no SEC EDGAR em 10-K, 10-Q, 8-K desde 2001.",
         boxes: [
           {
-            t: "Keyword search", d: "Type a keyword, filter by form type / date / ticker. Results link to EDGAR.",
-            w: "Companies bury the truth in the 10-K body, not the abstract. Searching 'material weakness' or 'going concern' surfaces warnings the earnings PR won't."
+            t: "Busca por palavra-chave", d: "Digite uma palavra-chave, filtre por tipo de formulário / data / ticker. Os resultados linkam para o EDGAR.",
+            w: "As empresas enterram a verdade no corpo do 10-K, não no resumo. Buscar 'material weakness' ou 'going concern' revela alertas que o release de resultados não mostra."
           },
         ],
       },
     ],
   },
   {
-    key: "fundos", label: "Funds", icon: "ti-coin", fase: "The product", cor: "var(--green)", startHere: true,
-    importa: "The heart of the sale — complete profile of each ETP. 8 tabs. The Vault (default) is the star: transparency without giving away the model.",
+    key: "fundos", label: "Fundos", icon: "ti-coin", fase: "O produto", cor: "var(--green)", startHere: true,
+    importa: "O coração da venda — o perfil completo de cada ETP. 8 abas. O The Vault (padrão) é a estrela: transparência sem entregar o modelo.",
     telas: [
       {
-        nome: "Fund · Overview", go: "fundo", param: "HPC22",
-        why: "Product profile: what it is, what it delivers, governance seals.",
+        nome: "Fundo · Visão Geral", go: "fundo", param: "HPC22",
+        why: "Perfil do produto: o que é, o que entrega, selos de governança.",
         boxes: [
-          { t: "Header + Highlights", d: "Ticker, name, strategy, status, ISIN + 4 headline stats (CAGR, Max DD, Sortino…) with S&P and Nasdaq comparison." },
-          { t: "Product data + Seals", d: "Key-value profile and governance seals (Harpian doesn't custody or execute — Lynk/BNYM does)." },
+          { t: "Cabeçalho + Destaques", d: "Ticker, nome, estratégia, status, ISIN + 4 estatísticas de destaque (CAGR, Max DD, Sortino…) com comparação vs S&P e Nasdaq." },
+          { t: "Dados do produto + Selos", d: "Perfil chave-valor e selos de governança (a Harpian não faz custódia nem execução — quem faz é a Lynk/BNYM)." },
         ],
       },
       {
-        nome: "The Vault (default tab)", go: "fundo", param: "HPC22",
-        why: "Verified Opacity Protocol. The client sees enough to trust — not enough to replicate. This is what protects the edge while proving skin-in-the-game.",
+        nome: "The Vault (aba padrão)", go: "fundo", param: "HPC22",
+        why: "Protocolo de Opacidade Verificada. O cliente vê o suficiente para confiar — não o suficiente para replicar. É isso que protege a vantagem enquanto prova o skin-in-the-game.",
         boxes: [
-          { t: "The Vault (aggregate)", d: "5 KPIs: active longs, hedges, % AUM invested, portfolio beta, avg holding, 90-day hit rate. NEVER shows tickers of active positions." },
-          { t: "The Showcase (3 closed positions)", d: "3 real trades the ETP closed, sampled from positions closed ≥ 28 days ago. Rotates every Monday 06:00 BRT. No archive." },
-          { t: "Momentum Weather", d: "Regime state + defense % + streak days + last regime flip (from/to + magnitude). The trigger stack stays proprietary." },
-          { t: "Do Not Touch", d: "5 worst SPX500 momentum + 2 fragile sectors we are actively avoiding this week. Publishing what we AVOID is safer than what we buy." },
+          { t: "The Vault (agregado)", d: "5 KPIs: comprados ativos, hedges, % do AUM investido, beta do portfólio, tempo médio em posição, taxa de acerto em 90 dias. NUNCA mostra os tickers das posições ativas." },
+          { t: "The Showcase (3 posições encerradas)", d: "3 trades reais que o ETP encerrou, amostrados de posições fechadas há 28 dias ou mais. Rotaciona toda segunda-feira às 06:00 (horário de Brasília). Sem arquivo." },
+          { t: "Momentum Weather", d: "Estado do regime + % de defesa + dias de sequência + última virada de regime (de/para + magnitude). A pilha de gatilhos permanece proprietária." },
+          { t: "Do Not Touch", d: "Os 5 piores momentums do SPX500 + 2 setores frágeis que estamos evitando ativamente esta semana. Publicar o que EVITAMOS é mais seguro do que o que compramos." },
         ],
       },
       {
-        nome: "Fund · Performance", go: "fundo", param: "HPC22",
-        why: "Proof of results, always benchmarked. Layout: chart 2/3 · tables 1/3.",
+        nome: "Fundo · Desempenho", go: "fundo", param: "HPC22",
+        why: "A prova dos resultados, sempre comparada a benchmark. Layout: gráfico 2/3 · tabelas 1/3.",
         boxes: [
-          { t: "$10k over time (left, 2/3)", d: "Real portfolio growth vs S&P vs CORE22+, with return and MaxDD by period." },
-          { t: "Gross vs net vs S&P (right, 1/3)", d: "Metric-by-metric table." },
-          { t: "CORE22+ vs S&P vs Nasdaq (right)", d: "CAGR, Max DD, Ulcer, Sharpe, Sortino, negative years — all three benchmarks side by side." },
+          { t: "US$ 10 mil ao longo do tempo (esquerda, 2/3)", d: "Crescimento real do portfólio vs S&P vs CORE22+, com retorno e MaxDD por período." },
+          { t: "Bruto vs líquido vs S&P (direita, 1/3)", d: "Tabela métrica a métrica." },
+          { t: "CORE22+ vs S&P vs Nasdaq (direita)", d: "CAGR, Max DD, Ulcer, Sharpe, Sortino, anos negativos — os três benchmarks lado a lado." },
         ],
       },
       {
-        nome: "Fund · Risk & Journey", go: "fundo", param: "HPC22",
-        why: "The capital-preservation story. Layout: chart 2/3 · tables 1/3.",
+        nome: "Fundo · Risco e Jornada", go: "fundo", param: "HPC22",
+        why: "A história da preservação de capital. Layout: gráfico 2/3 · tabelas 1/3.",
         boxes: [
-          { t: "Journey chart (left, 2/3)", d: "Cumulative return vs S&P vs Dow vs Treasuries. CORE22+ line turns AMBER during periods when Defense was armed (2008, 2020, 2022, etc.), with subtle backdrop bands. Hover shows the crisis name." },
-          { t: "Dimension 1 · Journey risk (right)", d: "Declines ≥5%: CORE22+ vs S&P side by side." },
-          { t: "Dimension 2 · Entry-point risk (right)", d: "Buying at the annual peak: % positive and worst case by horizon." },
+          { t: "Gráfico da jornada (esquerda, 2/3)", d: "Retorno acumulado vs S&P vs Dow vs Treasuries. A linha do CORE22+ fica ÂMBAR nos períodos em que a Defesa esteve armada (2008, 2020, 2022, etc.), com faixas sutis ao fundo. Passar o mouse mostra o nome da crise." },
+          { t: "Dimensão 1 · Risco da jornada (direita)", d: "Quedas ≥5%: CORE22+ vs S&P lado a lado." },
+          { t: "Dimensão 2 · Risco do ponto de entrada (direita)", d: "Comprando no topo do ano: % de casos positivos e o pior caso por horizonte." },
         ],
       },
       {
-        nome: "Fund · Crisis Defense", go: "fundo", param: "HPC22",
-        why: "By crisis: drawdown and recovery time, S&P vs CORE, plus Nasdaq comparison.",
+        nome: "Fundo · Defesa em Crises", go: "fundo", param: "HPC22",
+        why: "Por crise: drawdown e tempo de recuperação, S&P vs CORE, mais a comparação com a Nasdaq.",
         boxes: [
-          { t: "Crisis defense table", d: "Dot-com, GFC, COVID, 2022 bear, etc. — S&P decline & recovery vs CORE22+ decline & recovery." },
+          { t: "Tabela de defesa em crises", d: "Dot-com, GFC, COVID, bear de 2022, etc. — queda e recuperação do S&P vs queda e recuperação do CORE22+." },
         ],
       },
       {
-        nome: "Composition · 5w snapshot", go: "fundo", param: "HPC22",
-        why: "The portfolio as it was 35 days ago. Full transparency (tickers + weights + defense) but with a rolling embargo — holding is ~34 days, so most positions here already turned.",
+        nome: "Composição · foto de 5 semanas", go: "fundo", param: "HPC22",
+        why: "O portfólio como estava há 35 dias. Transparência total (tickers + pesos + defesa), mas com embargo móvel — o tempo em posição é de ~34 dias, então a maioria das posições aqui já rodou.",
         boxes: [
-          { t: "Delay banner", d: "Explicit callout: 'not live composition'. Shows exact snapshot date and the regime state at that moment." },
-          { t: "3 profiles", d: "Conservative / Balanced / Advanced: stocks vs ETFs split, positions count, top holdings with weight %." },
-          { t: "Defense layer (as it was)", d: "The defensive assets and weights active on that snapshot date. The trigger is still proprietary." },
+          { t: "Aviso de defasagem", d: "Aviso explícito: 'composição não é ao vivo'. Mostra a data exata da foto e o estado do regime naquele momento." },
+          { t: "3 perfis", d: "Conservador / Balanceado / Avançado: divisão entre ações e ETFs, número de posições, principais posições com % de peso." },
+          { t: "Camada de defesa (como estava)", d: "Os ativos defensivos e os pesos ativos naquela data da foto. O gatilho continua proprietário." },
         ],
       },
       {
-        nome: "Fund · Economics & Architecture", go: "fundo", param: "HPC22",
-        why: "The commercial and operational profile — fees, custody, settlement, contacts.",
+        nome: "Fundo · Economia e Arquitetura", go: "fundo", param: "HPC22",
+        why: "O perfil comercial e operacional — taxas, custódia, liquidação, contatos.",
         boxes: [
-          { t: "ETP economics", d: "Management fee, performance fee, minimum, currency." },
-          { t: "Institutional architecture", d: "Custody (BNY Mellon), settlement (Euroclear/Clearstream), issuer, calculation agent." },
-          { t: "Engine architecture", d: "Which engine variant powers this fund (client-safe wording)." },
-          { t: "Contacts", d: "Operational counterparts for onboarding and subscription." },
+          { t: "Economia do ETP", d: "Taxa de gestão, taxa de performance, mínimo, moeda." },
+          { t: "Arquitetura institucional", d: "Custódia (BNY Mellon), liquidação (Euroclear/Clearstream), emissor, agente de cálculo." },
+          { t: "Arquitetura do motor", d: "Qual variante do motor alimenta este fundo (redação segura para o cliente)." },
+          { t: "Contatos", d: "Contrapartes operacionais para onboarding e subscrição." },
         ],
       },
       {
-        nome: "Fund · How to Buy", go: "fundo", param: "HPC22",
-        why: "5-step guide from analysis to submission via Lynk.",
+        nome: "Fundo · Como Comprar", go: "fundo", param: "HPC22",
+        why: "Guia de 5 passos, da análise ao envio via Lynk.",
         boxes: [
-          { t: "5-step flow", d: "Instructions per step for the MFO / broker desk." },
-          { t: "Submit order CTA", d: "Opens the Orders screen pre-loaded for this fund." },
+          { t: "Fluxo de 5 passos", d: "Instruções por passo para o MFO / mesa da corretora." },
+          { t: "CTA de enviar ordem", d: "Abre a tela de Ordens pré-carregada para este fundo." },
         ],
       },
       {
-        nome: "Submit order (Lynk)", go: "ordem",
-        why: "Closes the cycle: subscription/redemption goes to Lynk.",
+        nome: "Enviar ordem (Lynk)", go: "ordem",
+        why: "Fecha o ciclo: a subscrição/resgate vai para a Lynk.",
         boxes: [
-          { t: "Product + Order", d: "Profile (ISIN, yesterday's NAV, BNYM custody, Euroclear/Clearstream settlement), side, client, amount, notes." },
-          { t: "Validation", d: "Minimum $50k, multiples of $5k, confirmation dialog." },
-          { t: "Custody × broker", d: "Cash at BNY Mellon (NY); accounts via Interactive Brokers (IBKR)." },
-          { t: "Manual execution", d: "Every daily order is executed manually by the team after review in the cockpit. JIM interprets and supports — no order is automatic." },
+          { t: "Produto + Ordem", d: "Perfil (ISIN, NAV de ontem, custódia BNYM, liquidação Euroclear/Clearstream), lado, cliente, valor, observações." },
+          { t: "Validação", d: "Mínimo de US$ 50 mil, múltiplos de US$ 5 mil, diálogo de confirmação." },
+          { t: "Custódia × corretora", d: "Caixa no BNY Mellon (NY); contas via Interactive Brokers (IBKR)." },
+          { t: "Execução manual", d: "Toda ordem diária é executada manualmente pela equipe após revisão no cockpit. O JIM interpreta e apoia — nenhuma ordem é automática." },
         ],
       },
     ],
   },
   {
-    key: "clientes", label: "Clients", icon: "ti-users", fase: "The people", cor: "var(--gold)",
-    importa: "The MFO's client base: who they are, how much they have, what they hold, who's outside mandate. From onboarding CSV to detailed portfolio and alerts.",
+    key: "clientes", label: "Clientes", icon: "ti-users", fase: "As pessoas", cor: "var(--gold)",
+    importa: "A base de clientes do MFO: quem são, quanto têm, o que carregam, quem está fora do mandato. Do CSV de onboarding à carteira detalhada e aos alertas.",
     telas: [
       {
-        nome: "Client list", go: "clientes",
-        why: "Portfolio view of the whole office in one screen.",
+        nome: "Lista de clientes", go: "clientes",
+        why: "Visão de portfólio de todo o escritório em uma tela.",
         boxes: [
-          { t: "4 KPIs", d: "Total AUM, client count, average Harpian allocation, how many outside mandate." },
-          { t: "Clients table", d: "Name, type, profile, AUM, gain %, Risk Number, alignment (within / above mandate)." },
-          { t: "Add client (top-right)", d: "Onboard a new client with the profile questionnaire." },
+          { t: "4 KPIs", d: "AUM total, número de clientes, alocação média na Harpian, quantos estão fora do mandato." },
+          { t: "Tabela de clientes", d: "Nome, tipo, perfil, AUM, ganho %, Risk Number, alinhamento (dentro / acima do mandato)." },
+          { t: "Adicionar cliente (canto superior direito)", d: "Faça o onboarding de um novo cliente com o questionário de perfil." },
         ],
       },
       {
-        nome: "Client portfolio", go: "carteira",
-        why: "One client's detail: what they hold, the risk gap, and a migration simulator.",
+        nome: "Carteira do cliente", go: "carteira",
+        why: "O detalhe de um cliente: o que carrega, o gap de risco e um simulador de migração.",
         boxes: [
-          { t: "What they hold today", d: "Allocation bars per asset class." },
-          { t: "Risk gap", d: "Risk Number vs mandate + 'migrate % to HPC22' slider." },
-          { t: "Portfolios per account", d: "Cards per portfolio (broker/account, value, positions count)." },
+          { t: "O que carrega hoje", d: "Barras de alocação por classe de ativo." },
+          { t: "Gap de risco", d: "Risk Number vs mandato + slider 'migrar % para o HPC22'." },
+          { t: "Carteiras por conta", d: "Cartões por carteira (corretora/conta, valor, número de posições)." },
         ],
       },
       {
-        nome: "Import / connect", go: "importar",
-        why: "Bring an outside portfolio into the terminal.",
+        nome: "Importar / conectar", go: "importar",
+        why: "Traga uma carteira externa para o terminal.",
         boxes: [
-          { t: "CSV upload + preview", d: "Drag in a spreadsheet (asset, quantity, avg price); review; apply to the client." },
+          { t: "Upload de CSV + prévia", d: "Arraste uma planilha (ativo, quantidade, preço médio); revise; aplique ao cliente." },
         ],
       },
       {
-        nome: "Alerts", go: "alertas",
-        why: "What needs action today, without digging through every client.",
+        nome: "Alertas", go: "alertas",
+        why: "O que exige ação hoje, sem vasculhar cliente por cliente.",
         boxes: [
-          { t: "Alert feed", d: "Level (critical / watch / info), the alert, and when. Mixes client risk drifts + market events (Fed, CPI…)." },
+          { t: "Feed de alertas", d: "Nível (crítico / atenção / informativo), o alerta e quando. Mistura desvios de risco de clientes + eventos de mercado (Fed, CPI…)." },
         ],
       },
     ],
   },
   {
-    key: "risco", label: "Risk", icon: "ti-shield-half", fase: "Suitability", cor: "var(--red)",
-    importa: "Compliance flipped into a sales argument. Product · Mandate · Tolerance · Portfolio, all on the SAME 0-100 ruler. Shows the client whether they are (or aren't) inside what was agreed.",
+    key: "risco", label: "Risco", icon: "ti-shield-half", fase: "Suitability", cor: "var(--red)",
+    importa: "Compliance transformado em argumento de venda. Produto · Mandato · Tolerância · Carteira, todos na MESMA régua de 0-100. Mostra ao cliente se ele está (ou não) dentro do que foi combinado.",
     telas: [
       {
-        nome: "Comparison · 4 levels", go: "risco",
-        why: "4 risks side-by-side. Reference points: S&P 500 sits at ≈72, HPC22 ≈38, HPC11 ≈34 — both well below the market.",
+        nome: "Comparação · 4 níveis", go: "risco",
+        why: "4 riscos lado a lado. Pontos de referência: o S&P 500 está em ≈72, o HPC22 em ≈38, o HPC11 em ≈34 — ambos bem abaixo do mercado.",
         boxes: [
           {
-            t: "4 level cards", d: "Product risk · Client tolerance · Mandate ceiling · Portfolio risk.",
-            w: "The word 'risk' is meaningless without a scale. When you show S&P at 72, HPC22 at 38, and the client mandate at 40 — the conversation is over, the picture wins."
+            t: "4 cartões de nível", d: "Risco do produto · Tolerância do cliente · Teto do mandato · Risco da carteira.",
+            w: "A palavra 'risco' não significa nada sem uma escala. Quando você mostra o S&P em 72, o HPC22 em 38 e o mandato do cliente em 40 — a conversa acaba, a imagem vence."
           },
           {
-            t: "Client ruler", d: "Green→red bar with 4 markers + migration simulator to HPC22.",
-            w: "A visual ruler beats a paragraph of jargon 10:1. Institutional clients want a picture that fits on a slide — this IS that slide."
+            t: "Régua do cliente", d: "Barra verde→vermelho com 4 marcadores + simulador de migração para o HPC22.",
+            w: "Uma régua visual ganha de um parágrafo de jargão por 10 a 1. Clientes institucionais querem uma imagem que caiba em um slide — esta É esse slide."
           },
           {
-            t: "All clients on the ruler", d: "Comparison table (portfolio vs mandate per client) + badge showing how many are outside.",
-            w: "Portfolio-level view: who's drifting above their mandate, who's aligned. Compliance and sales in one screen — the compliance flag becomes the retention argument ('let's fix this')."
+            t: "Todos os clientes na régua", d: "Tabela comparativa (carteira vs mandato por cliente) + selo mostrando quantos estão fora.",
+            w: "Visão de portfólio: quem está desviando acima do mandato, quem está alinhado. Compliance e vendas em uma tela — o alerta de compliance vira o argumento de retenção ('vamos ajustar isso')."
           },
         ],
       },
     ],
   },
   {
-    key: "ajustes", label: "Settings", icon: "ti-settings", fase: "Support", cor: "var(--tx2)",
-    importa: "Operations + branding: connections, API for your management system, white-label so the terminal wears your office's identity.",
+    key: "ajustes", label: "Configurações", icon: "ti-settings", fase: "Apoio", cor: "var(--tx2)",
+    importa: "Operações + marca: conexões, API para o seu sistema de gestão, white-label para o terminal vestir a identidade do seu escritório.",
     telas: [
-      { nome: "Integrations",         go: "integracoes", why: "Live status of every data source and provider (custody, market data, Lynk).", boxes: [{ t: "Providers", d: "Each source is genuinely queried when the screen opens — status is measured, not declared." }] },
-      { nome: "API & Integration",    go: "api",         why: "For the technical team to plug the Terminal's data into the MFO's management system.", boxes: [{ t: "Keys & endpoints", d: "REST endpoints, auth model, integration docs (phase 2)." }] },
-      { nome: "Brand (white-label)",  go: "marca",       why: "Terminal wears your office's identity in end-client reports.", boxes: [{ t: "Brand kit", d: "Logo, primary color, accent, name shown to the end client." }] },
-      { nome: "Settings",             go: "config",      why: "General preferences and display.", boxes: [{ t: "Preferences", d: "Theme (default / light / dark) and display settings." }] },
+      { nome: "Integrações",         go: "integracoes", why: "Status ao vivo de cada fonte de dados e provedor (custódia, dados de mercado, Lynk).", boxes: [{ t: "Provedores", d: "Cada fonte é de fato consultada quando a tela abre — o status é medido, não declarado." }] },
+      { nome: "API & Integração",    go: "api",         why: "Para a equipe técnica plugar os dados do Terminal no sistema de gestão do MFO.", boxes: [{ t: "Chaves e endpoints", d: "Endpoints REST, modelo de autenticação, docs de integração (fase 2)." }] },
+      { nome: "Marca (white-label)",  go: "marca",       why: "O terminal veste a identidade do seu escritório nos relatórios ao cliente final.", boxes: [{ t: "Kit de marca", d: "Logo, cor primária, cor de destaque, nome exibido ao cliente final." }] },
+      { nome: "Configurações",             go: "config",      why: "Preferências gerais e exibição.", boxes: [{ t: "Preferências", d: "Tema (padrão / claro / escuro) e configurações de exibição." }] },
     ],
   },
 ];
@@ -429,8 +429,8 @@ export default function Tutorial({ go }: { go: (id: ScreenId, param?: string) =>
   return (
     <div className="screen">
       <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
-        <div className="h1" style={{ margin: 0 }}>How to use the terminal — full map</div>
-        <div className="sub" style={{ margin: 0 }}>Click each menu to see why it matters and what each box brings. Follows the natural flow of the day: scenario → product → client → execution.</div>
+        <div className="h1" style={{ margin: 0 }}>Como usar o terminal — mapa completo</div>
+        <div className="sub" style={{ margin: 0 }}>Clique em cada menu para ver por que importa e o que cada bloco traz. Segue o fluxo natural do dia: cenário → produto → cliente → execução.</div>
       </div>
 
       {/* ═══════════ QUICK START ═══════════ */}
@@ -442,9 +442,9 @@ export default function Tutorial({ go }: { go: (id: ScreenId, param?: string) =>
         <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap", marginBottom: 10 }}>
           <h3 style={{ margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
             <i className="ti ti-rocket" style={{ color: "var(--gold)" }} />
-            Quick Start — 5 minutes, 5 clicks
+            Início Rápido — 5 minutos, 5 cliques
           </h3>
-          <span className="muted" style={{ fontSize: 12 }}>First time here? Follow the numbers.</span>
+          <span className="muted" style={{ fontSize: 12 }}>Primeira vez aqui? Siga os números.</span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
           {QUICK_START.map((s) => (
@@ -500,12 +500,12 @@ export default function Tutorial({ go }: { go: (id: ScreenId, param?: string) =>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <div style={{ fontSize: 14, fontWeight: 700, color: on ? "var(--tx)" : "var(--tx2)" }}>{n.label}</div>
                       {n.startHere && (
-                        <span title="Recommended starting point"
+                        <span title="Ponto de partida recomendado"
                           style={{
                             fontSize: 8.5, fontWeight: 700, padding: "2px 6px", borderRadius: 3,
                             background: "rgba(201,160,44,.18)", color: "var(--gold)",
                             fontFamily: "var(--mono)", letterSpacing: .4,
-                          }}>START HERE</span>
+                          }}>COMECE AQUI</span>
                       )}
                     </div>
                   </div>
@@ -523,7 +523,7 @@ export default function Tutorial({ go }: { go: (id: ScreenId, param?: string) =>
               <span style={{ marginLeft: "auto", fontSize: 10, fontFamily: "var(--mono)", color: "var(--tx3)" }}>{node.fase}</span>
             </h3>
             <div style={{ fontSize: 13, lineHeight: 1.6, color: "var(--tx2)" }}>
-              <b style={{ color: "var(--gold)" }}>Why it matters: </b>{node.importa}
+              <b style={{ color: "var(--gold)" }}>Por que importa: </b>{node.importa}
             </div>
           </div>
 
@@ -534,7 +534,7 @@ export default function Tutorial({ go }: { go: (id: ScreenId, param?: string) =>
                   <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--tx)" }}>{tela.nome}</span>
                   {tela.go && (
                     <button className="btn ghost" style={{ marginLeft: "auto", fontSize: 11, padding: "3px 10px" }}
-                      onClick={() => go(tela.go!, tela.param)}>open screen ›</button>
+                      onClick={() => go(tela.go!, tela.param)}>abrir tela ›</button>
                   )}
                 </div>
                 <div style={{ fontSize: 12, color: "var(--tx2)", lineHeight: 1.5, marginBottom: 10 }}>{tela.why}</div>
@@ -550,7 +550,7 @@ export default function Tutorial({ go }: { go: (id: ScreenId, param?: string) =>
                           fontSize: 11, color: "var(--gold)", lineHeight: 1.55,
                         }}>
                           <b style={{ fontWeight: 700, letterSpacing: 0.4, fontSize: 9.5, fontFamily: "var(--mono)", display: "block", marginBottom: 3, opacity: 0.85 }}>
-                            → WHY IT MATTERS
+                            → POR QUE IMPORTA
                           </b>
                           <span style={{ fontStyle: "italic", color: "var(--tx)" }}>{b.w}</span>
                         </div>
@@ -566,15 +566,15 @@ export default function Tutorial({ go }: { go: (id: ScreenId, param?: string) =>
 
       {/* Footer: customization + Jim */}
       <div className="card mt" style={{ borderColor: "rgba(201,160,44,.3)" }}>
-        <h3><i className="ti ti-layout-grid-add" />Customize everything (like Bloomberg)</h3>
+        <h3><i className="ti ti-layout-grid-add" />Personalize tudo (como no Bloomberg)</h3>
         <div className="muted" style={{ lineHeight: 1.6 }}>
-          Every dashboard has a <b style={{ color: "var(--tx)" }}>default</b> layout, but you <b style={{ color: "var(--tx)" }}>add, remove and drag</b> the cards. Start with the Dashboard: remove what you don&apos;t use, bring in what matters. That&apos;s how the terminal becomes your working tool.
+          Todo painel tem um layout <b style={{ color: "var(--tx)" }}>padrão</b>, mas você <b style={{ color: "var(--tx)" }}>adiciona, remove e arrasta</b> os cartões. Comece pelo Painel: remova o que não usa, traga o que importa. É assim que o terminal vira a sua ferramenta de trabalho.
         </div>
       </div>
 
       <div className="card mt" style={{ display: "flex", alignItems: "center", gap: 14, borderColor: "rgba(201,160,44,.3)" }}>
         <i className="ti ti-sparkles" style={{ fontSize: 22, color: "var(--gold)" }} />
-        <div style={{ flex: 1 }}><b style={{ fontSize: 13 }}>Need help?</b> <span className="muted" style={{ fontSize: 13 }}>Ask Jim AI anytime — it sees the screen and answers in context.</span></div>
+        <div style={{ flex: 1 }}><b style={{ fontSize: 13 }}>Precisa de ajuda?</b> <span className="muted" style={{ fontSize: 13 }}>Pergunte ao Jim AI a qualquer momento — ele vê a tela e responde no contexto.</span></div>
       </div>
     </div>
   );
