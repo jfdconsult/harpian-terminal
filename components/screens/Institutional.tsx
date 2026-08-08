@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useI18n } from "@/lib/i18n";
 import { GOV_API, fmtN, fmtUSD } from "@/lib/data";
 import { publishScreenData } from "@/lib/jim-data";
 
@@ -7,7 +8,36 @@ interface Fund { short: string; name: string; style: string; cik?: string; }
 interface Holding { issuer: string; title_of_class: string; cusip: string; value_x1000_usd: number; shares: number; put_call?: string; share_type?: string; }
 interface FundData { num_holdings?: number; filing_date?: string; period?: string; all_holdings?: Holding[]; }
 
+// ════════════════════════════════════════════════════════════════
+// i18n — local dictionary for this screen. One entry per user-visible
+// English string. en = current text (kept EXACTLY), pt = natural
+// institutional Brazilian-Portuguese. Brand/product terms and codes
+// (13F, CUSIP, AUM, Put/Call values) are intentionally NOT translated.
+// ════════════════════════════════════════════════════════════════
+const TR = {
+  title: { pt: "Posições Institucionais", en: "Institutional Holdings" },
+  subtitle: { pt: "SEC Form 13F · O que os maiores hedge funds estão comprando e vendendo.", en: "SEC Form 13F · What the largest hedge funds are buying and selling." },
+  fundLabel: { pt: "Fundo:", en: "Fund:" },
+  apiOffline: { pt: "API offline — execute: python api_server.py", en: "API offline — run: python api_server.py" },
+  offlinePlaceholderPrefix: { pt: "API gov-data offline. Execute ", en: "gov-data API offline. Run " },
+  offlinePlaceholderSuffix: { pt: " (porta 8877) para ver os dados reais.", en: " (port 8877) to see the real data." },
+  totalAum13f: { pt: "AUM Total (13F)", en: "Total AUM (13F)" },
+  holdings: { pt: "Posições", en: "Holdings" },
+  filingDate: { pt: "Data do Filing", en: "Filing Date" },
+  period: { pt: "Período", en: "Period" },
+  top10Holdings: { pt: "Top 10 Posições", en: "Top 10 Holdings" },
+  issuer: { pt: "Emissor", en: "Issuer" },
+  className: { pt: "Classe", en: "Class" },
+  valueUsd: { pt: "Valor (USD)", en: "Value (USD)" },
+  shares: { pt: "Ações", en: "Shares" },
+  allHoldings: { pt: "Todas as Posições", en: "All Holdings" },
+  value: { pt: "Valor", en: "Value" },
+  type: { pt: "Tipo", en: "Type" },
+} as const;
+
 export default function Institutional() {
+  const { lang } = useI18n();
+  const t = (k: keyof typeof TR) => TR[k][lang];
   const [funds, setFunds] = useState<Fund[]>([]);
   const [selected, setSelected] = useState("");
   const [data, setData] = useState<FundData | null>(null);
@@ -60,30 +90,30 @@ export default function Institutional() {
     );
   }, [fund, data, holdings, totalVal]);
   const stats = [
-    { v: fmtUSD(totalVal), l: "Total AUM (13F)" },
-    { v: fmtN(data?.num_holdings || holdings.length), l: "Holdings" },
-    { v: data?.filing_date || "—", l: "Filing Date" },
-    { v: data?.period || "—", l: "Period" },
+    { v: fmtUSD(totalVal), l: t("totalAum13f") },
+    { v: fmtN(data?.num_holdings || holdings.length), l: t("holdings") },
+    { v: data?.filing_date || "—", l: t("filingDate") },
+    { v: data?.period || "—", l: t("period") },
   ];
 
   return (
     <div className="screen">
       <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
-        <div className="h1" style={{ margin: 0 }}>Institutional Holdings</div>
-        <div className="sub" style={{ margin: 0 }}>SEC Form 13F · What the largest hedge funds are buying and selling.</div>
+        <div className="h1" style={{ margin: 0 }}>{t("title")}</div>
+        <div className="sub" style={{ margin: 0 }}>{t("subtitle")}</div>
       </div>
 
       <div style={{ display: "flex", gap: 8, alignItems: "center", margin: "14px 0", flexWrap: "wrap" }}>
-        <span className="flabel">Fund:</span>
+        <span className="flabel">{t("fundLabel")}</span>
         <select className="fsel" style={{ fontSize: 12, padding: "6px 10px", minWidth: 240 }} value={selected} onChange={(e) => setSelected(e.target.value)}>
-          {offline && <option>API offline — run: python api_server.py</option>}
+          {offline && <option>{t("apiOffline")}</option>}
           {funds.map((f) => (<option key={f.short} value={f.short}>{f.name} ({f.style})</option>))}
         </select>
         <span style={{ fontSize: 11, color: "var(--tx3)", marginLeft: "auto" }}>{fund ? `${fund.style}${fund.cik ? " · CIK " + fund.cik : ""}` : ""}</span>
       </div>
 
       {offline ? (
-        <div className="placeholder">gov-data API offline. Run <b>python api_server.py</b> (port 8877) to see the real data.</div>
+        <div className="placeholder">{t("offlinePlaceholderPrefix")}<b>python api_server.py</b>{t("offlinePlaceholderSuffix")}</div>
       ) : (
         <>
           <div className="grid g4" style={{ marginBottom: 14 }}>
@@ -96,10 +126,10 @@ export default function Institutional() {
           </div>
 
           <div className="card" style={{ marginBottom: 14 }}>
-            <h3>Top 10 Holdings</h3>
+            <h3>{t("top10Holdings")}</h3>
             <div style={{ overflowX: "auto" }}>
               <table>
-                <thead><tr><th>#</th><th>Issuer</th><th>Class</th><th>CUSIP</th><th className="num">Value (USD)</th><th className="num">Shares</th><th style={{ textAlign: "center" }}>P/C</th></tr></thead>
+                <thead><tr><th>#</th><th>{t("issuer")}</th><th>{t("className")}</th><th>CUSIP</th><th className="num">{t("valueUsd")}</th><th className="num">{t("shares")}</th><th style={{ textAlign: "center" }}>P/C</th></tr></thead>
                 <tbody>
                   {holdings.slice(0, 10).map((x, i) => (
                     <tr key={i}>
@@ -118,10 +148,10 @@ export default function Institutional() {
           </div>
 
           <div className="card">
-            <h3>All Holdings ({holdings.length})</h3>
+            <h3>{t("allHoldings")} ({holdings.length})</h3>
             <div style={{ maxHeight: 400, overflowY: "auto", overflowX: "auto" }}>
               <table>
-                <thead><tr><th>#</th><th>Issuer</th><th>Class</th><th>CUSIP</th><th className="num">Value</th><th className="num">Shares</th><th style={{ textAlign: "center" }}>Type</th></tr></thead>
+                <thead><tr><th>#</th><th>{t("issuer")}</th><th>{t("className")}</th><th>CUSIP</th><th className="num">{t("value")}</th><th className="num">{t("shares")}</th><th style={{ textAlign: "center" }}>{t("type")}</th></tr></thead>
                 <tbody>
                   {holdings.map((x, i) => (
                     <tr key={i}>

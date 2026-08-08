@@ -1,9 +1,59 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { useI18n } from "@/lib/i18n";
 import { getFavorites, syncFromServer } from "@/lib/favorites";
 import { publishScreenData } from "@/lib/jim-data";
 import BackToVisao from "../BackToVisao";
 import type { ScreenId } from "@/lib/nav";
+
+const TR = {
+  title: { pt: "Calendário", en: "Calendar" },
+  subtitle: { pt: "Macro dos EUA de alto impacto + resultados dos seus favoritos. Clique em qualquer linha para abrir a Nasdaq com a análise completa.", en: "High-impact US macro + earnings for your favorites. Click any row to open Nasdaq for the full write-up." },
+  when: { pt: "Quando", en: "When" },
+  upcoming: { pt: "Próximos", en: "Upcoming" },
+  latest: { pt: "Recentes", en: "Latest" },
+  window: { pt: "Janela", en: "Window" },
+  next3: { pt: "Próximos 3 dias", en: "Next 3 days" },
+  last3: { pt: "Últimos 3 dias", en: "Last 3 days" },
+  next7: { pt: "Próximos 7 dias", en: "Next 7 days" },
+  last7: { pt: "Últimos 7 dias", en: "Last 7 days" },
+  next14: { pt: "Próximos 14 dias", en: "Next 14 days" },
+  last14: { pt: "Últimos 14 dias", en: "Last 14 days" },
+  next30: { pt: "Próximos 30 dias", en: "Next 30 days" },
+  last30: { pt: "Últimos 30 dias", en: "Last 30 days" },
+  economic: { pt: "Econômico", en: "Economic" },
+  earningsFavorites: { pt: "Resultados", en: "Earnings" },
+  favoritesSuffix: { pt: "favoritos", en: "favorites" },
+  upcomingEconDesc: { pt: "Próximos CPI · NFP · FOMC · GDP · PCE · Vendas no Varejo · Pedidos de Seguro-Desemprego · ISM · ADP", en: "Upcoming CPI · NFP · FOMC · GDP · PCE · Retail Sales · Jobless Claims · ISM · ADP" },
+  latestEconDesc: { pt: "Divulgações dos EUA mais recentes já publicadas (com o valor real)", en: "Most recent US releases already published (with the actual print)" },
+  events: { pt: "eventos", en: "events" },
+  loading: { pt: "Carregando…", en: "Loading…" },
+  calendarUnavailable: { pt: "Calendário indisponível", en: "Calendar unavailable" },
+  noHighImpactEvents: { pt: "Nenhum evento de alto impacto dos EUA nesta janela", en: "No high-impact US events in this window" },
+  tryWidening: { pt: "Tente ampliá-la.", en: "Try widening it." },
+  date: { pt: "Data", en: "Date" },
+  time: { pt: "Hora", en: "Time" },
+  event: { pt: "Evento", en: "Event" },
+  consensus: { pt: "Consenso", en: "Consensus" },
+  previous: { pt: "Anterior", en: "Previous" },
+  actual: { pt: "Real", en: "Actual" },
+  openOnNasdaq: { pt: "Abrir na Nasdaq", en: "Open on Nasdaq" },
+  noFavoritesYet: { pt: "Nenhum favorito ainda", en: "No favorites yet" },
+  starTickerHint: { pt: "Marque um ticker com estrela em qualquer tela de Mercado (Cotações, Gráfico, Screener) para ver a data de resultados aqui.", en: "Star a ticker on any Market screen (Quotes, Chart, Screener) to see its earnings date here." },
+  earningsFeedUnavailable: { pt: "Feed de resultados indisponível", en: "Earnings feed unavailable" },
+  noEarningsUpcoming: { pt: "Nenhum resultado agendado para seus favoritos nos próximos", en: "No earnings scheduled for your favorites in the next" },
+  noEarningsRecent: { pt: "Nenhum resultado divulgado pelos seus favoritos nos últimos", en: "No earnings reported by your favorites in the last" },
+  daysSuffix: { pt: "dias", en: "days" },
+  nasdaqPublishesAhead: { pt: "A Nasdaq publica o calendário de resultados com ~45 dias de antecedência.", en: "Nasdaq publishes the earnings calendar ~45 days ahead." },
+  ticker: { pt: "Ticker", en: "Ticker" },
+  company: { pt: "Empresa", en: "Company" },
+  epsConsensus: { pt: "EPS consenso", en: "EPS consensus" },
+  epsReported: { pt: "EPS reportado", en: "EPS reported" },
+  surprise: { pt: "Surpresa", en: "Surprise" },
+  fiscalQuarter: { pt: "Trimestre fiscal", en: "Fiscal quarter" },
+  lastYearEps: { pt: "EPS ano anterior", en: "Last year EPS" },
+  open: { pt: "Abrir", en: "Open" },
+} as const;
 
 interface EconEvent {
   datetime: string;
@@ -48,20 +98,23 @@ function fmtSurprise(v: string | number | null): { text: string; color: string }
 type Tab = "economic" | "earnings";
 type When = "upcoming" | "latest";
 
-const TIME_LABEL: Record<string, string> = {
-  "time-pre-market": "Pre-market",
-  "time-after-hours": "After hours",
-  "time-not-supplied": "TBD",
-};
+const TIME_LABEL_TR = {
+  "time-pre-market": { pt: "Pré-mercado", en: "Pre-market" },
+  "time-after-hours": { pt: "Pós-mercado", en: "After hours" },
+  "time-not-supplied": { pt: "A definir", en: "TBD" },
+} as const;
 
-function fmtTime(t: string | null): string {
-  return !t ? "—" : TIME_LABEL[t] || t;
+function fmtTime(t: string | null, lang: "pt" | "en"): string {
+  if (!t) return "—";
+  const entry = (TIME_LABEL_TR as Record<string, { pt: string; en: string }>)[t];
+  return entry ? entry[lang] : t;
 }
 
-function fmtDate(iso: string): string {
+function fmtDate(iso: string, lang: "pt" | "en"): string {
   const [y, m, d] = iso.split("-").map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d));
-  return dt.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  const locale = lang === "pt" ? "pt-BR" : "en-US";
+  return dt.toLocaleDateString(locale, { weekday: "short", month: "short", day: "numeric" });
 }
 
 // Row-level click handler that opens the Nasdaq source in a new tab.
@@ -75,6 +128,8 @@ const rowLink = (url: string | null): React.CSSProperties => ({
 });
 
 export default function Calendar({ go }: { go?: (id: ScreenId, param?: string) => void }) {
+  const { lang } = useI18n();
+  const t = (k: keyof typeof TR) => TR[k][lang];
   const [tab, setTab] = useState<Tab>("economic");
   const [when, setWhen] = useState<When>("upcoming");
   const [days, setDays] = useState<number>(7);
@@ -163,26 +218,26 @@ export default function Calendar({ go }: { go?: (id: ScreenId, param?: string) =
 
       <div className="flex between wrap" style={{ alignItems: "baseline", marginBottom: 10 }}>
         <div>
-          <div className="h1">Calendar</div>
+          <div className="h1">{t("title")}</div>
           <div className="sub" style={{ margin: 0 }}>
-            High-impact US macro + earnings for your favorites. Click any row to open Nasdaq for the full write-up.
+            {t("subtitle")}
           </div>
         </div>
         <div className="flex" style={{ gap: 10, alignItems: "center" }}>
           <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
-            When
+            {t("when")}
             <select className="input" value={when} onChange={(e) => setWhen(e.target.value as When)}>
-              <option value="upcoming">Upcoming</option>
-              <option value="latest">Latest</option>
+              <option value="upcoming">{t("upcoming")}</option>
+              <option value="latest">{t("latest")}</option>
             </select>
           </label>
           <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
-            Window
+            {t("window")}
             <select className="input" value={days} onChange={(e) => setDays(Number(e.target.value))}>
-              <option value={3}>{when === "upcoming" ? "Next 3 days" : "Last 3 days"}</option>
-              <option value={7}>{when === "upcoming" ? "Next 7 days" : "Last 7 days"}</option>
-              <option value={14}>{when === "upcoming" ? "Next 14 days" : "Last 14 days"}</option>
-              <option value={30}>{when === "upcoming" ? "Next 30 days" : "Last 30 days"}</option>
+              <option value={3}>{when === "upcoming" ? t("next3") : t("last3")}</option>
+              <option value={7}>{when === "upcoming" ? t("next7") : t("last7")}</option>
+              <option value={14}>{when === "upcoming" ? t("next14") : t("last14")}</option>
+              <option value={30}>{when === "upcoming" ? t("next30") : t("last30")}</option>
             </select>
           </label>
         </div>
@@ -190,10 +245,10 @@ export default function Calendar({ go }: { go?: (id: ScreenId, param?: string) =
 
       <div className="flex" style={{ gap: 6, marginBottom: 12 }}>
         <button className={`btn ${tab === "economic" ? "" : "ghost"}`} onClick={() => setTab("economic")}>
-          <i className="ti ti-calendar-event" /> Economic
+          <i className="ti ti-calendar-event" /> {t("economic")}
         </button>
         <button className={`btn ${tab === "earnings" ? "" : "ghost"}`} onClick={() => setTab("earnings")}>
-          <i className="ti ti-report-money" /> Earnings · {favorites.length} favorites
+          <i className="ti ti-report-money" /> {t("earningsFavorites")} · {favorites.length} {t("favoritesSuffix")}
         </button>
       </div>
 
@@ -202,33 +257,33 @@ export default function Calendar({ go }: { go?: (id: ScreenId, param?: string) =
           <div className="flex between" style={{ marginBottom: 10 }}>
             <div className="muted" style={{ fontSize: 12 }}>
               {when === "upcoming"
-                ? "Upcoming CPI · NFP · FOMC · GDP · PCE · Retail Sales · Jobless Claims · ISM · ADP"
-                : "Most recent US releases already published (with the actual print)"}
+                ? t("upcomingEconDesc")
+                : t("latestEconDesc")}
             </div>
-            <div className="muted" style={{ fontSize: 11 }}>{econ.length} events</div>
+            <div className="muted" style={{ fontSize: 11 }}>{econ.length} {t("events")}</div>
           </div>
           {econLoading ? (
-            <div className="muted" style={{ padding: 24, textAlign: "center" }}>Loading…</div>
+            <div className="muted" style={{ padding: 24, textAlign: "center" }}>{t("loading")}</div>
           ) : econError ? (
-            <div className="placeholder"><i className="ti ti-cloud-off" /><b>Calendar unavailable</b><div className="muted mt">{econError}</div></div>
+            <div className="placeholder"><i className="ti ti-cloud-off" /><b>{t("calendarUnavailable")}</b><div className="muted mt">{econError}</div></div>
           ) : econ.length === 0 ? (
-            <div className="placeholder"><i className="ti ti-calendar-off" /><b>No high-impact US events in this window</b><div className="muted mt">Try widening it.</div></div>
+            <div className="placeholder"><i className="ti ti-calendar-off" /><b>{t("noHighImpactEvents")}</b><div className="muted mt">{t("tryWidening")}</div></div>
           ) : (
             <table>
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Time</th>
-                  <th>Event</th>
-                  <th className="num">Consensus</th>
-                  <th className="num">Previous</th>
-                  <th className="num">Actual</th>
+                  <th>{t("date")}</th>
+                  <th>{t("time")}</th>
+                  <th>{t("event")}</th>
+                  <th className="num">{t("consensus")}</th>
+                  <th className="num">{t("previous")}</th>
+                  <th className="num">{t("actual")}</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
                 {econ.map((e, i) => (
-                  <tr key={`${e.datetime}-${i}`} onClick={() => openSource(e.source_url)} style={rowLink(e.source_url)} title={e.source_url ? "Open on Nasdaq" : undefined}>
+                  <tr key={`${e.datetime}-${i}`} onClick={() => openSource(e.source_url)} style={rowLink(e.source_url)} title={e.source_url ? t("openOnNasdaq") : undefined}>
                     <td>{e.date}</td>
                     <td>{e.time || "—"}</td>
                     <td style={{ color: "var(--tx)" }}>{e.event}</td>
@@ -249,37 +304,37 @@ export default function Calendar({ go }: { go?: (id: ScreenId, param?: string) =
           {favorites.length === 0 ? (
             <div className="placeholder">
               <i className="ti ti-star-off" />
-              <b>No favorites yet</b>
-              <div className="muted mt">Star a ticker on any Market screen (Quotes, Chart, Screener) to see its earnings date here.</div>
+              <b>{t("noFavoritesYet")}</b>
+              <div className="muted mt">{t("starTickerHint")}</div>
             </div>
           ) : earnLoading ? (
-            <div className="muted" style={{ padding: 24, textAlign: "center" }}>Loading…</div>
+            <div className="muted" style={{ padding: 24, textAlign: "center" }}>{t("loading")}</div>
           ) : earnError ? (
-            <div className="placeholder"><i className="ti ti-cloud-off" /><b>Earnings feed unavailable</b><div className="muted mt">{earnError}</div></div>
+            <div className="placeholder"><i className="ti ti-cloud-off" /><b>{t("earningsFeedUnavailable")}</b><div className="muted mt">{earnError}</div></div>
           ) : earn.length === 0 ? (
             <div className="placeholder">
               <i className="ti ti-calendar-check" />
-              <b>{when === "upcoming" ? `No earnings scheduled for your favorites in the next ${Math.max(days, 30)} days` : `No earnings reported by your favorites in the last ${Math.max(days, 30)} days`}</b>
-              <div className="muted mt">Nasdaq publishes the earnings calendar ~45 days ahead.</div>
+              <b>{when === "upcoming" ? `${t("noEarningsUpcoming")} ${Math.max(days, 30)} ${t("daysSuffix")}` : `${t("noEarningsRecent")} ${Math.max(days, 30)} ${t("daysSuffix")}`}</b>
+              <div className="muted mt">{t("nasdaqPublishesAhead")}</div>
             </div>
           ) : (
             <table>
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Time</th>
-                  <th>Ticker</th>
-                  <th>Company</th>
-                  <th className="num">EPS consensus</th>
+                  <th>{t("date")}</th>
+                  <th>{t("time")}</th>
+                  <th>{t("ticker")}</th>
+                  <th>{t("company")}</th>
+                  <th className="num">{t("epsConsensus")}</th>
                   {when === "latest" ? (
                     <>
-                      <th className="num">EPS reported</th>
-                      <th className="num">Surprise</th>
+                      <th className="num">{t("epsReported")}</th>
+                      <th className="num">{t("surprise")}</th>
                     </>
                   ) : (
                     <>
-                      <th>Fiscal quarter</th>
-                      <th className="num">Last year EPS</th>
+                      <th>{t("fiscalQuarter")}</th>
+                      <th className="num">{t("lastYearEps")}</th>
                     </>
                   )}
                   <th></th>
@@ -289,9 +344,9 @@ export default function Calendar({ go }: { go?: (id: ScreenId, param?: string) =
                 {earn.map((r) => {
                   const surp = fmtSurprise(r.surprise_pct);
                   return (
-                    <tr key={`${r.date}-${r.symbol}`} onClick={() => openSource(r.source_url)} style={rowLink(r.source_url)} title={r.source_url ? `Open ${r.symbol}` : undefined}>
-                      <td style={{ color: "var(--gold)", fontWeight: 600 }}>{fmtDate(r.date)}</td>
-                      <td>{fmtTime(r.time)}</td>
+                    <tr key={`${r.date}-${r.symbol}`} onClick={() => openSource(r.source_url)} style={rowLink(r.source_url)} title={r.source_url ? `${t("open")} ${r.symbol}` : undefined}>
+                      <td style={{ color: "var(--gold)", fontWeight: 600 }}>{fmtDate(r.date, lang)}</td>
+                      <td>{fmtTime(r.time, lang)}</td>
                       <td style={{ fontFamily: "var(--mono)", fontWeight: 700 }}>{r.symbol}</td>
                       <td style={{ color: "var(--tx2)" }}>{r.name || "—"}</td>
                       <td className="num">{r.eps_forecast || "—"}</td>

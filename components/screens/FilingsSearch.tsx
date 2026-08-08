@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useI18n } from "@/lib/i18n";
 import { GOV_API } from "@/lib/data";
 import { publishScreenData } from "@/lib/jim-data";
 
@@ -8,7 +9,29 @@ interface SearchResponse { query: string; forms?: string; total?: number; total_
 
 const COMMON_FORMS = ["", "10-K", "10-Q", "8-K", "DEF 14A", "S-1", "13D", "13G"];
 
+const TR = {
+  title: { pt: "Busca de Processos (Filings)", en: "Filings Search" },
+  subtitle: { pt: "SEC EDGAR Full-Text Search · Busca por palavra-chave em 10-K/10-Q/8-K/etc desde 2001.", en: "SEC EDGAR Full-Text Search · Keyword search across 10-K/10-Q/8-K/etc since 2001." },
+  placeholder: { pt: 'ex: "stock buyback", "material weakness"', en: 'ex: "stock buyback", "material weakness"' },
+  formLabel: { pt: "Formulário:", en: "Form:" },
+  all: { pt: "Todos", en: "All" },
+  searching: { pt: "Buscando…", en: "Searching…" },
+  search: { pt: "Buscar", en: "Search" },
+  offline: { pt: "API gov-data offline. Rode ", en: "gov-data API offline. Run " },
+  offlineSuffix: { pt: " (porta 8877) para ver dados reais.", en: " (port 8877) to see real data." },
+  results: { pt: "resultados", en: "results" },
+  outOfTotal: { pt: "de ~", en: "out of ~" },
+  date: { pt: "Data", en: "Date" },
+  company: { pt: "Empresa", en: "Company" },
+  form: { pt: "Formulário", en: "Form" },
+  document: { pt: "Documento", en: "Document" },
+  open: { pt: "abrir", en: "open" },
+  enterAndSearch: { pt: "Digite uma busca e clique em Buscar.", en: "Enter a search and click Search." },
+} as const;
+
 export default function FilingsSearch() {
+  const { lang } = useI18n();
+  const t = (k: keyof typeof TR) => TR[k][lang];
   const [query, setQuery] = useState("");
   const [forms, setForms] = useState("");
   const [data, setData] = useState<SearchResponse | null>(null);
@@ -44,36 +67,36 @@ export default function FilingsSearch() {
   return (
     <div className="screen">
       <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
-        <div className="h1" style={{ margin: 0 }}>Filings Search</div>
-        <div className="sub" style={{ margin: 0 }}>SEC EDGAR Full-Text Search · Keyword search across 10-K/10-Q/8-K/etc since 2001.</div>
+        <div className="h1" style={{ margin: 0 }}>{t("title")}</div>
+        <div className="sub" style={{ margin: 0 }}>{t("subtitle")}</div>
       </div>
 
       <div style={{ display: "flex", gap: 8, alignItems: "center", margin: "14px 0", flexWrap: "wrap" }}>
         <input
           className="fsel" style={{ minWidth: 260, fontSize: 12, padding: "6px 10px" }}
-          placeholder='ex: "stock buyback", "material weakness"'
+          placeholder={t("placeholder")}
           value={query} onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") search(); }}
         />
-        <span className="flabel">Form:</span>
+        <span className="flabel">{t("formLabel")}</span>
         <select className="fsel" style={{ fontSize: 12, padding: "6px 10px" }} value={forms} onChange={(e) => setForms(e.target.value)}>
-          {COMMON_FORMS.map((f) => (<option key={f} value={f}>{f || "All"}</option>))}
+          {COMMON_FORMS.map((f) => (<option key={f} value={f}>{f || t("all")}</option>))}
         </select>
         <button className="btn ghost" style={{ padding: "6px 14px", fontSize: 11 }} onClick={search} disabled={loading}>
-          {loading ? "Searching…" : "Search"}
+          {loading ? t("searching") : t("search")}
         </button>
       </div>
 
       {offline ? (
-        <div className="placeholder">gov-data API offline. Run <b>python api_server.py</b> (port 8877) to see real data.</div>
+        <div className="placeholder">{t("offline")}<b>python api_server.py</b>{t("offlineSuffix")}</div>
       ) : data?.error ? (
         <div className="placeholder">{data.error}</div>
       ) : data ? (
         <div className="card">
-          <h3>{data.n} results{data.total ? ` out of ~${data.total}${data.total_is_lower_bound ? "+" : ""}` : ""}</h3>
+          <h3>{data.n} {t("results")}{data.total ? ` ${t("outOfTotal")}${data.total}${data.total_is_lower_bound ? "+" : ""}` : ""}</h3>
           <div style={{ overflowX: "auto" }}>
             <table>
-              <thead><tr><th>Date</th><th>Company</th><th>Form</th><th>Document</th></tr></thead>
+              <thead><tr><th>{t("date")}</th><th>{t("company")}</th><th>{t("form")}</th><th>{t("document")}</th></tr></thead>
               <tbody>
                 {data.results.map((r, i) => (
                   <tr key={i}>
@@ -82,7 +105,7 @@ export default function FilingsSearch() {
                     <td style={{ color: "var(--tx2)" }}>{r.form_type || "—"}</td>
                     <td>
                       {r.document_url ? (
-                        <a href={r.document_url} target="_blank" rel="noreferrer" style={{ color: "var(--gold)" }}>open</a>
+                        <a href={r.document_url} target="_blank" rel="noreferrer" style={{ color: "var(--gold)" }}>{t("open")}</a>
                       ) : "—"}
                     </td>
                   </tr>
@@ -92,7 +115,7 @@ export default function FilingsSearch() {
           </div>
         </div>
       ) : (
-        <div className="placeholder">Enter a search and click Search.</div>
+        <div className="placeholder">{t("enterAndSearch")}</div>
       )}
     </div>
   );

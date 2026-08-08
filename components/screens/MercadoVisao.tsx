@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useI18n } from "@/lib/i18n";
 import { fetchSnapshot, type RegimeState } from "@/lib/snapshot";
 import { fetchXri, type XriView } from "@/lib/xri";
 import { GOV_API } from "@/lib/data";
@@ -27,6 +28,40 @@ import type { AssetResp } from "@/lib/types";
 //    instructions, not analysis.
 //  · Norman (progressive disclosure): the "why" lives on each indicator's own screen.
 // ============================================================
+
+// i18n dictionary — one entry per user-visible English string. Brand/product
+// terms and data-driven regime state codes (RISK-ON/CAUTION/etc.) are not translated.
+const TR = {
+  marketOverview: { pt: "Visão Geral do Mercado", en: "Market Overview" },
+  todaysSummary: { pt: "Resumo de hoje", en: "Today's summary" },
+  askJim: { pt: "Perguntar ao JIM", en: "Ask JIM" },
+  whatToDo: { pt: "O que fazer:", en: "What to do:" },
+  alerts: { pt: "ALERTAS", en: "ALERTS" },
+  internalRisk: { pt: "RISCO INTERNO", en: "INTERNAL RISK" },
+  sp500: { pt: "S&P 500", en: "S&P 500" },
+  todayLabel: { pt: "Hoje", en: "Today" },
+  ytd: { pt: "YTD", en: "YTD" },
+  rsi: { pt: "RSI", en: "RSI" },
+  externalRisk: { pt: "RISCO EXTERNO", en: "EXTERNAL RISK" },
+  confidence: { pt: "confiança", en: "confidence" },
+  xriUnavailable: { pt: "XRI indisponível", en: "XRI unavailable" },
+  intelligence: { pt: "INTELIGÊNCIA", en: "INTELLIGENCE" },
+  ivRank: { pt: "IV rank", en: "IV rank" },
+  fearGreed: { pt: "Fear & Greed", en: "Fear & Greed" },
+  breadth: { pt: "Amplitude", en: "Breadth" },
+  aboveMa200: { pt: "acima da MA200", en: "above MA200" },
+  credit: { pt: "Crédito", en: "Credit" },
+  curve: { pt: "curva", en: "curve" },
+  govDataOffline: { pt: "gov-data offline (8877)", en: "gov-data offline (8877)" },
+  indices: { pt: "ÍNDICES", en: "INDICES" },
+  loading: { pt: "carregando…", en: "loading…" },
+  openQuotesHint: { pt: "Abra Cotações para montar sua lista de favoritos.", en: "Open Quotes to build your favorites list." },
+  requiresAttention: { pt: "REQUER ATENÇÃO — SÓ APARECE QUANDO INDICADORES CRUZAM LIMITES", en: "REQUIRES ATTENTION — ONLY APPEARS WHEN INDICATORS CROSS" },
+  nothingCrossing: { pt: "Nada cruzando indicadores hoje.", en: "Nothing crossing indicators today." },
+  yourFavorites: { pt: "SEUS FAVORITOS", en: "YOUR FAVORITES" },
+  worst: { pt: "pior", en: "worst" },
+  favoritesEmptyHint: { pt: "Marque com ★ itens em Cotações ou Snowflake e começarei a acompanhar seus ativos aqui — variação diária e o eixo mais fraco de cada um.", en: "Star ★ items in Quotes or Snowflake and I'll start tracking your assets here — daily change and each one's weakest axis." },
+} as const;
 
 const REGIME_LABEL: Record<string, string> = { BULL: "RISK-ON", CAUTELA: "CAUTION", NEUTRO: "NEUTRAL", BEAR: "RISK-OFF" };
 // Red → green order, left to right (same convention as the XRI gauge).
@@ -86,6 +121,8 @@ function CardFoot({ text }: { text: string }) {
 }
 
 export default function MercadoVisao({ go }: { go?: (id: ScreenId, param?: string) => void }) {
+  const { lang } = useI18n();
+  const t = (k: keyof typeof TR) => TR[k][lang];
   const [regime, setRegime] = useState<RegimeState>("BULL");
   const [asOf, setAsOf] = useState("");
   const [asset, setAsset] = useState<AssetResp | null>(null);
@@ -154,8 +191,8 @@ export default function MercadoVisao({ go }: { go?: (id: ScreenId, param?: strin
 
       <div className="flex between" style={{ alignItems: "baseline", marginBottom: 8 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-          <div className="h1" style={{ margin: 0 }}>Market Overview</div>
-          <span className="muted" style={{ fontSize: 10 }}>Today&apos;s summary{asOf && <> · {asOf}</>}</span>
+          <div className="h1" style={{ margin: 0 }}>{t("marketOverview")}</div>
+          <span className="muted" style={{ fontSize: 10 }}>{t("todaysSummary")}{asOf && <> · {asOf}</>}</span>
         </div>
         <button
           onClick={() => askJim("Give me the full read on the market today: why are ARI and XRI at these levels, what changed, the drivers, and the portfolio impact.")}
@@ -163,7 +200,7 @@ export default function MercadoVisao({ go }: { go?: (id: ScreenId, param?: strin
             fontFamily: "var(--mono)", fontSize: 10, padding: "4px 10px", borderRadius: 5, cursor: "pointer",
             border: "1px solid rgba(201,160,44,.4)", background: "rgba(201,160,44,.12)", color: "var(--gold)",
           }}>
-          <i className="ti ti-sparkles" style={{ fontSize: 11, marginRight: 4 }} />Perguntar ao JIM
+          <i className="ti ti-sparkles" style={{ fontSize: 11, marginRight: 4 }} />{t("askJim")}
         </button>
       </div>
 
@@ -181,13 +218,13 @@ export default function MercadoVisao({ go }: { go?: (id: ScreenId, param?: strin
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: a.headlineColor, lineHeight: 1.3 }}>{a.headline}</div>
           <div style={{ fontSize: 12.5, color: "var(--tx2)", marginTop: 2 }}>
-            <b style={{ color: "var(--tx)" }}>What to do:</b> {a.acao}
+            <b style={{ color: "var(--tx)" }}>{t("whatToDo")}</b> {a.acao}
           </div>
         </div>
         {a.atencao.length > 0 && (
           <div style={{ marginLeft: "auto", flexShrink: 0, textAlign: "right" }}>
             <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "var(--mono)", color: "#E67E22", lineHeight: 1 }}>{a.atencao.length}</div>
-            <div style={{ fontSize: 9, color: "var(--tx3)", fontFamily: "var(--mono)" }}>ALERTS</div>
+            <div style={{ fontSize: 9, color: "var(--tx3)", fontFamily: "var(--mono)" }}>{t("alerts")}</div>
           </div>
         )}
       </div>
@@ -197,7 +234,7 @@ export default function MercadoVisao({ go }: { go?: (id: ScreenId, param?: strin
 
         {/* 1 — INTERNAL RISK (ARI) */}
         <div className="card" style={{ padding: "12px 14px", cursor: "pointer", display: "flex", flexDirection: "column" }} onClick={() => go?.("regime")}>
-          <CardHead label="INTERNAL RISK" tag="ARI" tagColor="#4A90D9" arrow />
+          <CardHead label={t("internalRisk")} tag="ARI" tagColor="#4A90D9" arrow />
           <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "var(--mono)", color: ARI_ZONES.find(z => z.key === regime)?.color, lineHeight: 1.1 }}>
             {REGIME_LABEL[regime]}
           </div>
@@ -217,17 +254,17 @@ export default function MercadoVisao({ go }: { go?: (id: ScreenId, param?: strin
             })}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "3px 8px", marginBottom: 6 }}>
-            <div><span style={{ fontSize: 9, color: "var(--tx3)" }}>S&P 500</span><div style={{ fontSize: 13, fontWeight: 700 }}>{numShort(asset?.price)}</div></div>
-            <div><span style={{ fontSize: 9, color: "var(--tx3)" }}>Today</span><div className={pctClass(asset?.dayPct)} style={{ fontSize: 13, fontWeight: 700 }}>{pctText(asset?.dayPct)}</div></div>
-            <div><span style={{ fontSize: 9, color: "var(--tx3)" }}>YTD</span><div className={pctClass(asset?.ytdPct)} style={{ fontSize: 13, fontWeight: 700 }}>{pctText(asset?.ytdPct)}</div></div>
-            <div><span style={{ fontSize: 9, color: "var(--tx3)" }}>RSI</span><div style={{ fontSize: 13, fontWeight: 700, color: (asset?.rsi ?? 50) > 70 ? "var(--red)" : (asset?.rsi ?? 50) < 30 ? "var(--green)" : "var(--tx)" }}>{asset?.rsi != null ? num(asset.rsi, 0) : "—"}</div></div>
+            <div><span style={{ fontSize: 9, color: "var(--tx3)" }}>{t("sp500")}</span><div style={{ fontSize: 13, fontWeight: 700 }}>{numShort(asset?.price)}</div></div>
+            <div><span style={{ fontSize: 9, color: "var(--tx3)" }}>{t("todayLabel")}</span><div className={pctClass(asset?.dayPct)} style={{ fontSize: 13, fontWeight: 700 }}>{pctText(asset?.dayPct)}</div></div>
+            <div><span style={{ fontSize: 9, color: "var(--tx3)" }}>{t("ytd")}</span><div className={pctClass(asset?.ytdPct)} style={{ fontSize: 13, fontWeight: 700 }}>{pctText(asset?.ytdPct)}</div></div>
+            <div><span style={{ fontSize: 9, color: "var(--tx3)" }}>{t("rsi")}</span><div style={{ fontSize: 13, fontWeight: 700, color: (asset?.rsi ?? 50) > 70 ? "var(--red)" : (asset?.rsi ?? 50) < 30 ? "var(--green)" : "var(--tx)" }}>{asset?.rsi != null ? num(asset.rsi, 0) : "—"}</div></div>
           </div>
           <CardFoot text={ariBlock?.resumo || "—"} />
         </div>
 
         {/* 2 — EXTERNAL RISK (XRI) */}
         <div className="card" style={{ padding: "12px 14px", cursor: "pointer", display: "flex", flexDirection: "column" }} onClick={() => go?.("xri")}>
-          <CardHead label="EXTERNAL RISK" tag="XRI" tagColor="#E67E22" arrow />
+          <CardHead label={t("externalRisk")} tag="XRI" tagColor="#E67E22" arrow />
           {xri.ok && xri.score != null && xri.state ? (
             <>
               <div style={{ margin: "-6px 0 -10px" }}>
@@ -235,7 +272,7 @@ export default function MercadoVisao({ go }: { go?: (id: ScreenId, param?: strin
               </div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 6 }}>
                 <span style={{ fontSize: 15, fontWeight: 800, fontFamily: "var(--mono)", color: xri.state ? undefined : "var(--tx2)" }}>{xri.state}</span>
-                <span className="muted" style={{ fontSize: 10 }}>{xri.direction} · confidence {xri.confidence_pct}%</span>
+                <span className="muted" style={{ fontSize: 10 }}>{xri.direction} · {t("confidence")} {xri.confidence_pct}%</span>
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginBottom: 6 }}>
                 {(xri.drivers || []).slice(0, 3).map((d) => (
@@ -248,13 +285,13 @@ export default function MercadoVisao({ go }: { go?: (id: ScreenId, param?: strin
               <CardFoot text={xriBlock?.resumo || "—"} />
             </>
           ) : (
-            <div className="muted" style={{ fontSize: 11, padding: "20px 0", textAlign: "center" }}>XRI unavailable</div>
+            <div className="muted" style={{ fontSize: 11, padding: "20px 0", textAlign: "center" }}>{t("xriUnavailable")}</div>
           )}
         </div>
 
         {/* 3 — INTELLIGENCE (Market DNA) */}
         <div className="card" style={{ padding: "12px 14px", cursor: "pointer", display: "flex", flexDirection: "column" }} onClick={() => go?.("market-dna")}>
-          <CardHead label="INTELLIGENCE" tag="DNA" tagColor="#7B68EE" arrow />
+          <CardHead label={t("intelligence")} tag="DNA" tagColor="#7B68EE" arrow />
           {L ? (
             <>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 8px", marginBottom: 8 }}>
@@ -263,40 +300,40 @@ export default function MercadoVisao({ go }: { go?: (id: ScreenId, param?: strin
                   <div style={{ fontSize: 17, fontWeight: 800, fontFamily: "var(--mono)", color: (vix?.current ?? 20) < 20 ? "#2ECC71" : "#E74C3C" }}>
                     {vix?.current != null ? vix.current.toFixed(1) : "—"}
                   </div>
-                  <span style={{ fontSize: 8.5, color: "var(--tx3)" }}>IV rank {vix?.iv_rank != null ? `${vix.iv_rank.toFixed(0)}%` : "—"}</span>
+                  <span style={{ fontSize: 8.5, color: "var(--tx3)" }}>{t("ivRank")} {vix?.iv_rank != null ? `${vix.iv_rank.toFixed(0)}%` : "—"}</span>
                 </div>
                 <div>
-                  <span style={{ fontSize: 9, color: "var(--tx3)" }}>Fear &amp; Greed</span>
+                  <span style={{ fontSize: 9, color: "var(--tx3)" }}>{t("fearGreed")}</span>
                   <div style={{ fontSize: 17, fontWeight: 800, fontFamily: "var(--mono)", color: (sent?.score ?? 50) < 45 ? "#E67E22" : (sent?.score ?? 50) > 70 ? "#E74C3C" : "#C9A02C" }}>
                     {sent?.score != null ? sent.score.toFixed(0) : "—"}
                   </div>
                   <span style={{ fontSize: 8.5, color: "var(--tx3)" }}>{sent?.rating || "—"}</span>
                 </div>
                 <div>
-                  <span style={{ fontSize: 9, color: "var(--tx3)" }}>Breadth</span>
+                  <span style={{ fontSize: 9, color: "var(--tx3)" }}>{t("breadth")}</span>
                   <div style={{ fontSize: 17, fontWeight: 800, fontFamily: "var(--mono)", color: (brd?.pct_above_200ma ?? 50) > 60 ? "#2ECC71" : "#E67E22" }}>
                     {brd?.pct_above_200ma != null ? `${brd.pct_above_200ma.toFixed(0)}%` : "—"}
                   </div>
-                  <span style={{ fontSize: 8.5, color: "var(--tx3)" }}>above MA200</span>
+                  <span style={{ fontSize: 8.5, color: "var(--tx3)" }}>{t("aboveMa200")}</span>
                 </div>
                 <div>
-                  <span style={{ fontSize: 9, color: "var(--tx3)" }}>Credit</span>
+                  <span style={{ fontSize: 9, color: "var(--tx3)" }}>{t("credit")}</span>
                   <div style={{ fontSize: 17, fontWeight: 800, fontFamily: "var(--mono)", color: macro?.credit_signal === "Tight" ? "#2ECC71" : "#E67E22" }}>
                     {macro?.credit_spread != null ? macro.credit_spread.toFixed(2) : "—"}
                   </div>
-                  <span style={{ fontSize: 8.5, color: "var(--tx3)" }}>{macro?.credit_signal || "—"} · curve {macro?.yield_curve_signal || "—"}</span>
+                  <span style={{ fontSize: 8.5, color: "var(--tx3)" }}>{macro?.credit_signal || "—"} · {t("curve")} {macro?.yield_curve_signal || "—"}</span>
                 </div>
               </div>
               <CardFoot text={dnaBlock?.resumo || "—"} />
             </>
           ) : (
-            <div className="muted" style={{ fontSize: 11, padding: "20px 0", textAlign: "center" }}>gov-data offline (8877)</div>
+            <div className="muted" style={{ fontSize: 11, padding: "20px 0", textAlign: "center" }}>{t("govDataOffline")}</div>
           )}
         </div>
 
         {/* 4 — INDICES */}
         <div className="card" style={{ padding: "12px 14px", cursor: "pointer", display: "flex", flexDirection: "column" }} onClick={() => go?.("cotacoes")}>
-          <CardHead label="INDICES" arrow />
+          <CardHead label={t("indices")} arrow />
           {quotes.length ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               {quotes.filter(q => !q.error).map((q) => (
@@ -310,9 +347,9 @@ export default function MercadoVisao({ go }: { go?: (id: ScreenId, param?: strin
               ))}
             </div>
           ) : (
-            <div className="muted" style={{ fontSize: 11, padding: "20px 0", textAlign: "center" }}>loading…</div>
+            <div className="muted" style={{ fontSize: 11, padding: "20px 0", textAlign: "center" }}>{t("loading")}</div>
           )}
-          <CardFoot text="Open Quotes to build your favorites list." />
+          <CardFoot text={t("openQuotesHint")} />
         </div>
       </div>
 
@@ -321,7 +358,7 @@ export default function MercadoVisao({ go }: { go?: (id: ScreenId, param?: strin
         <div className="card" style={{ padding: "10px 14px", borderColor: "rgba(230,126,34,.28)" }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: "#E67E22", fontFamily: "var(--mono)", letterSpacing: ".06em", marginBottom: 6 }}>
             <i className="ti ti-alert-triangle" style={{ fontSize: 12, marginRight: 5 }} />
-            REQUIRES ATTENTION — ONLY APPEARS WHEN INDICATORS CROSS
+            {t("requiresAttention")}
           </div>
           {a.atencao.length ? (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 14px" }}>
@@ -334,12 +371,12 @@ export default function MercadoVisao({ go }: { go?: (id: ScreenId, param?: strin
               ))}
             </div>
           ) : (
-            <div className="muted" style={{ fontSize: 11 }}>Nothing crossing indicators today.</div>
+            <div className="muted" style={{ fontSize: 11 }}>{t("nothingCrossing")}</div>
           )}
         </div>
 
         <div className="card" style={{ padding: "10px 14px", cursor: "pointer" }} onClick={() => go?.("snowflake")}>
-          <CardHead label="YOUR FAVORITES" arrow />
+          <CardHead label={t("yourFavorites")} arrow />
           {validFavs.length ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
               {validFavs.slice(0, 4).map((f) => {
@@ -352,7 +389,7 @@ export default function MercadoVisao({ go }: { go?: (id: ScreenId, param?: strin
                         {pctText(f.change_pct != null ? f.change_pct * 100 : null)}
                       </span>
                       <span style={{ fontSize: 10, fontFamily: "var(--mono)", color: axisColor(worst), width: 44, textAlign: "right" }}>
-                        {worst != null ? `worst ${worst}/5` : "—"}
+                        {worst != null ? `${t("worst")} ${worst}/5` : "—"}
                       </span>
                     </div>
                   </div>
@@ -362,7 +399,7 @@ export default function MercadoVisao({ go }: { go?: (id: ScreenId, param?: strin
           ) : (
             /* Empty state showing what WILL be here, not what's missing (Greene) */
             <div style={{ fontSize: 11, color: "var(--tx3)", lineHeight: 1.5, paddingTop: 4 }}>
-              Star ★ items in Quotes or Snowflake and I&apos;ll start tracking your assets here — daily change and each one&apos;s weakest axis.
+              {t("favoritesEmptyHint")}
             </div>
           )}
         </div>

@@ -6,6 +6,38 @@ import { publishScreenData } from "@/lib/jim-data";
 import { fetchCalendar, type CalendarResp } from "@/lib/calendar";
 import { fetchNews, type NewsHeadline } from "@/lib/feeds";
 import type { ScreenId } from "@/lib/nav";
+import { useI18n } from "@/lib/i18n";
+
+const TR = {
+  title: { pt: "Alertas", en: "Alerts" },
+  subtitle: {
+    pt: "O que precisa de ação — risco de cliente, notícias de alto impacto e o calendário econômico.",
+    en: "What needs action — client risk, high-impact news, and the economic calendar.",
+  },
+  aboveMandate: { pt: "portfólio {r} acima do mandato {m}", en: "portfolio {r} above mandate {m}" },
+  forecast: { pt: "previsão", en: "forecast" },
+  previous: { pt: "anterior", en: "previous" },
+  today: { pt: "hoje", en: "today" },
+  tomorrow: { pt: "amanhã", en: "tomorrow" },
+  now: { pt: "agora", en: "now" },
+  emptyTitle: { pt: "Nada exigindo ação no momento", en: "Nothing requiring action right now" },
+  emptyNoClient: { pt: "Nenhum cliente fora do mandato", en: "No client outside their mandate" },
+  emptyCalUnavailable: { pt: " · calendário indisponível no momento", en: " · calendar unavailable right now" },
+  emptyNoEvents: { pt: " e nenhum evento de alto impacto à frente.", en: " and no high-impact events ahead." },
+  emptyPeriod: { pt: ".", en: "." },
+  footer: {
+    pt: "Risco recalculado a partir dos portfólios · notícias do feed JD News · calendário econômico do Investing.com. Clique para abrir o cliente, a notícia ou a tela de mercado.",
+    en: "Risk recalculated from portfolios · news from the JD News feed · economic calendar from Investing.com. Click to open the client, the news item, or the market screen.",
+  },
+  briefingCount: { pt: "Você tem {n} alerta(s)", en: "You have {n} alert(s)" },
+  briefingCritical: { pt: ", **{n} crítico(s)**.", en: ", **{n} critical**." },
+  briefingPeriod: { pt: ".", en: "." },
+  briefingBreakdown: { pt: "{r} risco de cliente, {n} notícias e {e} calendário.", en: "{r} client risk, {n} news, and {e} calendar." },
+  briefingUrgent: { pt: ' Mais urgente: "{x}".', en: ' Most urgent: "{x}".' },
+  sugg1: { pt: "Qual alerta é mais urgente?", en: "Which alert is most urgent?" },
+  sugg2: { pt: "O que exige minha ação hoje?", en: "What requires my action today?" },
+  sugg3: { pt: "Quais dados saem esta semana?", en: "What data comes out this week?" },
+} as const;
 
 // Alerts = client risk (computed from portfolios) + market (real economic
 // calendar + high-impact news).
@@ -25,17 +57,19 @@ interface Alert {
 }
 
 // "07/16 08:30 ET" → "today 08:30 ET" / "tomorrow 08:30 ET" / "07/16 08:30 ET"
-function quando(iso: string, date: string, time: string): string {
+function quando(iso: string, date: string, time: string, t: (k: keyof typeof TR) => string): string {
   const d = new Date(iso);
   const hoje = new Date();
   const dia = (x: Date) => `${x.getFullYear()}-${x.getMonth()}-${x.getDate()}`;
   const amanha = new Date(hoje.getTime() + 86400000);
-  if (dia(d) === dia(hoje)) return `today ${time}`;
-  if (dia(d) === dia(amanha)) return `tomorrow ${time}`;
+  if (dia(d) === dia(hoje)) return `${t("today")} ${time}`;
+  if (dia(d) === dia(amanha)) return `${t("tomorrow")} ${time}`;
   return `${date} ${time}`;
 }
 
 export default function Alertas({ go }: { go: (id: ScreenId, param?: string) => void }) {
+  const { lang } = useI18n();
+  const t = (k: keyof typeof TR) => TR[k][lang];
   const [cal, setCal] = useState<CalendarResp | null>(null);
   const [news, setNews] = useState<NewsHeadline[]>([]);
   // Seed no SSR, allClients() (localStorage) no cliente — mesmo padrão de
@@ -53,8 +87,8 @@ export default function Alertas({ go }: { go: (id: ScreenId, param?: string) => 
     .filter((c) => c.riskNumber > c.mandate)
     .map((c) => ({
       level: c.riskNumber - c.mandate >= 10 ? ("critical" as const) : ("watch" as const),
-      text: `${c.name} — portfolio ${c.riskNumber} above mandate ${c.mandate}`,
-      when: "today",
+      text: `${c.name} — ${t("aboveMandate").replace("{r}", String(c.riskNumber)).replace("{m}", String(c.mandate))}`,
+      when: t("today"),
       go: "cliente" as ScreenId,
       param: c.id,
     }));
@@ -65,8 +99,8 @@ export default function Alertas({ go }: { go: (id: ScreenId, param?: string) => 
     .slice(0, 4)
     .map((e) => ({
       level: "info" as const,
-      text: `${e.event}${e.forecast ? ` — forecast ${e.forecast}` : ""}${e.previous ? `, previous ${e.previous}` : ""}`,
-      when: quando(e.datetime, e.date, e.time),
+      text: `${e.event}${e.forecast ? ` — ${t("forecast")} ${e.forecast}` : ""}${e.previous ? `, ${t("previous")} ${e.previous}` : ""}`,
+      when: quando(e.datetime, e.date, e.time, t),
       go: "regime" as ScreenId,
     }));
 
@@ -77,7 +111,7 @@ export default function Alertas({ go }: { go: (id: ScreenId, param?: string) => 
     .map((n) => ({
       level: "watch" as const,
       text: n.headline.slice(0, 110) + (n.headline.length > 110 ? "…" : ""),
-      when: n.source || "now",
+      when: n.source || t("now"),
       url: n.url,
     }));
 
@@ -92,13 +126,14 @@ export default function Alertas({ go }: { go: (id: ScreenId, param?: string) => 
       all.map((a) => ({ nivel: a.level, texto: a.text, quando: a.when })),
       {
         briefing:
-          `You have ${all.length} alert(s)` + (criticos ? `, **${criticos} critical**.` : ".") +
-          ` ${risco.length} client risk, ${noticias.length} news, and ${eventos.length} calendar.` +
-          (all[0] ? ` Most urgent: "${all[0].text}".` : ""),
+          t("briefingCount").replace("{n}", String(all.length)) +
+          (criticos ? t("briefingCritical").replace("{n}", String(criticos)) : t("briefingPeriod")) +
+          " " + t("briefingBreakdown").replace("{r}", String(risco.length)).replace("{n}", String(noticias.length)).replace("{e}", String(eventos.length)) +
+          (all[0] ? t("briefingUrgent").replace("{x}", all[0].text) : ""),
         suggestions: [
-          "Which alert is most urgent?",
-          "What requires my action today?",
-          "What data comes out this week?",
+          t("sugg1"),
+          t("sugg2"),
+          t("sugg3"),
         ],
       }
     );
@@ -113,18 +148,18 @@ export default function Alertas({ go }: { go: (id: ScreenId, param?: string) => 
   return (
     <div className="screen">
       <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
-        <div className="h1" style={{ margin: 0 }}>Alerts</div>
-        <div className="sub" style={{ margin: 0 }}>What needs action — client risk, high-impact news, and the economic calendar.</div>
+        <div className="h1" style={{ margin: 0 }}>{t("title")}</div>
+        <div className="sub" style={{ margin: 0 }}>{t("subtitle")}</div>
       </div>
 
       <div className="card">
         {all.length === 0 ? (
           <div className="placeholder" style={{ padding: 30 }}>
             <i className="ti ti-checks" style={{ fontSize: 26, color: "var(--green)" }} />
-            <b style={{ display: "block", marginTop: 8 }}>Nothing requiring action right now</b>
+            <b style={{ display: "block", marginTop: 8 }}>{t("emptyTitle")}</b>
             <div className="muted" style={{ marginTop: 4 }}>
-              No client outside their mandate{cal && !cal.ok ? " · calendar unavailable right now" : ""}
-              {cal?.ok ? " and no high-impact events ahead." : "."}
+              {t("emptyNoClient")}{cal && !cal.ok ? t("emptyCalUnavailable") : ""}
+              {cal?.ok ? t("emptyNoEvents") : t("emptyPeriod")}
             </div>
           </div>
         ) : (
@@ -142,8 +177,7 @@ export default function Alertas({ go }: { go: (id: ScreenId, param?: string) => 
         )}
       </div>
       <div className="muted mt" style={{ fontSize: 11 }}>
-        Risk recalculated from portfolios · news from the JD News feed · economic calendar from Investing.com.
-        Click to open the client, the news item, or the market screen.
+        {t("footer")}
       </div>
     </div>
   );

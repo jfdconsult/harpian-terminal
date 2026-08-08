@@ -1,5 +1,6 @@
 "use client";
 import { useMemo, useState, useEffect } from "react";
+import { useI18n } from "@/lib/i18n";
 import { brl, type Client } from "@/lib/clients";
 import { findClient } from "@/lib/clientStore";
 import { publishScreenData } from "@/lib/jim-data";
@@ -8,16 +9,66 @@ import type { ScreenId } from "@/lib/nav";
 
 const HPC22_RN = 38; // Product Risk Number (internal engine)
 const ALLOC_COLORS = ["#4A90D9", "#C9A02C", "#2ECC71", "#F39C12", "#7d96b3"];
+
+// ════════════════════════════════════════════════════════════════
+// i18n — local dictionary for this screen (see Painel.tsx for the
+// canonical reference pattern). Brand/product terms (Harpian, HPC22,
+// Risk Number, AUM, CPF/CNPJ) are intentionally NOT translated.
+// ════════════════════════════════════════════════════════════════
+const TR = {
+  checkingAccount: { pt: "Conta corrente", en: "Checking account" },
+  brokerage: { pt: "Corretora", en: "Brokerage" },
+  custody: { pt: "Custódia", en: "Custody" },
+  other: { pt: "Outro", en: "Other" },
+  editClient: { pt: "Editar cliente", en: "Edit client" },
+  sendOrder: { pt: "Enviar ordem", en: "Send order" },
+  currentAum: { pt: "AUM atual", en: "Current AUM" },
+  gain: { pt: "Ganho", en: "Gain" },
+  since: { pt: "Desde", en: "Since" },
+  whatTheyHoldToday: { pt: "O que eles têm hoje", en: "What they hold today" },
+  riskGap: { pt: "Gap de risco", en: "Risk gap" },
+  riskNumberVsMandate: { pt: "Risk Number {rn} vs. mandato {mandate}. {note}", en: "Risk Number {rn} vs. mandate {mandate}. {note}" },
+  simulateMigration: { pt: "Simular migração para HPC22", en: "Simulate migration to HPC22" },
+  migratingStillAbove: { pt: "Migrando {pct}%, o risco cai para {rn} — ainda {gap} acima do teto.", en: "Migrating {pct}%, risk drops to {rn} — still {gap} above the ceiling." },
+  migratingWithinMandate: { pt: "Migrando {pct}%, a carteira fica dentro do mandato ({rn} ≤ {mandate}).", en: "Migrating {pct}%, the portfolio falls within the mandate ({rn} ≤ {mandate})." },
+  summary: { pt: "Resumo", en: "Summary" },
+  invested: { pt: "Investido", en: "Invested" },
+  current: { pt: "Atual", en: "Current" },
+  currentRiskNo: { pt: "Risk Nº atual", en: "Current Risk Nº" },
+  harpianAllocation: { pt: "Alocação Harpian", en: "Harpian Allocation" },
+  personalData: { pt: "Dados pessoais", en: "Personal data" },
+  email: { pt: "Email", en: "Email" },
+  phone: { pt: "Telefone", en: "Phone" },
+  cpfCnpj: { pt: "CPF/CNPJ", en: "CPF/CNPJ" },
+  responsibleParty: { pt: "Responsável", en: "Responsible party" },
+  noDataRegistered: { pt: "Nenhum dado cadastrado — clique em Editar cliente.", en: "No data registered — click Edit client." },
+  accountsAndBanks: { pt: "Contas & bancos", en: "Accounts & banks" },
+  noAccountsRegistered: { pt: "Nenhuma conta cadastrada.", en: "No accounts registered." },
+  noName: { pt: "(sem nome)", en: "(no name)" },
+  integrationsApi: { pt: "Integrações (API)", en: "Integrations (API)" },
+  noIntegrationRegistered: { pt: "Nenhuma integração cadastrada.", en: "No integration registered." },
+  portfolios: { pt: "Carteiras", en: "Portfolios" },
+  addPortfolio: { pt: "Adicionar carteira", en: "Add portfolio" },
+  noPortfolioRegistered: { pt: "Nenhuma carteira cadastrada", en: "No portfolio registered" },
+  clickPortfolioHint: { pt: "Clique em uma carteira para ver o detalhamento completo — cada carteira tem sua própria tela. Use o ícone de engrenagem para editar diretamente.", en: "Click a portfolio to see the full breakdown — each portfolio has its own screen. Use the gear icon to edit directly." },
+  editPortfolio: { pt: "Editar carteira", en: "Edit portfolio" },
+  noLinkedAccount: { pt: "sem conta vinculada", en: "no linked account" },
+  products: { pt: "produtos", en: "products" },
+  positions: { pt: "posições", en: "positions" },
+} as const;
+
 // Account["type"] stays in Portuguese in lib/clients.ts (stored value); this is
 // only for what's rendered on screen.
-const ACCOUNT_TYPE_TXT: Record<string, string> = {
-  "Conta corrente": "Checking account",
-  Corretora: "Brokerage",
-  "Custódia": "Custody",
-  Outro: "Other",
+const ACCOUNT_TYPE_TXT: Record<string, (t: (k: keyof typeof TR) => string) => string> = {
+  "Conta corrente": (t) => t("checkingAccount"),
+  Corretora: (t) => t("brokerage"),
+  "Custódia": (t) => t("custody"),
+  Outro: (t) => t("other"),
 };
 
 export function ClientDetail({ client: clientProp, go, screen = "cliente" }: { client: Client; go: (id: ScreenId, param?: string) => void; screen?: ScreenId }) {
+  const { lang } = useI18n();
+  const t = (k: keyof typeof TR) => TR[k][lang];
   const [client, setClient] = useState(clientProp);
   const [editing, setEditing] = useState(false);
   const [editTab, setEditTab] = useState<"perfil" | "portfolios">("perfil");
@@ -80,12 +131,12 @@ export function ClientDetail({ client: clientProp, go, screen = "cliente" }: { c
           <div className="tk" style={{ fontSize: 20 }}>{client.name}</div>
           <div className="nm">{client.type} · {client.profile}</div>
         </div>
-        <div className="fhstat"><div className="l">Current AUM</div><div className="v">{brl(client.current)}</div></div>
-        <div className="fhstat"><div className="l">Gain</div><div className="v g">+{ganhoPct.toFixed(1)}%</div></div>
-        <div className="fhstat"><div className="l">Since</div><div className="v" style={{ fontSize: 14 }}>{client.since}</div></div>
+        <div className="fhstat"><div className="l">{t("currentAum")}</div><div className="v">{brl(client.current)}</div></div>
+        <div className="fhstat"><div className="l">{t("gain")}</div><div className="v g">+{ganhoPct.toFixed(1)}%</div></div>
+        <div className="fhstat"><div className="l">{t("since")}</div><div className="v" style={{ fontSize: 14 }}>{client.since}</div></div>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-          <button className="btn ghost" onClick={() => { setEditTab("perfil"); setFocusPortfolioId(undefined); setEditing(true); }}><i className="ti ti-settings" />Edit client</button>
-          <button className="btn" onClick={() => go("ordem", client.id)}><i className="ti ti-send" />Send order</button>
+          <button className="btn ghost" onClick={() => { setEditTab("perfil"); setFocusPortfolioId(undefined); setEditing(true); }}><i className="ti ti-settings" />{t("editClient")}</button>
+          <button className="btn" onClick={() => go("ordem", client.id)}><i className="ti ti-send" />{t("sendOrder")}</button>
         </div>
       </div>
 
@@ -101,7 +152,7 @@ export function ClientDetail({ client: clientProp, go, screen = "cliente" }: { c
 
       <div className="grid g2">
         <div className="card">
-          <h3><i className="ti ti-chart-donut" />What they hold today</h3>
+          <h3><i className="ti ti-chart-donut" />{t("whatTheyHoldToday")}</h3>
           {client.alloc.map((a, i) => (
             <div key={a.label} style={{ marginBottom: 10 }}>
               <div className="flex between" style={{ marginBottom: 4 }}>
@@ -116,61 +167,64 @@ export function ClientDetail({ client: clientProp, go, screen = "cliente" }: { c
         </div>
 
         <div className="card" style={{ borderColor: aligned ? "var(--line2)" : "rgba(231,76,60,.25)" }}>
-          <h3><i className={`ti ${aligned ? "ti-shield-check" : "ti-alert-triangle"}`} />Risk gap</h3>
+          <h3><i className={`ti ${aligned ? "ti-shield-check" : "ti-alert-triangle"}`} />{t("riskGap")}</h3>
           <div className={`big ${gap > 0 ? "r" : "g"}`}>{gap > 0 ? `+${gap}` : "✓"}</div>
           <div className="muted mt" style={{ lineHeight: 1.6 }}>
-            Risk Number {blendedRN} vs. mandate {client.mandate}. {client.note}
+            {t("riskNumberVsMandate")
+              .replace("{rn}", String(blendedRN))
+              .replace("{mandate}", String(client.mandate))
+              .replace("{note}", client.note ?? "")}
           </div>
           <div className="flex mt" style={{ gap: 12 }}>
-            <span className="muted" style={{ minWidth: 150, fontSize: 12 }}>Simulate migration to HPC22</span>
+            <span className="muted" style={{ minWidth: 150, fontSize: 12 }}>{t("simulateMigration")}</span>
             <input type="range" min={0} max={100} value={migrate} onChange={(e) => setMigrate(+e.target.value)} style={{ flex: 1 }} />
             <span style={{ fontFamily: "var(--mono)", minWidth: 42, textAlign: "right" }}>{migrate}%</span>
           </div>
           <div className="muted mt" style={{ fontSize: 11 }}>
             {gap > 0
-              ? `Migrating ${migrate}%, risk drops to ${blendedRN} — still ${gap} above the ceiling.`
-              : `Migrating ${migrate}%, the portfolio falls within the mandate (${blendedRN} ≤ ${client.mandate}).`}
+              ? t("migratingStillAbove").replace("{pct}", String(migrate)).replace("{rn}", String(blendedRN)).replace("{gap}", String(gap))
+              : t("migratingWithinMandate").replace("{pct}", String(migrate)).replace("{rn}", String(blendedRN)).replace("{mandate}", String(client.mandate))}
           </div>
         </div>
       </div>
 
       <div className="card mt">
-        <h3><i className="ti ti-info-circle" />Summary</h3>
+        <h3><i className="ti ti-info-circle" />{t("summary")}</h3>
         <div className="grid g4">
-          <div className="kv"><span className="muted">Invested</span><span className="v">{brl(client.invested)}</span></div>
-          <div className="kv"><span className="muted">Current</span><span className="v">{brl(client.current)}</span></div>
-          <div className="kv"><span className="muted">Current Risk Nº</span><span className="v" style={{ color: aligned ? "var(--tx)" : "var(--red)" }}>{client.riskNumber}</span></div>
-          <div className="kv"><span className="muted">Harpian Allocation</span><span className="v" style={{ color: "var(--gold)" }}>{client.harpianPct}%</span></div>
+          <div className="kv"><span className="muted">{t("invested")}</span><span className="v">{brl(client.invested)}</span></div>
+          <div className="kv"><span className="muted">{t("current")}</span><span className="v">{brl(client.current)}</span></div>
+          <div className="kv"><span className="muted">{t("currentRiskNo")}</span><span className="v" style={{ color: aligned ? "var(--tx)" : "var(--red)" }}>{client.riskNumber}</span></div>
+          <div className="kv"><span className="muted">{t("harpianAllocation")}</span><span className="v" style={{ color: "var(--gold)" }}>{client.harpianPct}%</span></div>
         </div>
       </div>
 
       <div className="grid g3 mt">
         <div className="card">
-          <h3><i className="ti ti-id" />Personal data</h3>
+          <h3><i className="ti ti-id" />{t("personalData")}</h3>
           {client.email || client.personalData?.phone || client.personalData?.cpfCnpj ? (
             <>
-              {client.email && <div className="kv"><span className="muted">Email</span><span className="v" style={{ fontSize: 12 }}>{client.email}</span></div>}
-              {client.personalData?.phone && <div className="kv"><span className="muted">Phone</span><span className="v">{client.personalData.phone}</span></div>}
-              {client.personalData?.cpfCnpj && <div className="kv"><span className="muted">CPF/CNPJ</span><span className="v">{client.personalData.cpfCnpj}</span></div>}
-              {client.personalData?.responsavel && <div className="kv"><span className="muted">Responsible party</span><span className="v">{client.personalData.responsavel}</span></div>}
+              {client.email && <div className="kv"><span className="muted">{t("email")}</span><span className="v" style={{ fontSize: 12 }}>{client.email}</span></div>}
+              {client.personalData?.phone && <div className="kv"><span className="muted">{t("phone")}</span><span className="v">{client.personalData.phone}</span></div>}
+              {client.personalData?.cpfCnpj && <div className="kv"><span className="muted">{t("cpfCnpj")}</span><span className="v">{client.personalData.cpfCnpj}</span></div>}
+              {client.personalData?.responsavel && <div className="kv"><span className="muted">{t("responsibleParty")}</span><span className="v">{client.personalData.responsavel}</span></div>}
             </>
-          ) : <div className="muted">No data registered — click Edit client.</div>}
+          ) : <div className="muted">{t("noDataRegistered")}</div>}
         </div>
 
         <div className="card">
-          <h3><i className="ti ti-building-bank" />Accounts & banks</h3>
-          {(client.accounts?.length || 0) === 0 ? <div className="muted">No accounts registered.</div> : (
+          <h3><i className="ti ti-building-bank" />{t("accountsAndBanks")}</h3>
+          {(client.accounts?.length || 0) === 0 ? <div className="muted">{t("noAccountsRegistered")}</div> : (
             client.accounts!.map((a) => (
-              <div className="kv" key={a.id}><span>{a.bank || "(no name)"} <span className="muted">{ACCOUNT_TYPE_TXT[a.type] || a.type}</span></span><span className="v" style={{ fontSize: 11 }}>{a.accountNumber || "—"}</span></div>
+              <div className="kv" key={a.id}><span>{a.bank || t("noName")} <span className="muted">{ACCOUNT_TYPE_TXT[a.type]?.(t) || a.type}</span></span><span className="v" style={{ fontSize: 11 }}>{a.accountNumber || "—"}</span></div>
             ))
           )}
         </div>
 
         <div className="card">
-          <h3><i className="ti ti-plug" />Integrations (API)</h3>
-          {(client.integrations?.length || 0) === 0 ? <div className="muted">No integration registered.</div> : (
+          <h3><i className="ti ti-plug" />{t("integrationsApi")}</h3>
+          {(client.integrations?.length || 0) === 0 ? <div className="muted">{t("noIntegrationRegistered")}</div> : (
             client.integrations!.map((i) => (
-              <div className="kv" key={i.id}><span>{i.system || "(no name)"}</span><span className={`tag ${i.status === "conectado" ? "g" : i.status === "erro" ? "r" : "o"}`}>{i.status}</span></div>
+              <div className="kv" key={i.id}><span>{i.system || t("noName")}</span><span className={`tag ${i.status === "conectado" ? "g" : i.status === "erro" ? "r" : "o"}`}>{i.status}</span></div>
             ))
           )}
         </div>
@@ -178,14 +232,14 @@ export function ClientDetail({ client: clientProp, go, screen = "cliente" }: { c
 
       <div className="card mt">
         <div className="flex between" style={{ alignItems: "center" }}>
-          <h3 style={{ margin: 0 }}><i className="ti ti-briefcase" />Portfolios ({client.portfolios?.length || 0})</h3>
-          <button className="btn ghost" style={{ fontSize: 12 }} onClick={() => openPortfolioEdit()}><i className="ti ti-plus" />Add portfolio</button>
+          <h3 style={{ margin: 0 }}><i className="ti ti-briefcase" />{t("portfolios")} ({client.portfolios?.length || 0})</h3>
+          <button className="btn ghost" style={{ fontSize: 12 }} onClick={() => openPortfolioEdit()}><i className="ti ti-plus" />{t("addPortfolio")}</button>
         </div>
         {(client.portfolios?.length || 0) === 0 ? (
-          <div className="placeholder mt"><i className="ti ti-briefcase" /><b>No portfolio registered</b></div>
+          <div className="placeholder mt"><i className="ti ti-briefcase" /><b>{t("noPortfolioRegistered")}</b></div>
         ) : (
           <>
-            <div className="muted mb mt" style={{ fontSize: 11 }}>Click a portfolio to see the full breakdown — each portfolio has its own screen. Use the gear icon to edit directly.</div>
+            <div className="muted mb mt" style={{ fontSize: 11 }}>{t("clickPortfolioHint")}</div>
             <div className="grid g3">
               {client.portfolios!.map((p) => {
                 const hasItems = (p.items?.length || 0) > 0;
@@ -200,18 +254,18 @@ export function ClientDetail({ client: clientProp, go, screen = "cliente" }: { c
                   >
                     <button
                       className="btn ghost"
-                      title="Edit portfolio"
+                      title={t("editPortfolio")}
                       style={{ position: "absolute", top: 8, right: 8, padding: "3px 7px" }}
                       onClick={(e) => { e.stopPropagation(); openPortfolioEdit(p.id); }}
                     >
                       <i className="ti ti-settings" />
                     </button>
                     <div style={{ fontWeight: 600, color: "var(--tx)", paddingRight: 24 }}>{p.name}</div>
-                    <div className="muted" style={{ fontSize: 11, marginTop: 2 }}>{acc ? acc.bank : "no linked account"}{p.modelLabel && ` · ${p.modelLabel}`}</div>
+                    <div className="muted" style={{ fontSize: 11, marginTop: 2 }}>{acc ? acc.bank : t("noLinkedAccount")}{p.modelLabel && ` · ${p.modelLabel}`}</div>
                     <div style={{ fontSize: 15, color: "var(--gold)", fontWeight: 600, marginTop: 6 }}>
                       {hasItems ? "$" + totalUsd!.toLocaleString("en-US", { maximumFractionDigits: 0 }) : brl(totalBrl)}
                     </div>
-                    <div className="muted" style={{ fontSize: 11 }}>{hasItems ? p.items!.length : p.positions.length} {hasItems ? "products" : "positions"} <i className="ti ti-chevron-right" style={{ float: "right" }} /></div>
+                    <div className="muted" style={{ fontSize: 11 }}>{hasItems ? p.items!.length : p.positions.length} {hasItems ? t("products") : t("positions")} <i className="ti ti-chevron-right" style={{ float: "right" }} /></div>
                   </div>
                 );
               })}

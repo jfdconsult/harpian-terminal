@@ -5,6 +5,24 @@ import { readScreenData, subscribeScreenData, type ScreenSnapshot } from "@/lib/
 import { subscribeAskJim } from "@/lib/jim-ask";
 import { renderMarkdown } from "@/lib/markdown";
 import type { ScreenId } from "@/lib/nav";
+import { useI18n, type Lang } from "@/lib/i18n";
+
+const TR = {
+  greetingIntroPrefix: { pt: "Você está na tela **", en: "You're on the **" },
+  greetingIntroSuffix: { pt: "**.", en: "** screen." },
+  greetingPrompt: {
+    pt: "O que você quer saber sobre isto? Toque em uma das perguntas abaixo ou digite a sua.",
+    en: "What would you like to know about this? Tap one of the questions below or type your own.",
+  },
+  clearConversation: { pt: "Limpar conversa", en: "Clear conversation" },
+  close: { pt: "Fechar", en: "Close" },
+  askJimPlaceholder: { pt: "Pergunte ao JIM...", en: "Ask JIM..." },
+  disclaimer: {
+    pt: "O JIM usa IA (Claude) e pode cometer erros. Confira informações importantes.",
+    en: "JIM uses AI (Claude) and can make mistakes. Verify important information.",
+  },
+} as const;
+type TKey = keyof typeof TR;
 
 interface Msg {
   role: "user" | "assistant";
@@ -87,13 +105,15 @@ function MsgBubble({ msg }: { msg: Msg }) {
 }
 
 // Builds the data-aware greeting: names the screen and item with real data.
-function buildGreeting(screen: ScreenId, snap: ScreenSnapshot | null): string {
+function buildGreeting(screen: ScreenId, snap: ScreenSnapshot | null, lang: Lang): string {
   const ctx = getScreenContext(screen);
   const lead = snap?.briefing || ctx.description;
-  return `Você está na tela **${ctx.title}**.\n\n${lead}\n\nO que você quer saber sobre isto? Toque em uma das perguntas abaixo ou digite a sua.`;
+  return `${TR.greetingIntroPrefix[lang]}${ctx.title}${TR.greetingIntroSuffix[lang]}\n\n${lead}\n\n${TR.greetingPrompt[lang]}`;
 }
 
 export default function JimDrawer({ open, onClose, screen }: Props) {
+  const { lang } = useI18n();
+  const t = (k: TKey) => TR[k][lang];
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -141,7 +161,7 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
       const cur = readScreenData(screen);
       const greeting: Msg = {
         role: "assistant",
-        content: buildGreeting(screen, cur),
+        content: buildGreeting(screen, cur, lang),
         ts: Date.now(),
         greeting: true,
         screen,
@@ -156,12 +176,12 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
       setGreetHadBriefing(!!cur?.briefing);
       scrollToEnd();
     }
-  }, [open, screen, greeted, scrollToEnd, sessionLoaded]);
+  }, [open, screen, greeted, scrollToEnd, sessionLoaded, lang]);
 
   // If the data (briefing) arrives AFTER the greeting, updates the greeting in place.
   useEffect(() => {
     if (!open || greeted !== screen || greetHadBriefing || !snap?.briefing) return;
-    const newContent = buildGreeting(screen, snap);
+    const newContent = buildGreeting(screen, snap, lang);
     setMessages((prev) => {
       const idx = prev.map((m) => m.greeting).lastIndexOf(true);
       if (idx === -1) return prev;
@@ -170,7 +190,7 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
       return copy;
     });
     setGreetHadBriefing(true);
-  }, [snap, open, screen, greeted, greetHadBriefing]);
+  }, [snap, open, screen, greeted, greetHadBriefing, lang]);
 
   useEffect(() => {
     if (open) {
@@ -288,10 +308,10 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
             </div>
           </div>
           <div className="jim-header-actions">
-            <button className="jim-hbtn" onClick={clearHistory} title="Limpar conversa">
+            <button className="jim-hbtn" onClick={clearHistory} title={t("clearConversation")}>
               <i className="ti ti-trash" />
             </button>
-            <button className="jim-hbtn" onClick={onClose} title="Fechar">
+            <button className="jim-hbtn" onClick={onClose} title={t("close")}>
               <i className="ti ti-x" />
             </button>
           </div>
@@ -356,7 +376,7 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
             <textarea
               ref={inputRef}
               className="jim-input"
-              placeholder="Pergunte ao JIM..."
+              placeholder={t("askJimPlaceholder")}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -372,7 +392,7 @@ export default function JimDrawer({ open, onClose, screen }: Props) {
             </button>
           </div>
           <div className="jim-disclaimer">
-            O JIM usa IA (Claude) e pode cometer erros. Confira informações importantes.
+            {t("disclaimer")}
           </div>
         </div>
       </div>

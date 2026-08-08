@@ -3,8 +3,18 @@ import { useEffect, useState } from "react";
 import { fetchNews, IMPACT_COLOR, type NewsHeadline } from "@/lib/feeds";
 import { publishScreenData } from "@/lib/jim-data";
 import type { ScreenId } from "@/lib/nav";
+import { useI18n } from "@/lib/i18n";
+
+const TR = {
+  title: { pt: "Notícias que importam", en: "News that matters" },
+  subtitle: { pt: "Filtradas por impacto no fundo · feed RSS ao vivo (CNBC · MarketWatch · Yahoo).", en: "Filtered by impact on the fund · live RSS feed (CNBC · MarketWatch · Yahoo)." },
+  fullBroadcast: { pt: "Broadcast completo de notícias", en: "Full News Broadcast" },
+  loadError: { pt: "Não foi possível carregar as notícias. Verifique se o backend (porta 8080) está em execução.", en: "Could not load the news. Check whether the backend (port 8080) is running." },
+} as const;
 
 export default function Noticias({ go }: { go: (id: ScreenId, param?: string) => void }) {
+  const { lang } = useI18n();
+  const t = (k: keyof typeof TR) => TR[k][lang];
   const [items, setItems] = useState<NewsHeadline[]>([]);
   const [colors, setColors] = useState<Record<string, string>>({});
   const [conn, setConn] = useState<"loading" | "ok" | "error">("loading");
@@ -43,8 +53,8 @@ export default function Noticias({ go }: { go: (id: ScreenId, param?: string) =>
   return (
     <div className="screen">
       <div className="flex between wrap">
-        <div><div className="h1">News that matters</div><div className="sub" style={{ margin: 0 }}>Filtered by impact on the fund · live RSS feed (CNBC · MarketWatch · Yahoo).</div></div>
-        <button className="btn ghost" onClick={() => go("news-broadcast")}><i className="ti ti-broadcast" />Full News Broadcast</button>
+        <div><div className="h1">{t("title")}</div><div className="sub" style={{ margin: 0 }}>{t("subtitle")}</div></div>
+        <button className="btn ghost" onClick={() => go("news-broadcast")}><i className="ti ti-broadcast" />{t("fullBroadcast")}</button>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 14 }}>
@@ -53,7 +63,7 @@ export default function Noticias({ go }: { go: (id: ScreenId, param?: string) =>
         ))}
         {conn === "error" && (
           <div style={{ textAlign: "center", padding: 40, color: "var(--tx3)", fontSize: 12 }}>
-            Could not load the news. Check whether the backend (port 8080) is running.
+            {t("loadError")}
           </div>
         )}
         {conn === "ok" && items.map((h) => {
@@ -70,7 +80,7 @@ export default function Noticias({ go }: { go: (id: ScreenId, param?: string) =>
               <div style={{ fontSize: 14, fontWeight: 500, color: "var(--tx)", lineHeight: 1.45 }}>{h.headline}</div>
               {(h.tags?.length ?? 0) > 0 && (
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {h.tags.map((t) => <span key={t} style={{ fontFamily: "var(--mono)", fontSize: 10, background: "rgba(201,160,44,0.08)", border: "1px solid rgba(201,160,44,0.15)", color: "var(--gold)", padding: "2px 6px", borderRadius: 3 }}>{t}</span>)}
+                  {h.tags.map((tag) => <span key={tag} style={{ fontFamily: "var(--mono)", fontSize: 10, background: "rgba(201,160,44,0.08)", border: "1px solid rgba(201,160,44,0.15)", color: "var(--gold)", padding: "2px 6px", borderRadius: 3 }}>{tag}</span>)}
                 </div>
               )}
             </a>

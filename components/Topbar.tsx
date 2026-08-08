@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { MENUS, activeMenuFor, type ScreenId } from "@/lib/nav";
+import { getMenus, activeMenuFor, type ScreenId } from "@/lib/nav";
+import { useI18n } from "@/lib/i18n";
 
 function Clock() {
   const [t, setT] = useState("--:--:--");
@@ -14,7 +15,9 @@ function Clock() {
 }
 
 export default function Topbar({ go, screen, jimOpen, onJimToggle, onSettingsToggle }: { go: (id: ScreenId, param?: string) => void; screen: ScreenId; jimOpen?: boolean; onJimToggle?: () => void; onSettingsToggle?: () => void }) {
-  const activeMenu = activeMenuFor(screen);
+  const { lang } = useI18n();
+  const menus = getMenus(lang);
+  const activeMenu = activeMenuFor(screen, lang);
   return (
     <div className="topbar">
       <div className="brand" onClick={() => go("painel")}>
@@ -22,7 +25,7 @@ export default function Topbar({ go, screen, jimOpen, onJimToggle, onSettingsTog
         <img className="brand-logo brand-logo-navy" src="/harpian-logo-navy.svg" alt="HARPIAN" />
       </div>
 
-      {MENUS.map((m) => {
+      {menus.map((m) => {
         const isActive = m.label === activeMenu;
         return (
         <div className="menu" key={m.label}>

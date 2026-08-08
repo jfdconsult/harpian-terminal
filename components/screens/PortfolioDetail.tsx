@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useI18n } from "@/lib/i18n";
 import { findClient } from "@/lib/clientStore";
 import { brl, type Client, type Portfolio } from "@/lib/clients";
 import { publishScreenData } from "@/lib/jim-data";
@@ -9,13 +10,49 @@ interface Quote { symbol: string; price?: number; dayPct?: number | null; error?
 
 const pctFmt = (v: number) => (v * 100).toLocaleString("en-US", { maximumFractionDigits: 1 }) + "%";
 const usd = (n: number) => "$" + n.toLocaleString("en-US", { maximumFractionDigits: 0 });
+
+const TR = {
+  portfolioCrumb: { pt: "Portfólio", en: "Portfolio" },
+  noPortfolios: { pt: "Este cliente não possui portfólios cadastrados.", en: "This client has no portfolios registered." },
+  noLinkedAccount: { pt: "sem conta vinculada", en: "no linked account" },
+  portfolioLabel: { pt: "Portfólio:", en: "Portfolio:" },
+  totalValue: { pt: "Valor total", en: "Total value" },
+  products: { pt: "Produtos", en: "Products" },
+  top5Concentration: { pt: "Concentração top 5", en: "Top 5 concentration" },
+  estUsdReturnWeighted: { pt: "Retorno USD estimado (ponderado)", en: "Est. USD return (weighted)" },
+  byGeography: { pt: "Por geografia", en: "By geography" },
+  byCategory: { pt: "Por categoria", en: "By category" },
+  byRiskProfile: { pt: "Por perfil de risco", en: "By risk profile" },
+  fullBreakdown: { pt: "Detalhamento completo", en: "Full breakdown" },
+  product: { pt: "Produto", en: "Product" },
+  issuerManager: { pt: "Emissor / Gestor", en: "Issuer / Manager" },
+  category: { pt: "Categoria", en: "Category" },
+  subCategory: { pt: "Sub-categoria", en: "Sub-category" },
+  geography: { pt: "Geografia", en: "Geography" },
+  ticker: { pt: "Ticker", en: "Ticker" },
+  allocation: { pt: "Alocação", en: "Allocation" },
+  value: { pt: "Valor", en: "Value" },
+  risk: { pt: "Risco", en: "Risk" },
+  usdReturn: { pt: "Retorno USD", en: "USD Return" },
+  vol: { pt: "Vol.", en: "Vol." },
+  estReturnVolNote: { pt: "Retorno/volatilidade estimados (média histórica, fonte por produto). Base do modelo: {v}.", en: "Estimated return/volatility (historical average, source per product). Model base: {v}." },
+  positions: { pt: "Posições", en: "Positions" },
+  assets: { pt: "ativos", en: "assets" },
+  asset: { pt: "Ativo", en: "Asset" },
+  qty: { pt: "Qtd.", en: "Qty." },
+  avgPrice: { pt: "Preço médio", en: "Avg. price" },
+  currentPrice: { pt: "Preço atual", en: "Current price" },
+  gain: { pt: "Ganho", en: "Gain" },
+  noBreakdownNote: { pt: "Nenhum detalhamento completo disponível — a planilha importada só tem ticker/quantidade/preço médio.", en: "No full breakdown available — imported spreadsheet has only ticker/quantity/average price." },
+} as const;
+
 // Account["type"] stays in Portuguese in lib/clients.ts (stored value); this is
 // only for what's rendered on screen.
-const ACCOUNT_TYPE_TXT: Record<string, string> = {
-  "Conta corrente": "Checking account",
-  Corretora: "Brokerage",
-  "Custódia": "Custody",
-  Outro: "Other",
+const ACCOUNT_TYPE_TXT: Record<string, { pt: string; en: string }> = {
+  "Conta corrente": { pt: "Conta corrente", en: "Checking account" },
+  Corretora: { pt: "Corretora", en: "Brokerage" },
+  "Custódia": { pt: "Custódia", en: "Custody" },
+  Outro: { pt: "Outro", en: "Other" },
 };
 
 function sumBy<T>(rows: T[], key: (r: T) => string, val: (r: T) => number): { label: string; value: number }[] {
@@ -25,6 +62,8 @@ function sumBy<T>(rows: T[], key: (r: T) => string, val: (r: T) => number): { la
 }
 
 export default function PortfolioDetail({ arg, go }: { arg?: string; go: (id: ScreenId, param?: string) => void }) {
+  const { lang } = useI18n();
+  const t = (k: keyof typeof TR) => TR[k][lang];
   const [clientId, portfolioId] = (arg || "").split(":");
   const client: Client = findClient(clientId || "");
   const portfolios = client.portfolios || [];
@@ -100,8 +139,8 @@ export default function PortfolioDetail({ arg, go }: { arg?: string; go: (id: Sc
   if (!portfolio) {
     return (
       <div className="screen">
-        <div className="crumb"><b>{client.name}</b> › Portfolio</div>
-        <div className="placeholder"><i className="ti ti-briefcase-off" /><b>This client has no portfolios registered.</b></div>
+        <div className="crumb"><b>{client.name}</b> › {t("portfolioCrumb")}</div>
+        <div className="placeholder"><i className="ti ti-briefcase-off" /><b>{t("noPortfolios")}</b></div>
       </div>
     );
   }
@@ -114,13 +153,13 @@ export default function PortfolioDetail({ arg, go }: { arg?: string; go: (id: Sc
         <div>
           <div className="h1">{portfolio.name}</div>
           <div className="sub" style={{ margin: 0 }}>
-            {account ? `${account.bank} · ${ACCOUNT_TYPE_TXT[account.type] || account.type}` : "no linked account"}
+            {account ? `${account.bank} · ${ACCOUNT_TYPE_TXT[account.type]?.[lang] || account.type}` : t("noLinkedAccount")}
             {portfolio.modelLabel && <span style={{ marginLeft: 8, color: "var(--gold)" }}>· {portfolio.modelLabel}</span>}
           </div>
         </div>
         {portfolios.length > 1 && (
           <div className="flex" style={{ gap: 8, alignItems: "center" }}>
-            <span className="flabel">Portfolio:</span>
+            <span className="flabel">{t("portfolioLabel")}</span>
             <select className="fsel" style={{ fontSize: 13, padding: "8px 12px", minWidth: 220 }} value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
               {portfolios.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
@@ -131,15 +170,15 @@ export default function PortfolioDetail({ arg, go }: { arg?: string; go: (id: Sc
       {hasDetail ? (
         <>
           <div className="grid g4 mt mb">
-            <div className="card"><div className="muted">Total value</div><div className="big" style={{ fontSize: 22 }}>{usd(totalUsd)}</div></div>
-            <div className="card"><div className="muted">Products</div><div className="big" style={{ fontSize: 22 }}>{items.length}</div></div>
-            <div className="card"><div className="muted">Top 5 concentration</div><div className="big" style={{ fontSize: 22, color: concentracaoTop5 > 0.5 ? "var(--orange)" : "var(--tx)" }}>{pctFmt(concentracaoTop5)}</div></div>
-            <div className="card"><div className="muted">Est. USD return (weighted)</div><div className={`big ${retornoPondUsd != null && retornoPondUsd >= 0 ? "g" : "r"}`} style={{ fontSize: 22 }}>{retornoPondUsd != null ? pctFmt(retornoPondUsd) : "—"}</div></div>
+            <div className="card"><div className="muted">{t("totalValue")}</div><div className="big" style={{ fontSize: 22 }}>{usd(totalUsd)}</div></div>
+            <div className="card"><div className="muted">{t("products")}</div><div className="big" style={{ fontSize: 22 }}>{items.length}</div></div>
+            <div className="card"><div className="muted">{t("top5Concentration")}</div><div className="big" style={{ fontSize: 22, color: concentracaoTop5 > 0.5 ? "var(--orange)" : "var(--tx)" }}>{pctFmt(concentracaoTop5)}</div></div>
+            <div className="card"><div className="muted">{t("estUsdReturnWeighted")}</div><div className={`big ${retornoPondUsd != null && retornoPondUsd >= 0 ? "g" : "r"}`} style={{ fontSize: 22 }}>{retornoPondUsd != null ? pctFmt(retornoPondUsd) : "—"}</div></div>
           </div>
 
           <div className="grid g3 mb">
             <div className="card">
-              <h3><i className="ti ti-world" />By geography</h3>
+              <h3><i className="ti ti-world" />{t("byGeography")}</h3>
               {byGeo.map((g) => (
                 <div key={g.label} style={{ marginBottom: 8 }}>
                   <div className="flex between" style={{ marginBottom: 3, fontSize: 12 }}><span>{g.label}</span><span>{pctFmt(g.value / (totalUsd || 1))}</span></div>
@@ -148,7 +187,7 @@ export default function PortfolioDetail({ arg, go }: { arg?: string; go: (id: Sc
               ))}
             </div>
             <div className="card">
-              <h3><i className="ti ti-category" />By category</h3>
+              <h3><i className="ti ti-category" />{t("byCategory")}</h3>
               {byCat.map((c) => (
                 <div key={c.label} style={{ marginBottom: 8 }}>
                   <div className="flex between" style={{ marginBottom: 3, fontSize: 12 }}><span>{c.label}</span><span>{pctFmt(c.value / (totalUsd || 1))}</span></div>
@@ -157,7 +196,7 @@ export default function PortfolioDetail({ arg, go }: { arg?: string; go: (id: Sc
               ))}
             </div>
             <div className="card">
-              <h3><i className="ti ti-shield-half" />By risk profile</h3>
+              <h3><i className="ti ti-shield-half" />{t("byRiskProfile")}</h3>
               {byRisco.map((r) => (
                 <div key={r.label} style={{ marginBottom: 8 }}>
                   <div className="flex between" style={{ marginBottom: 3, fontSize: 12 }}><span>{r.label}</span><span>{pctFmt(r.value / (totalUsd || 1))}</span></div>
@@ -168,13 +207,13 @@ export default function PortfolioDetail({ arg, go }: { arg?: string; go: (id: Sc
           </div>
 
           <div className="card">
-            <h3><i className="ti ti-list-details" />Full breakdown · {items.length} products</h3>
+            <h3><i className="ti ti-list-details" />{t("fullBreakdown")} · {items.length} {t("products").toLowerCase()}</h3>
             <div style={{ overflowX: "auto" }}>
               <table>
                 <thead><tr>
-                  <th>Product</th><th>Issuer / Manager</th><th>Category</th><th>Sub-category</th><th>Geography</th><th>Ticker</th>
-                  <th className="num">Allocation</th><th className="num">Value</th><th>Risk</th>
-                  <th className="num">USD Return</th><th className="num">Vol.</th>
+                  <th>{t("product")}</th><th>{t("issuerManager")}</th><th>{t("category")}</th><th>{t("subCategory")}</th><th>{t("geography")}</th><th>{t("ticker")}</th>
+                  <th className="num">{t("allocation")}</th><th className="num">{t("value")}</th><th>{t("risk")}</th>
+                  <th className="num">{t("usdReturn")}</th><th className="num">{t("vol")}</th>
                 </tr></thead>
                 <tbody>
                   {items.map((i, idx) => (
@@ -195,14 +234,14 @@ export default function PortfolioDetail({ arg, go }: { arg?: string; go: (id: Sc
                 </tbody>
               </table>
             </div>
-            <div className="muted mt" style={{ fontSize: 11 }}>Estimated return/volatility (historical average, source per product). Model base: {usd(portfolio.baseValueUsd || 100000)}.</div>
+            <div className="muted mt" style={{ fontSize: 11 }}>{t("estReturnVolNote").replace("{v}", usd(portfolio.baseValueUsd || 100000))}</div>
           </div>
         </>
       ) : (
         <div className="card mt">
-          <h3><i className="ti ti-list-details" />Positions · {portfolio.positions.length} assets</h3>
+          <h3><i className="ti ti-list-details" />{t("positions")} · {portfolio.positions.length} {t("assets")}</h3>
           <table>
-            <thead><tr><th>Asset</th><th className="num">Qty.</th><th className="num">Avg. price</th><th className="num">Current price</th><th className="num">Gain</th></tr></thead>
+            <thead><tr><th>{t("asset")}</th><th className="num">{t("qty")}</th><th className="num">{t("avgPrice")}</th><th className="num">{t("currentPrice")}</th><th className="num">{t("gain")}</th></tr></thead>
             <tbody>
               {portfolio.positions.map((pos, i) => {
                 const q = live[pos.ticker];
@@ -219,7 +258,7 @@ export default function PortfolioDetail({ arg, go }: { arg?: string; go: (id: Sc
               })}
             </tbody>
           </table>
-          <div className="muted mt" style={{ fontSize: 11 }}>No full breakdown available — imported spreadsheet has only ticker/quantity/average price.</div>
+          <div className="muted mt" style={{ fontSize: 11 }}>{t("noBreakdownNote")}</div>
         </div>
       )}
     </div>

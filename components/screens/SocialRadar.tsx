@@ -2,8 +2,45 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchSocialTrending, IMPACT_COLOR, SENTIMENT_COLOR, type SocialPost } from "@/lib/feeds";
 import { publishScreenData } from "@/lib/jim-data";
+import { useI18n } from "@/lib/i18n";
+
+const TR = {
+  title: { pt: "Radar de Redes Sociais", en: "Social Media Radar" },
+  subtitle: { pt: "StockTwits ao vivo · cashtags mais comentadas · sentimento declarado pelo autor.", en: "Live StockTwits · most-discussed cashtags · sentiment declared by the author." },
+  filter: { pt: "Filtro:", en: "Filter:" },
+  allReach: { pt: "Todo alcance", en: "All reach" },
+  highReach: { pt: "Alto (20 mil+ seguidores)", en: "High (20k+ followers)" },
+  mediumReach: { pt: "Médio (3 mil+)", en: "Medium (3k+)" },
+  lowReach: { pt: "Baixo", en: "Low" },
+  allSentiment: { pt: "Todo sentimento", en: "All sentiment" },
+  bullish: { pt: "Comprado", en: "Bullish" },
+  bearish: { pt: "Vendido", en: "Bearish" },
+  neutral: { pt: "Neutro", en: "Neutral" },
+  refresh: { pt: "Atualizar", en: "Refresh" },
+  posts: { pt: "posts", en: "posts" },
+  offlineNotice: { pt: "StockTwits está indisponível no momento — feed vazio (sem dados fabricados).", en: "StockTwits is currently unavailable — feed empty (no fabricated data)." },
+  backendOffline: { pt: "Backend offline — inicie a API na porta 8080.", en: "Backend offline — start the API on port 8080." },
+  noMatch: { pt: "Nenhum post corresponde a estes filtros.", en: "No posts match these filters." },
+  backFeed: { pt: "← Feed", en: "← Feed" },
+  intelligenceLayer: { pt: "CAMADA DE INTELIGÊNCIA", en: "INTELLIGENCE LAYER" },
+  close: { pt: "Fechar", en: "Close" },
+  source: { pt: "Fonte", en: "Source" },
+  followers: { pt: "seguidores", en: "followers" },
+  originalPost: { pt: "Post original", en: "Original post" },
+  assetsMentioned: { pt: "Ativos mencionados", en: "Assets mentioned" },
+  harpianRead: { pt: "Leitura Harpian", en: "Harpian Read" },
+  sentimentAuthor: { pt: "Sentimento (autor)", en: "Sentiment (author)" },
+  reach: { pt: "Alcance", en: "Reach" },
+  verified: { pt: "Verificado", en: "Verified" },
+  yes: { pt: "Sim", en: "Yes" },
+  no: { pt: "Não", en: "No" },
+  platform: { pt: "Plataforma", en: "Platform" },
+  viewOriginal: { pt: "Ver post original ↗", en: "View original post ↗" },
+} as const;
 
 export default function SocialRadar() {
+  const { lang } = useI18n();
+  const t = (k: keyof typeof TR) => TR[k][lang];
   const [all, setAll] = useState<SocialPost[]>([]);
   const [conn, setConn] = useState<"loading" | "ok" | "error">("loading");
   const [offline, setOffline] = useState(false);
@@ -63,33 +100,33 @@ export default function SocialRadar() {
   return (
     <div className="screen" style={{ display: "flex", flexDirection: "column" }}>
       <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
-        <div className="h1" style={{ margin: 0 }}>Social Media Radar</div>
-        <div className="sub" style={{ margin: 0 }}>Live StockTwits · most-discussed cashtags · sentiment declared by the author.</div>
+        <div className="h1" style={{ margin: 0 }}>{t("title")}</div>
+        <div className="sub" style={{ margin: 0 }}>{t("subtitle")}</div>
       </div>
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "14px 0", alignItems: "center" }}>
-        <span className="flabel" style={{ marginRight: 4 }}>Filter:</span>
+        <span className="flabel" style={{ marginRight: 4 }}>{t("filter")}</span>
         <select className="fsel" value={impact} onChange={(e) => setImpact(e.target.value)}>
-          <option value="all">All reach</option>
-          <option value="High">High (20k+ followers)</option>
-          <option value="Medium">Medium (3k+)</option>
-          <option value="Low">Low</option>
+          <option value="all">{t("allReach")}</option>
+          <option value="High">{t("highReach")}</option>
+          <option value="Medium">{t("mediumReach")}</option>
+          <option value="Low">{t("lowReach")}</option>
         </select>
         <select className="fsel" value={sentiment} onChange={(e) => setSentiment(e.target.value)}>
-          <option value="all">All sentiment</option>
-          <option value="Bullish">Bullish</option>
-          <option value="Bearish">Bearish</option>
-          <option value="Neutral">Neutral</option>
+          <option value="all">{t("allSentiment")}</option>
+          <option value="Bullish">{t("bullish")}</option>
+          <option value="Bearish">{t("bearish")}</option>
+          <option value="Neutral">{t("neutral")}</option>
         </select>
-        <button className="btn ghost" style={{ fontSize: 11 }} onClick={load}><i className="ti ti-refresh" />Refresh</button>
+        <button className="btn ghost" style={{ fontSize: 11 }} onClick={load}><i className="ti ti-refresh" />{t("refresh")}</button>
         <span style={{ marginLeft: "auto", fontFamily: "var(--mono)", fontSize: 9, color: "var(--tx3)" }}>
-          {conn === "ok" ? `${posts.length} posts` : ""}
+          {conn === "ok" ? `${posts.length} ${t("posts")}` : ""}
         </span>
       </div>
 
       {offline && (
         <div style={{ padding: "8px 12px", marginBottom: 8, fontSize: 11, color: "var(--orange)", background: "rgba(243,156,18,.08)", border: "1px solid rgba(243,156,18,.2)", borderRadius: 5 }}>
-          StockTwits is currently unavailable — feed empty (no fabricated data).
+          {t("offlineNotice")}
         </div>
       )}
 
@@ -97,9 +134,9 @@ export default function SocialRadar() {
         <div className={`sr-feed-col${active ? " has-panel" : ""}`}>
           <div style={{ display: "grid", gridTemplateColumns: active ? "1fr" : "repeat(2, minmax(0, 1fr))", gap: 8, alignContent: "start" }}>
             {conn === "loading" && [0, 1, 2, 3, 4].map((i) => <div key={i} className="skeleton" style={{ height: 88, borderRadius: 6 }} />)}
-            {conn === "error" && <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: 48, color: "var(--tx3)", fontSize: 11 }}>Backend offline — start the API on port 8080.</div>}
+            {conn === "error" && <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: 48, color: "var(--tx3)", fontSize: 11 }}>{t("backendOffline")}</div>}
             {conn === "ok" && posts.length === 0 && (
-              <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: 48, color: "var(--tx3)", fontSize: 11 }}>No posts match these filters.</div>
+              <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: 48, color: "var(--tx3)", fontSize: 11 }}>{t("noMatch")}</div>
             )}
             {conn === "ok" && posts.map((p) => (
               <SocialCard key={p.id} p={p} selected={activeId === p.id} onClick={() => setActiveId(p.id)} />
@@ -153,53 +190,56 @@ function SocialCard({ p, selected, onClick }: { p: SocialPost; selected: boolean
 }
 
 function IntelPanel({ p, onClose }: { p: SocialPost; onClose: () => void }) {
+  const { lang } = useI18n();
+  const t = (k: keyof typeof TR) => TR[k][lang];
   const ic = IMPACT_COLOR[p.impact] || "rgba(255,255,255,0.3)";
   const sc = SENTIMENT_COLOR[p.sentiment] || "rgba(255,255,255,0.4)";
+  const sentimentLabel = p.sentiment === "Bullish" ? t("bullish") : p.sentiment === "Bearish" ? t("bearish") : p.sentiment === "Neutral" ? t("neutral") : p.sentiment;
 
   return (
     <div style={{ padding: "20px 18px", display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <button onClick={onClose} className="sr-action-secondary" style={{ width: "auto", padding: "5px 10px", fontSize: 9 }}>← Feed</button>
-        <span style={{ fontFamily: "var(--mono)", fontSize: 8, letterSpacing: ".10em", color: "var(--tx3)" }}>INTELLIGENCE LAYER</span>
-        <button onClick={onClose} aria-label="Close" style={{ background: "none", border: "none", color: "var(--tx3)", fontSize: 16, cursor: "pointer", padding: "0 2px", lineHeight: 1 }}><i className="ti ti-x" /></button>
+        <button onClick={onClose} className="sr-action-secondary" style={{ width: "auto", padding: "5px 10px", fontSize: 9 }}>{t("backFeed")}</button>
+        <span style={{ fontFamily: "var(--mono)", fontSize: 8, letterSpacing: ".10em", color: "var(--tx3)" }}>{t("intelligenceLayer")}</span>
+        <button onClick={onClose} aria-label={t("close")} style={{ background: "none", border: "none", color: "var(--tx3)", fontSize: 16, cursor: "pointer", padding: "0 2px", lineHeight: 1 }}><i className="ti ti-x" /></button>
       </div>
 
       <div>
-        <div style={{ fontFamily: "var(--mono)", fontSize: 9, letterSpacing: ".10em", textTransform: "uppercase", color: "var(--tx3)", marginBottom: 6 }}>Source</div>
+        <div style={{ fontFamily: "var(--mono)", fontSize: 9, letterSpacing: ".10em", textTransform: "uppercase", color: "var(--tx3)", marginBottom: 6 }}>{t("source")}</div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontFamily: "var(--mono)", fontSize: 10, fontWeight: 700, background: "#00A99D", color: "#000", padding: "3px 8px", borderRadius: 3 }}>ST</span>
           <span style={{ fontSize: 16, fontWeight: 700, color: "var(--tx)" }}>{p.author}</span>
           {p.verified && <i className="ti ti-rosette-discount-check" style={{ color: "var(--blue)", fontSize: 15 }} />}
         </div>
-        <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--tx3)", marginTop: 3 }}>{p.handle} · {(p.followers / 1000).toFixed(1)}k followers · {p.ts}</div>
+        <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--tx3)", marginTop: 3 }}>{p.handle} · {(p.followers / 1000).toFixed(1)}k {t("followers")} · {p.ts}</div>
       </div>
 
       <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--line)", borderRadius: 5, padding: "10px 12px" }}>
-        <div style={{ fontFamily: "var(--mono)", fontSize: 9, letterSpacing: ".10em", textTransform: "uppercase", color: "var(--tx3)", marginBottom: 6 }}>Original post</div>
+        <div style={{ fontFamily: "var(--mono)", fontSize: 9, letterSpacing: ".10em", textTransform: "uppercase", color: "var(--tx3)", marginBottom: 6 }}>{t("originalPost")}</div>
         <div style={{ fontSize: 14, fontWeight: 500, color: "var(--tx)", lineHeight: 1.5 }}>{p.body}</div>
       </div>
 
       {p.symbols.length > 0 && (
         <div>
-          <div style={{ fontFamily: "var(--mono)", fontSize: 10, letterSpacing: ".10em", textTransform: "uppercase", color: "var(--tx3)", marginBottom: 6 }}>Assets mentioned</div>
+          <div style={{ fontFamily: "var(--mono)", fontSize: 10, letterSpacing: ".10em", textTransform: "uppercase", color: "var(--tx3)", marginBottom: 6 }}>{t("assetsMentioned")}</div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {p.symbols.map((t) => (
-              <span key={t} style={{ fontFamily: "var(--mono)", fontSize: 12, background: "rgba(201,160,44,0.08)", border: "1px solid rgba(201,160,44,0.15)", color: "var(--gold)", padding: "3px 9px", borderRadius: 3 }}>${t}</span>
+            {p.symbols.map((sym) => (
+              <span key={sym} style={{ fontFamily: "var(--mono)", fontSize: 12, background: "rgba(201,160,44,0.08)", border: "1px solid rgba(201,160,44,0.15)", color: "var(--gold)", padding: "3px 9px", borderRadius: 3 }}>${sym}</span>
             ))}
           </div>
         </div>
       )}
 
       <div style={{ background: "rgba(201,160,44,0.04)", border: "1px solid rgba(201,160,44,0.12)", borderRadius: 5, padding: "10px 12px" }}>
-        <div style={{ fontFamily: "var(--mono)", fontSize: 10, letterSpacing: ".10em", textTransform: "uppercase", color: "var(--gold)", marginBottom: 8 }}>Harpian Read</div>
-        <div className="sr-calib-row"><span className="sr-calib-k">Sentiment (author)</span><span className="sr-calib-v" style={{ color: sc }}>{p.sentiment}</span></div>
-        <div className="sr-calib-row"><span className="sr-calib-k">Reach</span><span className="sr-calib-v" style={{ color: ic }}>{p.impact} · {(p.followers / 1000).toFixed(1)}k</span></div>
-        <div className="sr-calib-row"><span className="sr-calib-k">Verified</span><span className="sr-calib-v">{p.verified ? "Yes" : "No"}</span></div>
-        <div className="sr-calib-row"><span className="sr-calib-k">Platform</span><span className="sr-calib-v">StockTwits</span></div>
+        <div style={{ fontFamily: "var(--mono)", fontSize: 10, letterSpacing: ".10em", textTransform: "uppercase", color: "var(--gold)", marginBottom: 8 }}>{t("harpianRead")}</div>
+        <div className="sr-calib-row"><span className="sr-calib-k">{t("sentimentAuthor")}</span><span className="sr-calib-v" style={{ color: sc }}>{sentimentLabel}</span></div>
+        <div className="sr-calib-row"><span className="sr-calib-k">{t("reach")}</span><span className="sr-calib-v" style={{ color: ic }}>{p.impact} · {(p.followers / 1000).toFixed(1)}k</span></div>
+        <div className="sr-calib-row"><span className="sr-calib-k">{t("verified")}</span><span className="sr-calib-v">{p.verified ? t("yes") : t("no")}</span></div>
+        <div className="sr-calib-row"><span className="sr-calib-k">{t("platform")}</span><span className="sr-calib-v">StockTwits</span></div>
       </div>
 
       <a href={p.url} target="_blank" rel="noopener noreferrer" className="sr-action-secondary" style={{ textAlign: "center", textDecoration: "none", display: "block", padding: "8px" }}>
-        View original post ↗
+        {t("viewOriginal")}
       </a>
     </div>
   );

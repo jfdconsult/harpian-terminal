@@ -4,6 +4,39 @@ import { GOV_API, fmtN, fmtUSD } from "@/lib/data";
 import { publishScreenData } from "@/lib/jim-data";
 import BackToVisao from "../BackToVisao";
 import type { ScreenId } from "@/lib/nav";
+import { useI18n } from "@/lib/i18n";
+
+const TR = {
+  title: { pt: "Ordens de Insiders & Executivos", en: "Insider & Executive Orders" },
+  subtitle: { pt: "SEC Form 4 · compras/vendas de diretores, executivos e acionistas com 10%+ — direto da EDGAR. Clique numa linha para ver o filing.", en: "SEC Form 4 · buys/sells by officers, executives, and 10%+ shareholders — straight from EDGAR. Click a row for the filing." },
+  collected: { pt: "coletado em", en: "collected" },
+  sideLabel: { pt: "Lado:", en: "Side:" },
+  all: { pt: "Todos", en: "All" },
+  buys: { pt: "Compras", en: "Buys" },
+  sells: { pt: "Vendas", en: "Sells" },
+  allRoles: { pt: "Todas as funções", en: "All roles" },
+  filingsOf: { pt: "de", en: "of" },
+  filing: { pt: "filing", en: "filing" },
+  loadingFilings: { pt: "Carregando filings da EDGAR…", en: "Loading filings from EDGAR…" },
+  couldNotFetch: { pt: "Não foi possível buscar os filings", en: "Could not fetch the filings" },
+  govDataOffline: { pt: "gov-data offline — porta 8877. Melhor não mostrar nada do que mostrar dados que não vieram da SEC.", en: "gov-data offline — port 8877. Better to show nothing than to show data that didn't come from the SEC." },
+  noFilingsMatch: { pt: "Nenhum filing corresponde ao filtro atual", en: "No filings match the current filter" },
+  noMatchingForm4: { pt: "Nenhum Form 4 correspondente no período coletado.", en: "No matching Form 4 in the collected period." },
+  date: { pt: "Data", en: "Date" },
+  insider: { pt: "Insider", en: "Insider" },
+  role: { pt: "Função", en: "Role" },
+  company: { pt: "Empresa", en: "Company" },
+  ticker: { pt: "Ticker", en: "Ticker" },
+  side: { pt: "Lado", en: "Side" },
+  shares: { pt: "Ações", en: "Shares" },
+  price: { pt: "Preço", en: "Price" },
+  valueUsd: { pt: "Valor (USD)", en: "Value (USD)" },
+  buy: { pt: "Compra", en: "Buy" },
+  sell: { pt: "Venda", en: "Sell" },
+  openFiling: { pt: "Abrir filing", en: "Open filing" },
+  onEdgar: { pt: "na SEC EDGAR", en: "on SEC EDGAR" },
+  sourceLine: { pt: "Fonte: SEC EDGAR (Form 4), coletado pelo gov-data. Cada linha é um filing publicamente auditável — clique para abrir o documento original na SEC.", en: "Source: SEC EDGAR (Form 4), collected by gov-data. Each row is a publicly auditable filing — click to open the original document on the SEC." },
+} as const;
 
 // REAL SEC Form 4, via gov-data /api/insider (api_server.py :8877).
 // This screen used to render a fixed array (IO_DATA) with MADE-UP
@@ -38,6 +71,8 @@ function edgarUrl(accession: string): string {
 }
 
 export default function InsiderOrders({ go }: { go?: (id: ScreenId, param?: string) => void }) {
+  const { lang } = useI18n();
+  const t = (k: keyof typeof TR) => TR[k][lang];
   const [side, setSide] = useState("all");
   const [role, setRole] = useState("all");
   const [data, setData] = useState<InsiderResp | null>(null);
@@ -91,61 +126,60 @@ export default function InsiderOrders({ go }: { go?: (id: ScreenId, param?: stri
     <div className="screen">
       <div className="flex between wrap" style={{ alignItems: "flex-start", gap: 10 }}>
         <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap", flex: 1 }}>
-          <div className="h1" style={{ margin: 0 }}>Insider &amp; Executive Orders</div>
+          <div className="h1" style={{ margin: 0 }}>{t("title")}</div>
           <div className="sub" style={{ margin: 0 }}>
-            SEC Form 4 · buys/sells by officers, executives, and 10%+ shareholders — straight from EDGAR. Click a row for the filing.
+            {t("subtitle")}
           </div>
         </div>
         <BackToVisao go={go} />
         {data?.collected_at && (
           <div className="eodlabel"><i className="ti ti-clock" />
-            {data.source || "SEC EDGAR"} · collected {new Date(data.collected_at).toLocaleString("en-US")}
+            {data.source || "SEC EDGAR"} · {t("collected")} {new Date(data.collected_at).toLocaleString(lang === "pt" ? "pt-BR" : "en-US")}
           </div>
         )}
       </div>
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "14px 0", alignItems: "center" }}>
-        <span className="flabel">Side:</span>
+        <span className="flabel">{t("sideLabel")}</span>
         <select className="fsel" value={side} onChange={(e) => setSide(e.target.value)}>
-          <option value="all">All</option>
-          <option value="BUY">Buys</option>
-          <option value="SELL">Sells</option>
+          <option value="all">{t("all")}</option>
+          <option value="BUY">{t("buys")}</option>
+          <option value="SELL">{t("sells")}</option>
         </select>
         <select className="fsel" value={role} onChange={(e) => setRole(e.target.value)}>
-          <option value="all">All roles</option>
+          <option value="all">{t("allRoles")}</option>
           {roles.map((r) => <option key={r} value={r}>{r}</option>)}
         </select>
         <span style={{ marginLeft: "auto", fontFamily: "var(--mono)", fontSize: 9, color: "var(--tx3)" }}>
-          {items.length} of {data?.total ?? all.length} filing{items.length !== 1 ? "s" : ""}
+          {items.length} {t("filingsOf")} {data?.total ?? all.length} {t("filing")}{items.length !== 1 ? "s" : ""}
         </span>
       </div>
 
       <div className="card">
         {loading ? (
-          <div className="muted" style={{ padding: 30, textAlign: "center" }}>Loading filings from EDGAR…</div>
+          <div className="muted" style={{ padding: 30, textAlign: "center" }}>{t("loadingFilings")}</div>
         ) : err ? (
           <div className="placeholder">
             <i className="ti ti-cloud-off" />
-            <b style={{ display: "block", marginTop: 8 }}>Could not fetch the filings</b>
+            <b style={{ display: "block", marginTop: 8 }}>{t("couldNotFetch")}</b>
             <div className="muted" style={{ marginTop: 4 }}>
-              gov-data offline — <span style={{ fontFamily: "var(--mono)" }}>api_server.py</span> (port 8877).
-              Better to show nothing than to show data that didn't come from the SEC.
+              {t("govDataOffline")}
             </div>
           </div>
         ) : !items.length ? (
           <div className="placeholder">
             <i className="ti ti-file-off" />
-            <b style={{ display: "block", marginTop: 8 }}>No filings match the current filter</b>
-            <div className="muted" style={{ marginTop: 4 }}>No matching Form 4 in the collected period.</div>
+            <b style={{ display: "block", marginTop: 8 }}>{t("noFilingsMatch")}</b>
+            <div className="muted" style={{ marginTop: 4 }}>{t("noMatchingForm4")}</div>
           </div>
         ) : (
           <div style={{ maxHeight: 600, overflow: "auto" }}>
             <table>
               <thead>
                 <tr>
-                  <th>Date</th><th>Insider</th><th>Role</th><th>Company</th><th>Ticker</th>
-                  <th style={{ textAlign: "center" }}>Side</th>
-                  <th className="num">Shares</th><th className="num">Price</th><th className="num">Value (USD)</th>
+                  <th>{t("date")}</th><th>{t("insider")}</th><th>{t("role")}</th><th>{t("company")}</th><th>{t("ticker")}</th>
+                  <th style={{ textAlign: "center" }}>{t("side")}</th>
+                  <th className="num">{t("shares")}</th><th className="num">{t("price")}</th><th className="num">{t("valueUsd")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -153,14 +187,14 @@ export default function InsiderOrders({ go }: { go?: (id: ScreenId, param?: stri
                   const tc = x.side === "BUY" ? "var(--green)" : "var(--red)";
                   return (
                     <tr key={`${x.accession}-${i}`} style={{ cursor: "pointer" }}
-                      title={`Abrir filing ${x.accession} na SEC EDGAR`}
+                      title={`${t("openFiling")} ${x.accession} ${t("onEdgar")}`}
                       onClick={() => window.open(edgarUrl(x.accession), "_blank", "noopener,noreferrer")}>
                       <td style={{ color: "var(--tx3)" }}>{x.date}</td>
                       <td style={{ fontWeight: 600, color: "var(--tx)" }}>{x.owner}</td>
                       <td style={{ color: "var(--tx2)" }}>{x.role}</td>
                       <td style={{ color: "var(--tx2)" }}>{x.issuer}</td>
                       <td style={{ fontWeight: 600, color: "var(--gold)" }}>{x.ticker}</td>
-                      <td style={{ textAlign: "center", fontWeight: 700, color: tc }}>{x.side === "BUY" ? "Buy" : "Sell"}</td>
+                      <td style={{ textAlign: "center", fontWeight: 700, color: tc }}>{x.side === "BUY" ? t("buy") : t("sell")}</td>
                       <td className="num" style={{ color: "var(--tx2)" }}>{fmtN(x.shares)}</td>
                       <td className="num" style={{ color: "var(--tx2)" }}>{x.price != null ? "$" + x.price.toFixed(2) : "—"}</td>
                       <td className="num" style={{ color: tc, fontWeight: 600 }}>{fmtUSD(x.value_usd)}</td>
@@ -172,8 +206,7 @@ export default function InsiderOrders({ go }: { go?: (id: ScreenId, param?: stri
           </div>
         )}
         <div className="muted mt">
-          Source: SEC EDGAR (Form 4), collected by gov-data. Each row is a publicly auditable filing —
-          click to open the original document on the SEC.
+          {t("sourceLine")}
         </div>
       </div>
     </div>

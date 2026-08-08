@@ -1,6 +1,8 @@
 // ============================================================
 // HARPIAN ETP TERMINAL — Navigation (menu structure)
 // ============================================================
+import type { Lang } from "@/lib/i18n";
+
 export type ScreenId =
   | "painel"
   | "fundo"
@@ -39,178 +41,292 @@ export type ScreenId =
 
 export interface MenuItem {
   id: ScreenId;
-  label: string;
+  labelKey: string;
   icon: string;
   tag?: string;
   param?: string;
 }
 export interface MenuColumn {
-  label?: string;
+  labelKey?: string;
   items: MenuItem[];
 }
 export interface Menu {
-  label: string;
+  key: string;
+  labelKey: string;
   icon: string;
   direct?: ScreenId;
   wide?: boolean;
   columns?: MenuColumn[];
 }
 
+// Resolved (post-lang) shapes consumed by Topbar and other UI.
+export interface ResolvedMenuItem extends Omit<MenuItem, "labelKey"> {
+  label: string;
+}
+export interface ResolvedMenuColumn extends Omit<MenuColumn, "labelKey" | "items"> {
+  label?: string;
+  items: ResolvedMenuItem[];
+}
+export interface ResolvedMenu extends Omit<Menu, "labelKey" | "columns"> {
+  label: string;
+  columns?: ResolvedMenuColumn[];
+}
+
+// Bilingual label dictionary. Keys are internal-only, never rendered directly.
+const NAV_TR: Record<string, Record<Lang, string>> = {
+  "menu.painel": { pt: "Painel", en: "Dashboard" },
+  "menu.fundos": { pt: "Fundos", en: "Funds" },
+  "menu.clientes": { pt: "Clientes", en: "Clients" },
+  "menu.mercado": { pt: "Mercado", en: "Market" },
+  "menu.inteligencia": { pt: "Inteligência", en: "Intelligence" },
+  "menu.risco": { pt: "Risco", en: "Risk" },
+  "menu.configuracoes": { pt: "Configurações", en: "Settings" },
+  "menu.tutorial": { pt: "Tutorial", en: "Tutorial" },
+
+  "col.escolha_fundo": { pt: "Escolha o fundo", en: "Choose the fund" },
+  "col.o_que_fazer": { pt: "O que fazer", en: "What to do" },
+
+  "item.hpc22": { pt: "HPC22 · Agressivo", en: "HPC22 · Aggressive" },
+  "item.hpc11": { pt: "HPC11 · I.G.", en: "HPC11 · I.G." },
+  "item.lynk_core22": { pt: "Lynk Core22 HPC", en: "Lynk Core22 HPC" },
+  "item.white_label": { pt: "White-label", en: "White-label" },
+  "item.visao_geral": { pt: "Visão geral", en: "Overview" },
+  "item.desempenho": { pt: "Desempenho", en: "Performance" },
+  "item.composicao": { pt: "Composição", en: "Composition" },
+  "item.defesa_risco": { pt: "Defesa e risco", en: "Defense & risk" },
+  "item.portfolio_builder": { pt: "Construção de portfólio", en: "Portfolio builder" },
+  "item.enviar_ordem": { pt: "Enviar ordem (Lynk)", en: "Send order (Lynk)" },
+
+  "item.lista_clientes": { pt: "Lista de clientes", en: "Client list" },
+  "item.carteira_cliente": { pt: "Carteira do cliente", en: "Client portfolio" },
+  "item.importar_conectar": { pt: "Importar / conectar", en: "Import / connect" },
+  "item.alertas": { pt: "Alertas", en: "Alerts" },
+  "item.ordens": { pt: "Ordens", en: "Orders" },
+
+  "item.visao_mercado": { pt: "Visão de Mercado", en: "Market Overview" },
+  "item.ari": { pt: "American Regime Index (ARI)", en: "American Regime Index (ARI)" },
+  "item.xri": { pt: "External Regime Index (XRI)", en: "External Regime Index (XRI)" },
+  "item.market_dna": { pt: "Market DNA", en: "Market DNA" },
+  "item.snowflake": { pt: "Snowflake", en: "Snowflake" },
+  "item.calendario": { pt: "Calendário", en: "Calendar" },
+  "item.cotacoes": { pt: "Cotações", en: "Quotes" },
+  "item.screener": { pt: "Screener", en: "Screener" },
+
+  "item.social_radar": { pt: "Social Radar", en: "Social Radar" },
+  "item.news_broadcast": { pt: "News Broadcast", en: "News Broadcast" },
+  "item.insider_orders": { pt: "Insider Orders", en: "Insider Orders" },
+  "item.posicoes_13f": { pt: "Posições 13F", en: "13F Holdings" },
+  "item.cot_intelligence": { pt: "COT Intelligence", en: "COT Intelligence" },
+  "item.cot_explorer": { pt: "COT Data Explorer", en: "COT Data Explorer" },
+  "item.filings_search": { pt: "Filings Search", en: "Filings Search" },
+
+  "item.comparacao_niveis": { pt: "Comparação · 4 níveis", en: "Comparison · 4 levels" },
+  "item.risco_carteira": { pt: "Risco da carteira", en: "Portfolio risk" },
+  "item.risco_cliente": { pt: "Risco do cliente", en: "Client risk" },
+
+  "item.integracoes": { pt: "Integrações", en: "Integrations" },
+  "item.api_integracao": { pt: "API & Integração", en: "API & Integration" },
+  "item.marca": { pt: "Marca (white-label)", en: "Brand (white-label)" },
+  "item.configuracoes": { pt: "Configurações", en: "Settings" },
+};
+
+function tr(key: string, lang: Lang): string {
+  return NAV_TR[key]?.[lang] ?? key;
+}
+
 export const MENUS: Menu[] = [
-  { label: "Painel", icon: "ti-home", direct: "painel" },
+  { key: "painel", labelKey: "menu.painel", icon: "ti-home", direct: "painel" },
   {
-    label: "Fundos",
+    key: "fundos",
+    labelKey: "menu.fundos",
     icon: "ti-coin",
     wide: true,
     columns: [
       {
-        label: "Escolha o fundo",
+        labelKey: "col.escolha_fundo",
         items: [
-          { id: "fundo", label: "HPC22 · Agressivo", icon: "ti-coin", param: "HPC22" },
-          { id: "fundo", label: "HPC11 · I.G.", icon: "ti-coin", param: "HPC11" },
-          { id: "fundo", label: "Lynk Core22 HPC", icon: "ti-coin", param: "LCORE22", tag: "new" },
-          { id: "fundo", label: "White-label", icon: "ti-tag", param: "HPC22" },
+          { id: "fundo", labelKey: "item.hpc22", icon: "ti-coin", param: "HPC22" },
+          { id: "fundo", labelKey: "item.hpc11", icon: "ti-coin", param: "HPC11" },
+          { id: "fundo", labelKey: "item.lynk_core22", icon: "ti-coin", param: "LCORE22", tag: "new" },
+          { id: "fundo", labelKey: "item.white_label", icon: "ti-tag", param: "HPC22" },
         ],
       },
       {
-        label: "O que fazer",
+        labelKey: "col.o_que_fazer",
         items: [
-          { id: "fundo", label: "Visão geral", icon: "ti-eye" },
-          { id: "fundo", label: "Desempenho", icon: "ti-chart-line" },
-          { id: "fundo", label: "Composição", icon: "ti-chart-pie" },
-          { id: "fundo", label: "Defesa e risco", icon: "ti-shield" },
-          { id: "portfolio-builder", label: "Construção de portfólio", icon: "ti-adjustments-horizontal", tag: "new" },
-          { id: "ordem", label: "Enviar ordem (Lynk)", icon: "ti-send", tag: "new" },
+          { id: "fundo", labelKey: "item.visao_geral", icon: "ti-eye" },
+          { id: "fundo", labelKey: "item.desempenho", icon: "ti-chart-line" },
+          { id: "fundo", labelKey: "item.composicao", icon: "ti-chart-pie" },
+          { id: "fundo", labelKey: "item.defesa_risco", icon: "ti-shield" },
+          { id: "portfolio-builder", labelKey: "item.portfolio_builder", icon: "ti-adjustments-horizontal", tag: "new" },
+          { id: "ordem", labelKey: "item.enviar_ordem", icon: "ti-send", tag: "new" },
         ],
       },
     ],
   },
   {
-    label: "Clientes",
+    key: "clientes",
+    labelKey: "menu.clientes",
     icon: "ti-users",
     columns: [
       {
         items: [
-          { id: "clientes", label: "Lista de clientes", icon: "ti-list" },
-          { id: "carteira", label: "Carteira do cliente", icon: "ti-wallet" },
-          { id: "importar", label: "Importar / conectar", icon: "ti-upload" },
-          { id: "alertas", label: "Alertas", icon: "ti-bell" },
-          { id: "ordem", label: "Ordens", icon: "ti-send", tag: "Lynk" },
+          { id: "clientes", labelKey: "item.lista_clientes", icon: "ti-list" },
+          { id: "carteira", labelKey: "item.carteira_cliente", icon: "ti-wallet" },
+          { id: "importar", labelKey: "item.importar_conectar", icon: "ti-upload" },
+          { id: "alertas", labelKey: "item.alertas", icon: "ti-bell" },
+          { id: "ordem", labelKey: "item.ordens", icon: "ti-send", tag: "Lynk" },
         ],
       },
     ],
   },
   {
-    label: "Mercado",
+    key: "mercado",
+    labelKey: "menu.mercado",
     icon: "ti-chart-candle",
     columns: [
       {
         items: [
-          { id: "mercado-visao", label: "Visão de Mercado", icon: "ti-layout-dashboard", tag: "new" },
-          { id: "regime", label: "American Regime Index (ARI)", icon: "ti-world" },
-          { id: "xri", label: "External Regime Index (XRI)", icon: "ti-world-exclamation" },
-          { id: "market-dna", label: "Market DNA", icon: "ti-dna-2" },
-          { id: "snowflake", label: "Snowflake", icon: "ti-snowflake" },
-          { id: "calendar", label: "Calendário", icon: "ti-calendar-event", tag: "new" },
-          { id: "cotacoes", label: "Cotações", icon: "ti-table" },
-          { id: "screener", label: "Screener", icon: "ti-filter" },
+          { id: "mercado-visao", labelKey: "item.visao_mercado", icon: "ti-layout-dashboard", tag: "new" },
+          { id: "regime", labelKey: "item.ari", icon: "ti-world" },
+          { id: "xri", labelKey: "item.xri", icon: "ti-world-exclamation" },
+          { id: "market-dna", labelKey: "item.market_dna", icon: "ti-dna-2" },
+          { id: "snowflake", labelKey: "item.snowflake", icon: "ti-snowflake" },
+          { id: "calendar", labelKey: "item.calendario", icon: "ti-calendar-event", tag: "new" },
+          { id: "cotacoes", labelKey: "item.cotacoes", icon: "ti-table" },
+          { id: "screener", labelKey: "item.screener", icon: "ti-filter" },
         ],
       },
     ],
   },
   {
-    label: "Inteligência",
+    key: "inteligencia",
+    labelKey: "menu.inteligencia",
     icon: "ti-building",
     columns: [
       {
         items: [
-          { id: "social-radar", label: "Social Radar", icon: "ti-radar-2", tag: "new" },
-          { id: "news-broadcast", label: "News Broadcast", icon: "ti-broadcast", tag: "new" },
-          { id: "insider-orders", label: "Insider Orders", icon: "ti-gavel", tag: "new" },
-          { id: "institutional", label: "Posições 13F", icon: "ti-report-money", tag: "SEC" },
-          { id: "cot-sentiment", label: "COT Intelligence", icon: "ti-flame", tag: "CFTC" },
-          { id: "cot-legacy", label: "COT Data Explorer", icon: "ti-chart-bar" },
-          { id: "filings-search", label: "Filings Search", icon: "ti-file-search", tag: "SEC" },
+          { id: "social-radar", labelKey: "item.social_radar", icon: "ti-radar-2", tag: "new" },
+          { id: "news-broadcast", labelKey: "item.news_broadcast", icon: "ti-broadcast", tag: "new" },
+          { id: "insider-orders", labelKey: "item.insider_orders", icon: "ti-gavel", tag: "new" },
+          { id: "institutional", labelKey: "item.posicoes_13f", icon: "ti-report-money", tag: "SEC" },
+          { id: "cot-sentiment", labelKey: "item.cot_intelligence", icon: "ti-flame", tag: "CFTC" },
+          { id: "cot-legacy", labelKey: "item.cot_explorer", icon: "ti-chart-bar" },
+          { id: "filings-search", labelKey: "item.filings_search", icon: "ti-file-search", tag: "SEC" },
         ],
       },
     ],
   },
   {
-    label: "Risco",
+    key: "risco",
+    labelKey: "menu.risco",
     icon: "ti-shield-half",
     columns: [
       {
         items: [
-          { id: "risco", label: "Comparação · 4 níveis", icon: "ti-scale", tag: "new" },
-          { id: "carteira", label: "Risco da carteira", icon: "ti-wallet" },
-          { id: "cliente-risco", label: "Risco do cliente", icon: "ti-user-heart" },
+          { id: "risco", labelKey: "item.comparacao_niveis", icon: "ti-scale", tag: "new" },
+          { id: "carteira", labelKey: "item.risco_carteira", icon: "ti-wallet" },
+          { id: "cliente-risco", labelKey: "item.risco_cliente", icon: "ti-user-heart" },
         ],
       },
     ],
   },
   {
-    label: "Configurações",
+    key: "configuracoes",
+    labelKey: "menu.configuracoes",
     icon: "ti-settings",
     columns: [
       {
         items: [
-          { id: "integracoes", label: "Integrações", icon: "ti-plug" },
-          { id: "api", label: "API & Integração", icon: "ti-code", tag: "dev" },
-          { id: "marca", label: "Marca (white-label)", icon: "ti-palette", tag: "new" },
-          { id: "config", label: "Configurações", icon: "ti-adjustments" },
+          { id: "integracoes", labelKey: "item.integracoes", icon: "ti-plug" },
+          { id: "api", labelKey: "item.api_integracao", icon: "ti-code", tag: "dev" },
+          { id: "marca", labelKey: "item.marca", icon: "ti-palette", tag: "new" },
+          { id: "config", labelKey: "item.configuracoes", icon: "ti-adjustments" },
         ],
       },
     ],
   },
-  { label: "Tutorial", icon: "ti-help-circle", direct: "tutorial" },
+  { key: "tutorial", labelKey: "menu.tutorial", icon: "ti-help-circle", direct: "tutorial" },
 ];
 
-// Screen → top-menu mapping. Used by Topbar to highlight the active menu in gold
-// so the header doesn't need to repeat the section name in a breadcrumb below.
+/** Resolves MENUS to concrete labels for the given language. Consumers (e.g. Topbar) call
+ * this with the current `lang` from useI18n() instead of reading MENUS labels directly. */
+export function getMenus(lang: Lang): ResolvedMenu[] {
+  return MENUS.map((m) => ({
+    ...m,
+    label: tr(m.labelKey, lang),
+    columns: m.columns?.map((col) => ({
+      ...col,
+      label: col.labelKey ? tr(col.labelKey, lang) : undefined,
+      items: col.items.map((it) => ({ ...it, label: tr(it.labelKey, lang) })),
+    })),
+  }));
+}
+
+// Screen → top-menu mapping, keyed by the same `key` used in MENUS above (not by label),
+// so getScreenToMenu() and getMenus() always resolve to matching text for a given lang.
+// Used by Topbar to highlight the active menu in gold so the header doesn't need to
+// repeat the section name in a breadcrumb below.
 // Some screens live under multiple menus (e.g. `carteira` in Clients + Risk);
 // this table encodes the PRIMARY home for each screen.
-const SCREEN_TO_MENU: Record<ScreenId, string> = {
-  painel: "Painel",
-  fundo: "Fundos",
-  ordem: "Fundos",
-  clientes: "Clientes",
-  cliente: "Clientes",
-  carteira: "Clientes",
-  importar: "Clientes",
-  alertas: "Clientes",
-  "portfolio-detalhe": "Clientes",
-  "portfolio-builder": "Fundos",
-  "mercado-visao": "Mercado",
-  regime: "Mercado",
-  xri: "Mercado",
-  "market-dna": "Mercado",
-  snowflake: "Mercado",
-  calendar: "Mercado",
-  cotacoes: "Mercado",
-  screener: "Mercado",
-  acoes: "Mercado",
-  noticias: "Inteligência",
-  "social-radar": "Inteligência",
-  "news-broadcast": "Inteligência",
-  "insider-orders": "Inteligência",
-  institutional: "Inteligência",
-  "cot-sentiment": "Inteligência",
-  "cot-legacy": "Inteligência",
-  "filings-search": "Inteligência",
-  risco: "Risco",
-  "cliente-risco": "Risco",
-  integracoes: "Configurações",
-  api: "Configurações",
-  marca: "Configurações",
-  config: "Configurações",
-  tutorial: "Tutorial",
+const SCREEN_TO_MENU_KEY: Record<ScreenId, string> = {
+  painel: "painel",
+  fundo: "fundos",
+  ordem: "fundos",
+  clientes: "clientes",
+  cliente: "clientes",
+  carteira: "clientes",
+  importar: "clientes",
+  alertas: "clientes",
+  "portfolio-detalhe": "clientes",
+  "portfolio-builder": "fundos",
+  "mercado-visao": "mercado",
+  regime: "mercado",
+  xri: "mercado",
+  "market-dna": "mercado",
+  snowflake: "mercado",
+  calendar: "mercado",
+  cotacoes: "mercado",
+  screener: "mercado",
+  acoes: "mercado",
+  noticias: "inteligencia",
+  "social-radar": "inteligencia",
+  "news-broadcast": "inteligencia",
+  "insider-orders": "inteligencia",
+  institutional: "inteligencia",
+  "cot-sentiment": "inteligencia",
+  "cot-legacy": "inteligencia",
+  "filings-search": "inteligencia",
+  risco: "risco",
+  "cliente-risco": "risco",
+  integracoes: "configuracoes",
+  api: "configuracoes",
+  marca: "configuracoes",
+  config: "configuracoes",
+  tutorial: "tutorial",
 };
 
-export function activeMenuFor(screen: ScreenId): string {
-  return SCREEN_TO_MENU[screen] || "Painel";
+const MENU_KEY_TO_LABEL_KEY: Record<string, string> = Object.fromEntries(
+  MENUS.map((m) => [m.key, m.labelKey])
+);
+
+/** Resolves SCREEN_TO_MENU to the concrete menu label for `lang`, guaranteed to match a
+ * label produced by getMenus(lang) for the same lang since both derive from the same
+ * menu `key` → `labelKey` → NAV_TR chain. */
+export function getScreenToMenu(lang: Lang): Record<ScreenId, string> {
+  return Object.fromEntries(
+    Object.entries(SCREEN_TO_MENU_KEY).map(([screen, menuKey]) => [
+      screen,
+      tr(MENU_KEY_TO_LABEL_KEY[menuKey] ?? "menu.painel", lang),
+    ])
+  ) as Record<ScreenId, string>;
+}
+
+export function activeMenuFor(screen: ScreenId, lang: Lang = "pt"): string {
+  return getScreenToMenu(lang)[screen] || tr("menu.painel", lang);
 }
 
 /** O texto veio do endereco (#tela): so aceita se for uma tela que existe. */
 export function isScreenId(v: string): v is ScreenId {
-  return Object.prototype.hasOwnProperty.call(SCREEN_TO_MENU, v);
+  return Object.prototype.hasOwnProperty.call(SCREEN_TO_MENU_KEY, v);
 }

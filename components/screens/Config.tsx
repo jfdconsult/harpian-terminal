@@ -13,16 +13,43 @@ import { useI18n, type Lang } from "@/lib/i18n";
 // permissions directory, while the footer said user management was phase 2.
 // There is no user backend — so the screen says exactly that.
 
-const THEME_LABEL: Record<ThemeId, string> = {
-  navy: "Institutional (navy/gold)",
-  light: "Light",
-  dark: "Dark",
+const TR = {
+  themeInstitutional: { pt: "Institucional (marinho/dourado)", en: "Institutional (navy/gold)" },
+  themeLight: { pt: "Claro", en: "Light" },
+  themeDark: { pt: "Escuro", en: "Dark" },
+  langPt: { pt: "Português (BR)", en: "Português (BR)" },
+  langEn: { pt: "English (US)", en: "English (US)" },
+  settingsTitle: { pt: "Configurações", en: "Settings" },
+  settingsSub: { pt: "Conta e preferências. O que você mudar aqui se aplica a todo o terminal, imediatamente.", en: "Account and preferences. Whatever you change here applies to the whole terminal, immediately." },
+  account: { pt: "Conta", en: "Account" },
+  organization: { pt: "Organização", en: "Organization" },
+  type: { pt: "Tipo", en: "Type" },
+  familyOfficeMfo: { pt: "Family Office / MFO", en: "Family Office / MFO" },
+  plan: { pt: "Plano", en: "Plan" },
+  institutional: { pt: "Institucional", en: "Institutional" },
+  address: { pt: "Endereço", en: "Address" },
+  preferences: { pt: "Preferências", en: "Preferences" },
+  theme: { pt: "Tema", en: "Theme" },
+  language: { pt: "Idioma", en: "Language" },
+  displayCurrency: { pt: "Moeda de exibição", en: "Display currency" },
+  browserTimezone: { pt: "Fuso horário do navegador", en: "Browser timezone" },
+  usersPermissions: { pt: "Usuários e permissões", en: "Users & permissions" },
+  notYetImplemented: { pt: "Ainda não implementado", en: "Not yet implemented" },
+  usersDetail: { pt: "Não há login ou backend de usuários no terminal hoje — quem abre, abre tudo. Controle de acesso e permissões granulares chegam junto com a autenticação, na fase 2.", en: "There's no login or user backend in the terminal today — whoever opens it, opens everything. Access control and fine-grained permissions arrive together with authentication, in phase 2." },
+} as const;
+type TKey = keyof typeof TR;
+
+const THEME_LABEL: Record<ThemeId, { pt: string; en: string }> = {
+  navy: TR.themeInstitutional,
+  light: TR.themeLight,
+  dark: TR.themeDark,
 };
-const LANG_LABEL: Record<Lang, string> = { pt: "Português (BR)", en: "English (US)" };
+const LANG_LABEL: Record<Lang, { pt: string; en: string }> = { pt: TR.langPt, en: TR.langEn };
 
 export default function Config() {
   const { theme, setTheme } = useTheme();
   const { lang, setLang } = useI18n();
+  const t = (k: TKey) => TR[k][lang];
   const [tz, setTz] = useState("—");
 
   useEffect(() => {
@@ -34,10 +61,10 @@ export default function Config() {
     publishScreenData(
       "config",
       "Terminal settings: account (organization, plan) and real preferences (theme and language currently applied, browser timezone). User/permission management doesn't exist yet — there's no user backend.",
-      { moeda: "USD", idioma: LANG_LABEL[lang], tema: THEME_LABEL[theme], fuso: tz, plano: "Institucional", usuarios: "não implementado (fase 2)" },
+      { moeda: "USD", idioma: LANG_LABEL[lang].en, tema: THEME_LABEL[theme].en, fuso: tz, plano: "Institucional", usuarios: "não implementado (fase 2)" },
       {
         briefing:
-          `Settings: Institutional plan, display in USD, theme **${THEME_LABEL[theme]}**, language **${LANG_LABEL[lang]}**, timezone ${tz}. ` +
+          `Settings: Institutional plan, display in USD, theme **${THEME_LABEL[theme].en}**, language **${LANG_LABEL[lang].en}**, timezone ${tz}. ` +
           `User and permission management doesn't exist yet — it's coming in phase 2, along with login.`,
         suggestions: [
           "How do I change the theme or language?",
@@ -51,24 +78,24 @@ export default function Config() {
   return (
     <div className="screen">
       <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
-        <div className="h1" style={{ margin: 0 }}>Settings</div>
-        <div className="sub" style={{ margin: 0 }}>Account and preferences. Whatever you change here applies to the whole terminal, immediately.</div>
+        <div className="h1" style={{ margin: 0 }}>{t("settingsTitle")}</div>
+        <div className="sub" style={{ margin: 0 }}>{t("settingsSub")}</div>
       </div>
 
       <div className="grid g2">
         <div className="card">
-          <h3><i className="ti ti-building" />Account</h3>
-          <div className="kv"><span className="muted">Organization</span><span className="v">HARPIAN Capital</span></div>
-          <div className="kv"><span className="muted">Type</span><span className="v">Family Office / MFO</span></div>
-          <div className="kv"><span className="muted">Plan</span><span className="v" style={{ color: "var(--gold)" }}>Institutional</span></div>
-          <div className="kv"><span className="muted">Address</span><span className="v" style={{ fontSize: 11 }}>601 Brickell Key Dr · Miami</span></div>
+          <h3><i className="ti ti-building" />{t("account")}</h3>
+          <div className="kv"><span className="muted">{t("organization")}</span><span className="v">HARPIAN Capital</span></div>
+          <div className="kv"><span className="muted">{t("type")}</span><span className="v">{t("familyOfficeMfo")}</span></div>
+          <div className="kv"><span className="muted">{t("plan")}</span><span className="v" style={{ color: "var(--gold)" }}>{t("institutional")}</span></div>
+          <div className="kv"><span className="muted">{t("address")}</span><span className="v" style={{ fontSize: 11 }}>601 Brickell Key Dr · Miami</span></div>
         </div>
 
         <div className="card">
-          <h3><i className="ti ti-adjustments" />Preferences</h3>
+          <h3><i className="ti ti-adjustments" />{t("preferences")}</h3>
 
           <div className="kv">
-            <span className="muted">Theme</span>
+            <span className="muted">{t("theme")}</span>
             <span style={{ display: "flex", gap: 4 }}>
               {(["navy", "light", "dark"] as ThemeId[]).map((id) => (
                 <button key={id} onClick={() => setTheme(id)} style={{
@@ -76,13 +103,13 @@ export default function Config() {
                   border: `1px solid ${theme === id ? "rgba(201,160,44,.5)" : "var(--line2)"}`,
                   background: theme === id ? "rgba(201,160,44,.15)" : "transparent",
                   color: theme === id ? "var(--gold)" : "var(--tx3)",
-                }}>{THEME_LABEL[id].split(" ")[0]}</button>
+                }}>{THEME_LABEL[id][lang].split(" ")[0]}</button>
               ))}
             </span>
           </div>
 
           <div className="kv">
-            <span className="muted">Language</span>
+            <span className="muted">{t("language")}</span>
             <span style={{ display: "flex", gap: 4 }}>
               {(["pt", "en"] as Lang[]).map((id) => (
                 <button key={id} onClick={() => setLang(id)} style={{
@@ -95,18 +122,17 @@ export default function Config() {
             </span>
           </div>
 
-          <div className="kv"><span className="muted">Display currency</span><span className="v">USD</span></div>
-          <div className="kv"><span className="muted">Browser timezone</span><span className="v" style={{ fontFamily: "var(--mono)", fontSize: 11 }}>{tz}</span></div>
+          <div className="kv"><span className="muted">{t("displayCurrency")}</span><span className="v">USD</span></div>
+          <div className="kv"><span className="muted">{t("browserTimezone")}</span><span className="v" style={{ fontFamily: "var(--mono)", fontSize: 11 }}>{tz}</span></div>
         </div>
 
         <div className="card" style={{ gridColumn: "1 / -1", borderStyle: "dashed" }}>
-          <h3><i className="ti ti-users" />Users &amp; permissions</h3>
+          <h3><i className="ti ti-users" />{t("usersPermissions")}</h3>
           <div className="placeholder" style={{ padding: "20px 10px" }}>
             <i className="ti ti-lock" style={{ fontSize: 24, color: "var(--tx3)" }} />
-            <b style={{ display: "block", marginTop: 8 }}>Not yet implemented</b>
+            <b style={{ display: "block", marginTop: 8 }}>{t("notYetImplemented")}</b>
             <div className="muted" style={{ marginTop: 4, maxWidth: 520, margin: "4px auto 0", lineHeight: 1.6 }}>
-              There's no login or user backend in the terminal today — whoever opens it, opens everything.
-              Access control and fine-grained permissions arrive together with authentication, in phase 2.
+              {t("usersDetail")}
             </div>
           </div>
         </div>

@@ -4,6 +4,55 @@ import { CLIENTS, brl, type Client } from "@/lib/clients";
 import { allClients } from "@/lib/clientStore";
 import { publishScreenData } from "@/lib/jim-data";
 import { HPC22_RN, HPC11_RN, TOLERANCE, OBJETIVO } from "@/lib/riskLevels";
+import { useI18n } from "@/lib/i18n";
+
+const TR = {
+  title: { pt: "Risco por cliente — os 4 níveis na mesma régua", en: "Risk by client — the 4 levels on the same ruler" },
+  subtitle: { pt: "Onde o portfólio de cada cliente está em relação à tolerância do perfil e ao teto do mandato. Tudo no Risk Number (0-100).", en: "Where each client's portfolio stands vs. the profile tolerance and the mandate ceiling. All on the Risk Number (0-100)." },
+  client: { pt: "Cliente:", en: "Client:" },
+  productRisk: { pt: "Risco do produto", en: "Product risk" },
+  productMuted: { pt: "HPC22 (o fundo). HPC11 =", en: "HPC22 (the fund). HPC11 =" },
+  clientTolerance: { pt: "Tolerância do cliente", en: "Client tolerance" },
+  profileObjective: { pt: "perfil · objetivo", en: "profile · objective" },
+  mandate: { pt: "Mandato", en: "Mandate" },
+  mandateMuted: { pt: "Teto contratual da conta.", en: "Contractual ceiling for the account." },
+  portfolioRisk: { pt: "Risco do portfólio", en: "Portfolio risk" },
+  aboveMandate: { pt: "acima do mandato", en: "above the mandate" },
+  withinMandate: { pt: "✓ dentro do mandato", en: "✓ within the mandate" },
+  onSameRuler: { pt: "na mesma régua", en: "on the same ruler" },
+  legendProduct: { pt: "Produto", en: "Product" },
+  legendTolerance: { pt: "Tolerância", en: "Tolerance" },
+  legendMandate: { pt: "Mandato", en: "Mandate" },
+  legendPortfolio: { pt: "Portfólio", en: "Portfolio" },
+  simulate: { pt: "Simular: migrar", en: "Simulate: migrate" },
+  toHPC22: { pt: "para HPC22", en: "to HPC22" },
+  migratingStillAbove: { pt: "risco do portfólio cai para", en: "the portfolio risk drops to" },
+  stillAboveCeiling: { pt: "ainda", en: "still" },
+  aboveCeilingOf: { pt: "acima do teto de", en: "above the ceiling of" },
+  migratingWithin: { pt: "o portfólio chega a", en: "the portfolio lands at" },
+  withinMandateOf: { pt: "dentro do mandato (≤", en: "within the mandate (≤" },
+  allClients: { pt: "Todos os clientes na régua", en: "All clients on the ruler" },
+  outsideMandate: { pt: "fora do mandato", en: "outside the mandate" },
+  allWithin: { pt: "todos dentro", en: "all within" },
+  colClient: { pt: "Cliente", en: "Client" },
+  colProfile: { pt: "Perfil", en: "Profile" },
+  colObjective: { pt: "Objetivo", en: "Objective" },
+  colPortfolio: { pt: "Portfólio", en: "Portfolio" },
+  colTolerance: { pt: "Tolerância", en: "Tolerance" },
+  colMandate: { pt: "Mandato", en: "Mandate" },
+  colRulerDist: { pt: "Distribuição na régua", en: "Ruler distribution" },
+  colAlignment: { pt: "Alinhamento", en: "Alignment" },
+  within: { pt: "dentro", en: "within" },
+  legendMandateCeiling: { pt: "Mandato (teto)", en: "Mandate (ceiling)" },
+  legendToleranceProfile: { pt: "Tolerância (perfil)", en: "Tolerance (profile)" },
+  legendPortfolioOutside: { pt: "Portfólio fora", en: "Portfolio outside" },
+  legendPortfolioWithin: { pt: "Portfólio dentro", en: "Portfolio within" },
+  clickRow: { pt: "Clique numa linha para abrir o cliente na régua acima.", en: "Click a row to open the client on the ruler above." },
+  footnote: {
+    pt: "Portfólio = Risk Number das posições do cliente. Tolerância vem do perfil (questionário) e o mandato do contrato. Produto vem do motor interno. Escala calibrada ao S&P 500 ≈ 72.",
+    en: "Portfolio = Risk Number of the client's holdings. Tolerance comes from the profile (questionnaire) and the mandate from the contract. Product comes from the internal engine. Scale calibrated to the S&P 500 ≈ 72.",
+  },
+} as const;
 
 // Compact (inline) ruler with markers — used on each table row.
 // Exported to be reused in the "All clients on the ruler" module of the Dashboard.
@@ -22,6 +71,8 @@ export function MiniRegua({ portfolio, tolerance, mandate }: { portfolio: number
 }
 
 export default function Risco() {
+  const { lang } = useI18n();
+  const t = (k: keyof typeof TR) => TR[k][lang];
   const [clients, setClients] = useState<Client[]>(CLIENTS);   // seed on SSR; localStorage on client
   const [sel, setSel] = useState(CLIENTS[0].id);
   const [migrate, setMigrate] = useState(0); // % migrated to HPC22
@@ -84,13 +135,13 @@ export default function Risco() {
     <div className="screen">
       <div className="flex between wrap" style={{ gap: 10 }}>
         <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap", flex: 1 }}>
-          <div className="h1" style={{ margin: 0 }}>Risk by client — the 4 levels on the same ruler</div>
+          <div className="h1" style={{ margin: 0 }}>{t("title")}</div>
           <div className="sub" style={{ margin: 0 }}>
-            Where each client&apos;s portfolio stands vs. the profile tolerance and the mandate ceiling. All on the Risk Number (0-100).
+            {t("subtitle")}
           </div>
         </div>
         <div className="flex" style={{ gap: 8, alignItems: "center" }}>
-          <span className="flabel">Client:</span>
+          <span className="flabel">{t("client")}</span>
           <select className="fsel" style={{ fontSize: 13, padding: "8px 12px", minWidth: 220 }} value={sel} onChange={(e) => { setSel(e.target.value); setMigrate(0); }}>
             {clients.map((c) => (<option key={c.id} value={c.id}>{c.name} · {c.profile}</option>))}
           </select>
@@ -99,21 +150,21 @@ export default function Risco() {
 
       {/* 4 levels of the selected client */}
       <div className="grid g4 mt mb">
-        <div className="card"><h3><i className="ti ti-coin" />Product risk</h3><div className="big" style={{ color: "var(--orange)" }}>{HPC22_RN}</div><div className="muted mt">HPC22 (the fund). HPC11 = {HPC11_RN}.</div></div>
-        <div className="card"><h3><i className="ti ti-user-heart" />Client tolerance</h3><div className="big">{tol}</div><div className="muted mt">{client.profile} profile · objective {objetivo}.</div></div>
-        <div className="card"><h3><i className="ti ti-file-certificate" />Mandate</h3><div className="big">{client.mandate}</div><div className="muted mt">Contractual ceiling for the account.</div></div>
+        <div className="card"><h3><i className="ti ti-coin" />{t("productRisk")}</h3><div className="big" style={{ color: "var(--orange)" }}>{HPC22_RN}</div><div className="muted mt">{t("productMuted")} {HPC11_RN}.</div></div>
+        <div className="card"><h3><i className="ti ti-user-heart" />{t("clientTolerance")}</h3><div className="big">{tol}</div><div className="muted mt">{client.profile} {t("profileObjective")} {objetivo}.</div></div>
+        <div className="card"><h3><i className="ti ti-file-certificate" />{t("mandate")}</h3><div className="big">{client.mandate}</div><div className="muted mt">{t("mandateMuted")}</div></div>
         <div className="card" style={{ borderColor: gap > 0 ? "rgba(231,76,60,.3)" : "var(--line2)" }}>
-          <h3><i className="ti ti-wallet" />Portfolio risk</h3>
+          <h3><i className="ti ti-wallet" />{t("portfolioRisk")}</h3>
           <div className={`big ${gap > 0 ? "r" : "g"}`}>{blended}</div>
           <div className="muted mt" style={{ color: gap > 0 ? "var(--red)" : "var(--green)" }}>
-            {gap > 0 ? `▲ +${gap} above the mandate` : "✓ within the mandate"}
+            {gap > 0 ? `▲ +${gap} ${t("aboveMandate")}` : t("withinMandate")}
           </div>
         </div>
       </div>
 
       {/* Selected client's ruler */}
       <div className="card mb">
-        <h3><i className="ti ti-scale" />{client.name} — on the same ruler</h3>
+        <h3><i className="ti ti-scale" />{client.name} — {t("onSameRuler")}</h3>
         <div style={{ position: "relative", height: 72, margin: "8px 8px 0" }}>
           <div style={{ position: "absolute", top: 48, left: 0, right: 0, height: 9, borderRadius: 5, background: "linear-gradient(90deg,#2ECC71,#F39C12,#E74C3C)" }} />
           {markers.map((m, i) => (
@@ -124,50 +175,50 @@ export default function Risco() {
           ))}
         </div>
         <div className="legend" style={{ marginTop: 10 }}>
-          <i><b style={{ background: "#C9A02C" }} />Product {HPC22_RN}</i>
-          <i><b style={{ background: "#EAF0F7" }} />Tolerance {tol}</i>
-          <i><b style={{ background: "#4A90D9" }} />Mandate {client.mandate}</i>
-          <i><b style={{ background: gap > 0 ? "#E74C3C" : "#2ECC71" }} />Portfolio {blended}</i>
+          <i><b style={{ background: "#C9A02C" }} />{t("legendProduct")} {HPC22_RN}</i>
+          <i><b style={{ background: "#EAF0F7" }} />{t("legendTolerance")} {tol}</i>
+          <i><b style={{ background: "#4A90D9" }} />{t("legendMandate")} {client.mandate}</i>
+          <i><b style={{ background: gap > 0 ? "#E74C3C" : "#2ECC71" }} />{t("legendPortfolio")} {blended}</i>
         </div>
         <div className="flex mt" style={{ gap: 14 }}>
-          <span className="muted" style={{ minWidth: 210 }}>Simulate: migrate {client.name} to HPC22</span>
+          <span className="muted" style={{ minWidth: 210 }}>{t("simulate")} {client.name} {t("toHPC22")}</span>
           <input type="range" min={0} max={100} value={migrate} onChange={(e) => setMigrate(+e.target.value)} style={{ flex: 1 }} />
           <span style={{ fontFamily: "var(--mono)", minWidth: 46, textAlign: "right" }}>{migrate}%</span>
         </div>
         <div className="muted mt">
           {gap > 0
-            ? `Migrating ${migrate}%, the portfolio risk drops to ${blended} — still ${gap} above the ceiling of ${client.mandate}.`
-            : `Migrating ${migrate}%, the portfolio lands at ${blended} — within the mandate (≤ ${client.mandate}).`}
+            ? `${t("simulate")} ${migrate}%, ${t("migratingStillAbove")} ${blended} — ${t("stillAboveCeiling")} ${gap} ${t("aboveCeilingOf")} ${client.mandate}.`
+            : `${t("simulate")} ${migrate}%, ${t("migratingWithin")} ${blended} — ${t("withinMandateOf")} ${client.mandate}).`}
         </div>
       </div>
 
       {/* Overview of all clients — column distribution */}
       <div className="card">
         <div className="flex between mb">
-          <h3 style={{ margin: 0 }}><i className="ti ti-users" />All clients on the ruler</h3>
-          <span className={`tag ${fora.length ? "r" : "g"}`}>{fora.length ? `${fora.length} outside the mandate` : "all within"}</span>
+          <h3 style={{ margin: 0 }}><i className="ti ti-users" />{t("allClients")}</h3>
+          <span className={`tag ${fora.length ? "r" : "g"}`}>{fora.length ? `${fora.length} ${t("outsideMandate")}` : t("allWithin")}</span>
         </div>
         <div style={{ overflowX: "auto" }}>
           <table>
             <thead><tr>
-              <th>Client</th><th>Profile</th><th>Objective</th>
-              <th className="num">Portfolio</th><th className="num">Tolerance</th><th className="num">Mandate</th>
-              <th>Ruler distribution</th><th>Alignment</th>
+              <th>{t("colClient")}</th><th>{t("colProfile")}</th><th>{t("colObjective")}</th>
+              <th className="num">{t("colPortfolio")}</th><th className="num">{t("colTolerance")}</th><th className="num">{t("colMandate")}</th>
+              <th>{t("colRulerDist")}</th><th>{t("colAlignment")}</th>
             </tr></thead>
             <tbody>
               {clients.map((c) => {
                 const aligned = c.riskNumber <= c.mandate;
-                const t = TOLERANCE[c.profile];
+                const tol2 = TOLERANCE[c.profile];
                 return (
                   <tr key={c.id} style={{ cursor: "pointer", background: c.id === sel ? "rgba(201,160,44,.06)" : undefined }} onClick={() => { setSel(c.id); setMigrate(0); }}>
                     <td style={{ fontWeight: 600, color: "var(--tx)" }}>{c.name}</td>
                     <td style={{ color: "var(--tx2)" }}>{c.profile}</td>
                     <td style={{ color: "var(--tx3)" }}>{OBJETIVO[c.profile]}</td>
                     <td className="num" style={{ color: aligned ? "var(--tx)" : "var(--red)", fontWeight: 600 }}>{c.riskNumber}</td>
-                    <td className="num" style={{ color: "var(--tx2)" }}>{t}</td>
+                    <td className="num" style={{ color: "var(--tx2)" }}>{tol2}</td>
                     <td className="num" style={{ color: "var(--tx2)" }}>{c.mandate}</td>
-                    <td><MiniRegua portfolio={c.riskNumber} tolerance={t} mandate={c.mandate} /></td>
-                    <td>{aligned ? <span className="tag g">within</span> : <span className="tag r">▲ +{c.riskNumber - c.mandate}</span>}</td>
+                    <td><MiniRegua portfolio={c.riskNumber} tolerance={tol2} mandate={c.mandate} /></td>
+                    <td>{aligned ? <span className="tag g">{t("within")}</span> : <span className="tag r">▲ +{c.riskNumber - c.mandate}</span>}</td>
                   </tr>
                 );
               })}
@@ -175,11 +226,11 @@ export default function Risco() {
           </table>
         </div>
         <div className="legend mt">
-          <i><b style={{ background: "#4A90D9" }} />Mandate (ceiling)</i>
-          <i><b style={{ background: "#EAF0F7" }} />Tolerance (profile)</i>
-          <i><b style={{ background: "#E74C3C" }} />Portfolio outside</i>
-          <i><b style={{ background: "#2ECC71" }} />Portfolio within</i>
-          <span className="muted" style={{ marginLeft: "auto" }}>Click a row to open the client on the ruler above.</span>
+          <i><b style={{ background: "#4A90D9" }} />{t("legendMandateCeiling")}</i>
+          <i><b style={{ background: "#EAF0F7" }} />{t("legendToleranceProfile")}</i>
+          <i><b style={{ background: "#E74C3C" }} />{t("legendPortfolioOutside")}</i>
+          <i><b style={{ background: "#2ECC71" }} />{t("legendPortfolioWithin")}</i>
+          <span className="muted" style={{ marginLeft: "auto" }}>{t("clickRow")}</span>
         </div>
       </div>
 
@@ -187,7 +238,7 @@ export default function Risco() {
         <div style={{ display: "flex", gap: 8 }}>
           <i className="ti ti-info-circle" style={{ color: "var(--blue)", fontSize: 15, flexShrink: 0, marginTop: 2 }} />
           <div className="muted" style={{ fontSize: 10.5, lineHeight: 1.6 }}>
-            Portfolio = Risk Number of the client's holdings. Tolerance comes from the profile (questionnaire) and the mandate from the contract. Product comes from the internal engine. Scale calibrated to the S&amp;P 500 ≈ 72.
+            {t("footnote")}
           </div>
         </div>
       </div>

@@ -13,6 +13,7 @@ import JimBlock from "../JimBlock";
 import type { ScreenId } from "@/lib/nav";
 import type { Studies } from "./AssetChart";
 import type { CandlesResp, AssetResp } from "@/lib/types";
+import { useI18n } from "@/lib/i18n";
 
 const AssetChart = dynamic(() => import("./AssetChart"), { ssr: false });
 
@@ -22,18 +23,59 @@ const AssetChart = dynamic(() => import("./AssetChart"), { ssr: false });
 
 const REGIME_LABEL: Record<string, string> = { BULL: "RISK-ON", CAUTELA: "CAUTION", NEUTRO: "NEUTRAL", BEAR: "RISK-OFF" };
 const REGIME_COLOR: Record<string, string> = { BULL: "#2ECC71", CAUTELA: "#F39C12", NEUTRO: "#4A90D9", BEAR: "#E74C3C" };
-const REGIME_DESC: Record<string, string> = {
-  BULL: "Favorable environment — full exposure, defense on standby",
-  CAUTELA: "Signs of deterioration — reducing risk, defense activating",
-  NEUTRO: "No dominant trend — moderate exposure, close monitoring",
-  BEAR: "Adverse environment — defense active, reduced exposure",
-};
+
+const TR = {
+  regimeDescBull: { pt: "Ambiente favorável — exposição plena, defesa em standby", en: "Favorable environment — full exposure, defense on standby" },
+  regimeDescCautela: { pt: "Sinais de deterioração — reduzindo risco, defesa ativando", en: "Signs of deterioration — reducing risk, defense activating" },
+  regimeDescNeutro: { pt: "Sem tendência dominante — exposição moderada, monitoramento próximo", en: "No dominant trend — moderate exposure, close monitoring" },
+  regimeDescBear: { pt: "Ambiente adverso — defesa ativa, exposição reduzida", en: "Adverse environment — defense active, reduced exposure" },
+  market: { pt: "Mercado", en: "Market" },
+  subtitle: { pt: "S&P 500 + regime + inteligência", en: "S&P 500 + regime + intelligence" },
+  sp500: { pt: "S&P 500", en: "S&P 500" },
+  today: { pt: "hoje", en: "today" },
+  ytd: { pt: "No ano", en: "YTD" },
+  rsi14: { pt: "RSI (14)", en: "RSI (14)" },
+  overbought: { pt: "sobrecomprado", en: "overbought" },
+  oversold: { pt: "sobrevendido", en: "oversold" },
+  neutral: { pt: "neutro", en: "neutral" },
+  maxDdSharpe: { pt: "Máx. DD · Sharpe", en: "Max DD · Sharpe" },
+  sharpe: { pt: "Sharpe", en: "Sharpe" },
+  regime: { pt: "Regime", en: "Regime" },
+  ariLive: { pt: "ARI · ao vivo", en: "ARI · live" },
+  jimAnalysis: { pt: "JIM — Análise de Mercado", en: "JIM — Market Analysis" },
+  bollinger: { pt: "Bollinger", en: "Bollinger" },
+  volume: { pt: "Volume", en: "Volume" },
+  rsi: { pt: "RSI", en: "RSI" },
+  momD: { pt: "Momentum D", en: "Momentum D" },
+  momJ: { pt: "Momentum J", en: "Momentum J" },
+  errorLoadingSp500: { pt: "Erro ao carregar S&P 500", en: "Error loading S&P 500" },
+  loading: { pt: "Carregando…", en: "Loading…" },
+  sp500YahooLegend: { pt: "S&P 500 · Yahoo Finance", en: "S&P 500 · Yahoo Finance" },
+  marketDna: { pt: "Market DNA", en: "Market DNA" },
+  govDataOffline: { pt: "Gov-data offline —", en: "Gov-data offline —" },
+  calendar: { pt: "Calendário", en: "Calendar" },
+  calendarUnavailable: { pt: "Calendário indisponível no momento.", en: "Calendar unavailable right now." },
+  high: { pt: "alta", en: "high" },
+  news: { pt: "Notícias", en: "News" },
+  backendOffline: { pt: "Backend offline (8080)", en: "Backend offline (8080)" },
+  volatility: { pt: "Volatilidade", en: "Volatility" },
+  sentiment: { pt: "Sentimento", en: "Sentiment" },
+  breadth: { pt: "Amplitude", en: "Breadth" },
+  aboveMa200: { pt: "acima da MA200", en: "above MA200" },
+  macroRates: { pt: "Macro & Juros", en: "Macro & Rates" },
+  curveCredit: { pt: "Curva", en: "Curve" },
+  credit: { pt: "crédito", en: "credit" },
+  positioning: { pt: "Posicionamento", en: "Positioning" },
+  ofMarketsExtreme: { pt: "de mercados em extremo", en: "of markets at extreme" },
+} as const;
 
 const RANGES = [{ k: "3mo", l: "3M" }, { k: "6mo", l: "6M" }, { k: "1y", l: "1Y" }, { k: "2y", l: "2Y" }, { k: "5y", l: "5Y" }];
-const INDS: { key: keyof Studies; label: string }[] = [
-  { key: "ema", label: "EMA" }, { key: "bb", label: "Bollinger" }, { key: "vol", label: "Volume" },
-  { key: "rsi", label: "RSI" }, { key: "momD", label: "Momentum D" }, { key: "momJ", label: "Momentum J" },
-];
+function buildInds(t: (k: keyof typeof TR) => string): { key: keyof Studies; label: string }[] {
+  return [
+    { key: "ema", label: "EMA" }, { key: "bb", label: t("bollinger") }, { key: "vol", label: t("volume") },
+    { key: "rsi", label: t("rsi") }, { key: "momD", label: t("momD") }, { key: "momJ", label: t("momJ") },
+  ];
+}
 
 // Calendar: real data via /api/calendar (Investing.com). It used to be a
 // fixed array whose dates had already passed — and JIM's narrative would
@@ -41,7 +83,7 @@ const INDS: { key: keyof Studies; label: string }[] = [
 
 interface DnaScore { label: string; score: number; color: string; detail: string }
 
-function buildDnaScores(dna: DnaRaw | null): DnaScore[] {
+function buildDnaScores(dna: DnaRaw | null, t: (k: keyof typeof TR) => string): DnaScore[] {
   const L = dna?.layers;
   if (!L) return [];
   const scores: DnaScore[] = [];
@@ -50,35 +92,66 @@ function buildDnaScores(dna: DnaRaw | null): DnaScore[] {
   const vix = vol?.vix?.current;
   if (vix != null) {
     const s = vix < 15 ? 85 : vix < 20 ? 70 : vix < 25 ? 50 : vix < 30 ? 30 : 15;
-    scores.push({ label: "Volatility", score: s, color: s > 60 ? "#2ECC71" : s > 40 ? "#F39C12" : "#E74C3C", detail: `VIX ${vix.toFixed(1)} (${vol?.regime || "N/A"})` });
+    scores.push({ label: t("volatility"), score: s, color: s > 60 ? "#2ECC71" : s > 40 ? "#F39C12" : "#E74C3C", detail: `VIX ${vix.toFixed(1)} (${vol?.regime || "N/A"})` });
   }
   const fg = L.sentiment?.data?.score;
   if (fg != null) {
-    scores.push({ label: "Sentiment", score: Math.round(fg), color: fg > 60 ? "#2ECC71" : fg > 40 ? "#F39C12" : "#E74C3C", detail: `Fear & Greed ${fg.toFixed(0)} (${L.sentiment?.data?.rating || "—"})` });
+    scores.push({ label: t("sentiment"), score: Math.round(fg), color: fg > 60 ? "#2ECC71" : fg > 40 ? "#F39C12" : "#E74C3C", detail: `Fear & Greed ${fg.toFixed(0)} (${L.sentiment?.data?.rating || "—"})` });
   }
   const breadth = L.breadth?.data?.pct_above_200ma;
   if (breadth != null) {
-    scores.push({ label: "Breadth", score: Math.round(breadth), color: breadth > 60 ? "#2ECC71" : breadth > 40 ? "#F39C12" : "#E74C3C", detail: `${breadth.toFixed(0)}% above MA200` });
+    scores.push({ label: t("breadth"), score: Math.round(breadth), color: breadth > 60 ? "#2ECC71" : breadth > 40 ? "#F39C12" : "#E74C3C", detail: `${breadth.toFixed(0)}% ${t("aboveMa200")}` });
   }
   const curve = L.macro?.data?.yield_curve_spread;
   if (curve != null) {
     const s = curve > 0.5 ? 80 : curve > 0 ? 65 : curve > -0.5 ? 35 : 15;
-    scores.push({ label: "Macro & Rates", score: s, color: s > 60 ? "#2ECC71" : s > 40 ? "#F39C12" : "#E74C3C", detail: `Curve ${curve > 0 ? "+" : ""}${(curve * 100).toFixed(0)}bps · credit ${L.macro?.data?.credit_signal || "—"}` });
+    scores.push({ label: t("macroRates"), score: s, color: s > 60 ? "#2ECC71" : s > 40 ? "#F39C12" : "#E74C3C", detail: `${t("curveCredit")} ${curve > 0 ? "+" : ""}${(curve * 100).toFixed(0)}bps · ${t("credit")} ${L.macro?.data?.credit_signal || "—"}` });
   }
   const cot = L.positioning?.data;
   if (cot?.length) {
     const ext = cot.filter((r) => (r.spec_sentiment || "").startsWith("EXTREME")).length;
     const s = Math.round(100 - (ext / cot.length) * 100);
-    scores.push({ label: "Positioning", score: s, color: s > 60 ? "#2ECC71" : s > 40 ? "#F39C12" : "#E74C3C", detail: `${ext} of ${cot.length} markets at extreme` });
+    scores.push({ label: t("positioning"), score: s, color: s > 60 ? "#2ECC71" : s > 40 ? "#F39C12" : "#E74C3C", detail: `${ext} ${t("ofMarketsExtreme")} ${cot.length}` });
   }
   return scores;
 }
 
-function generateJimMarketAnalysis(regime: RegimeState, asset: AssetResp | null, dna: DnaRaw | null, news: NewsHeadline[], cal: CalendarResp | null): string {
+function generateJimMarketAnalysis(regime: RegimeState, asset: AssetResp | null, dna: DnaRaw | null, news: NewsHeadline[], cal: CalendarResp | null, lang: "pt" | "en"): string {
   const parts: string[] = [];
 
   const regLabel = REGIME_LABEL[regime];
-  parts.push(`The market regime is **${regLabel}**. ${REGIME_DESC[regime]}.`);
+  const regimeDescKey = ({ BULL: "regimeDescBull", CAUTELA: "regimeDescCautela", NEUTRO: "regimeDescNeutro", BEAR: "regimeDescBear" } as const)[regime];
+  const regimeDesc = TR[regimeDescKey][lang];
+
+  if (lang === "pt") {
+    parts.push(`O regime de mercado é **${regLabel}**. ${regimeDesc}.`);
+    if (asset) {
+      parts.push(`O S&P 500 opera em ${numShort(asset.price)} (${pctText(asset.dayPct)} hoje, ${pctText(asset.ytdPct)} no ano). RSI em ${num(asset.rsi, 0)} — ${(asset.rsi ?? 50) > 70 ? "sobrecomprado, cautela recomendada" : (asset.rsi ?? 50) < 30 ? "sobrevendido, possível reversão" : "zona neutra"}.`);
+      if (asset.maxDD) parts.push(`Drawdown máximo de ${pctText(asset.maxDD)} nos últimos 12 meses, Sharpe ${num(asset.sharpe, 2)}.`);
+    }
+    const L = dna?.layers;
+    if (L) {
+      const vix = L.volatility?.data?.vix?.current;
+      const fg = L.sentiment?.data?.score;
+      const breadth = L.breadth?.data?.pct_above_200ma;
+      if (vix != null) parts.push(`VIX em ${vix.toFixed(1)} — ${vix < 20 ? "baixa volatilidade, ambiente favorável ao risco" : vix < 30 ? "volatilidade moderada, monitorar" : "alta volatilidade, cautela elevada"}.`);
+      if (fg != null) parts.push(`Índice Fear & Greed em ${fg.toFixed(0)} — ${fg > 75 ? "ganância extrema: historicamente precede correções" : fg > 55 ? "otimismo moderado" : fg > 40 ? "sentimento neutro" : fg > 25 ? "medo: possível oportunidade contrária" : "medo extremo: historicamente precede recuperações"}.`);
+      if (breadth != null) parts.push(`Amplitude: ${breadth.toFixed(0)}% do S&P 500 acima da MA200 — ${breadth > 70 ? "participação ampla, rali saudável" : breadth > 50 ? "participação razoável" : "participação estreita, risco de concentração"}.`);
+    }
+    if (news.length > 0) {
+      const topNews = news.filter(n => n.impact === "Market Moving" || n.impact === "High").slice(0, 2);
+      if (topNews.length) {
+        parts.push(`Destaques de hoje: "${topNews[0].headline.slice(0, 80)}".`);
+      }
+    }
+    const calNext = (cal?.events || []).find((e) => e.importance === 3) || (cal?.events || [])[0];
+    if (calNext) {
+      parts.push(`Próximo evento relevante: **${calNext.event}** em ${calNext.date} (${calNext.time})${calNext.forecast ? `, previsão ${calNext.forecast}` : ""}.`);
+    }
+    return parts.join(" ");
+  }
+
+  parts.push(`The market regime is **${regLabel}**. ${regimeDesc}.`);
 
   if (asset) {
     parts.push(`The S&P 500 trades at ${numShort(asset.price)} (${pctText(asset.dayPct)} today, ${pctText(asset.ytdPct)} year-to-date). RSI at ${num(asset.rsi, 0)} — ${(asset.rsi ?? 50) > 70 ? "overbought, caution warranted" : (asset.rsi ?? 50) < 30 ? "oversold, possible reversal" : "neutral zone"}.`);
@@ -111,6 +184,8 @@ function generateJimMarketAnalysis(regime: RegimeState, asset: AssetResp | null,
 }
 
 export default function Regime({ go }: { go?: (id: ScreenId, param?: string) => void }) {
+  const { lang } = useI18n();
+  const t = (k: keyof typeof TR) => TR[k][lang];
   const [regime, setRegime] = useState<RegimeState>("BULL");
   const [asOf, setAsOf] = useState("");
   const [range, setRange] = useState("1y");
@@ -143,8 +218,9 @@ export default function Regime({ go }: { go?: (id: ScreenId, param?: string) => 
   }, [range]);
 
   const toggle = (k: keyof Studies) => setStudies(s => ({ ...s, [k]: !s[k] }));
-  const dnaScores = buildDnaScores(dna);
-  const jimText = generateJimMarketAnalysis(regime, asset, dna, news, cal);
+  const dnaScores = buildDnaScores(dna, t);
+  const INDS = buildInds(t);
+  const jimText = generateJimMarketAnalysis(regime, asset, dna, news, cal, lang);
   // Detail on "why the regime is like this" — lives here, not in the summary.
   const ariBlock = buildAri(regime, asset, dna);
   const topNews = news.filter(n => n.impact === "Market Moving" || n.impact === "High").slice(0, 5);
@@ -168,10 +244,10 @@ export default function Regime({ go }: { go?: (id: ScreenId, param?: string) => 
       <div className="flex between" style={{ alignItems: "baseline", gap: 14, marginBottom: 8, flexWrap: "wrap" }}>
         <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
           <div className="flex" style={{ alignItems: "baseline", gap: 8 }}>
-            <div className="h1" style={{ margin: 0 }}>Market</div>
+            <div className="h1" style={{ margin: 0 }}>{t("market")}</div>
             <span className="tag b" style={{ fontFamily: "var(--mono)", fontWeight: 700, fontSize: 11 }} title="American Regime Index — domestic counterpart to XRI (External Risk)">ARI</span>
           </div>
-          <span className="muted" style={{ fontSize: 10 }}>S&P 500 + regime + intelligence{asOf && <> · {asOf}</>}</span>
+          <span className="muted" style={{ fontSize: 10 }}>{t("subtitle")}{asOf && <> · {asOf}</>}</span>
         </div>
         <BackToVisao go={go} />
       </div>
@@ -179,33 +255,33 @@ export default function Regime({ go }: { go?: (id: ScreenId, param?: string) => 
       {/* Top strip: 4 metric cards + JIM, same height */}
       <div style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "stretch" }}>
         <div className="card" style={{ padding: "10px 14px", minWidth: 0 }}>
-          <div className="muted" style={{ fontSize: 10 }}>S&P 500</div>
+          <div className="muted" style={{ fontSize: 10 }}>{t("sp500")}</div>
           <div className="big" style={{ fontSize: 22 }}>{numShort(asset?.price)}</div>
-          <div className={`muted ${pctClass(asset?.dayPct)}`} style={{ fontSize: 11 }}>{asset ? pctText(asset.dayPct) + " today" : "…"}</div>
+          <div className={`muted ${pctClass(asset?.dayPct)}`} style={{ fontSize: 11 }}>{asset ? pctText(asset.dayPct) + " " + t("today") : "…"}</div>
         </div>
         <div className="card" style={{ padding: "10px 14px", minWidth: 0 }}>
-          <div className="muted" style={{ fontSize: 10 }}>YTD</div>
+          <div className="muted" style={{ fontSize: 10 }}>{t("ytd")}</div>
           <div className={`big ${asset && (asset.ytdPct ?? 0) >= 0 ? "g" : "r"}`} style={{ fontSize: 22 }}>{pctText(asset?.ytdPct)}</div>
         </div>
         <div className="card" style={{ padding: "10px 14px", minWidth: 0 }}>
-          <div className="muted" style={{ fontSize: 10 }}>RSI (14)</div>
+          <div className="muted" style={{ fontSize: 10 }}>{t("rsi14")}</div>
           <div className="big" style={{ fontSize: 22, color: (asset?.rsi ?? 50) > 70 ? "var(--red)" : (asset?.rsi ?? 50) < 30 ? "var(--green)" : "var(--tx)" }}>{asset?.rsi != null ? num(asset.rsi, 0) : "…"}</div>
-          <div className="muted" style={{ fontSize: 10 }}>{(asset?.rsi ?? 50) > 70 ? "overbought" : (asset?.rsi ?? 50) < 30 ? "oversold" : "neutral"}</div>
+          <div className="muted" style={{ fontSize: 10 }}>{(asset?.rsi ?? 50) > 70 ? t("overbought") : (asset?.rsi ?? 50) < 30 ? t("oversold") : t("neutral")}</div>
         </div>
         <div className="card" style={{ padding: "10px 14px", minWidth: 0 }}>
-          <div className="muted" style={{ fontSize: 10 }}>Max DD · Sharpe</div>
+          <div className="muted" style={{ fontSize: 10 }}>{t("maxDdSharpe")}</div>
           <div className="big r" style={{ fontSize: 22 }}>{pctText(asset?.maxDD)}</div>
-          <div className="muted" style={{ fontSize: 10 }}>Sharpe {num(asset?.sharpe, 2)}</div>
+          <div className="muted" style={{ fontSize: 10 }}>{t("sharpe")} {num(asset?.sharpe, 2)}</div>
         </div>
         <div className="card" style={{
           padding: "10px 14px", minWidth: 0,
           borderLeft: `3px solid ${regColor}`,
         }}>
-          <div className="muted" style={{ fontSize: 10 }}>Regime</div>
+          <div className="muted" style={{ fontSize: 10 }}>{t("regime")}</div>
           <div className="big" style={{ fontSize: 16, color: regColor, fontFamily: "var(--mono)", letterSpacing: 0.5 }}>{REGIME_LABEL[regime]}</div>
           <div className="muted" style={{ fontSize: 10, display: "flex", alignItems: "center", gap: 5 }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: regColor, boxShadow: `0 0 6px ${regColor}60` }} />
-            ARI · live
+            {t("ariLive")}
           </div>
         </div>
 
@@ -227,7 +303,7 @@ export default function Regime({ go }: { go?: (id: ScreenId, param?: string) => 
               <i className="ti ti-brain" style={{ fontSize: 14, color: "#0C1930" }} />
             </div>
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--tx)" }}>JIM — Market Analysis</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--tx)" }}>{t("jimAnalysis")}</div>
             </div>
           </div>
           <div style={{ fontSize: 13, color: "var(--tx)", lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical" as const }}>{jimText}</div>
@@ -253,15 +329,15 @@ export default function Regime({ go }: { go?: (id: ScreenId, param?: string) => 
             </div>
           </div>
           {chartErr ? (
-            <div className="placeholder"><i className="ti ti-cloud-off" /><b>Error loading S&P 500</b></div>
+            <div className="placeholder"><i className="ti ti-cloud-off" /><b>{t("errorLoadingSp500")}</b></div>
           ) : chartLoading || !cd ? (
-            <div className="muted" style={{ padding: 40, textAlign: "center" }}>Loading…</div>
+            <div className="muted" style={{ padding: 40, textAlign: "center" }}>{t("loading")}</div>
           ) : (
             <AssetChart candles={cd.candles} volume={cd.volume} studies={studies} />
           )}
           <div className="legend" style={{ marginTop: 2 }}>
             <i><b style={{ background: "#4A90D9" }} />EMA</i>
-            <span className="muted" style={{ marginLeft: "auto", fontSize: 9 }}>S&P 500 · Yahoo Finance</span>
+            <span className="muted" style={{ marginLeft: "auto", fontSize: 9 }}>{t("sp500YahooLegend")}</span>
           </div>
         </div>
 
@@ -270,7 +346,7 @@ export default function Regime({ go }: { go?: (id: ScreenId, param?: string) => 
           {/* Market DNA */}
           <div className="card" style={{ padding: "8px 12px" }}>
             <h3 style={{ cursor: "pointer", marginBottom: 4, fontSize: 11 }} onClick={() => go?.("market-dna")}>
-              <i className="ti ti-dna" />Market DNA<i className="ti ti-arrow-right" style={{ fontSize: 10, marginLeft: "auto", opacity: 0.4 }} />
+              <i className="ti ti-dna" />{t("marketDna")}<i className="ti ti-arrow-right" style={{ fontSize: 10, marginLeft: "auto", opacity: 0.4 }} />
             </h3>
             {dnaScores.length > 0 ? dnaScores.map((s, i) => (
               <div key={i} style={{ marginBottom: 5 }}>
@@ -284,24 +360,24 @@ export default function Regime({ go }: { go?: (id: ScreenId, param?: string) => 
               </div>
             )) : (
               <div className="muted" style={{ fontSize: 10, padding: "4px 0" }}>
-                Gov-data offline — <span style={{ fontFamily: "var(--mono)" }}>api_server.py</span> (8877)
+                {t("govDataOffline")} <span style={{ fontFamily: "var(--mono)" }}>api_server.py</span> (8877)
               </div>
             )}
           </div>
 
           {/* Economic Calendar — real data (/api/calendar) */}
           <div className="card" style={{ padding: "8px 12px" }}>
-            <h3 style={{ marginBottom: 4, fontSize: 11 }}><i className="ti ti-calendar-event" />Calendar</h3>
+            <h3 style={{ marginBottom: 4, fontSize: 11 }}><i className="ti ti-calendar-event" />{t("calendar")}</h3>
             {cal === null ? (
-              <div className="muted" style={{ fontSize: 10, padding: "4px 0" }}>Loading…</div>
+              <div className="muted" style={{ fontSize: 10, padding: "4px 0" }}>{t("loading")}</div>
             ) : !cal.ok || !cal.events.length ? (
-              <div className="muted" style={{ fontSize: 10, padding: "4px 0" }}>Calendar unavailable right now.</div>
+              <div className="muted" style={{ fontSize: 10, padding: "4px 0" }}>{t("calendarUnavailable")}</div>
             ) : (
               cal.events.slice(0, 5).map((ev, i) => (
                 <div key={i} className="flex between" style={{ marginBottom: 3, alignItems: "baseline", gap: 6 }}>
                   <div style={{ minWidth: 0 }}>
                     <span style={{ fontSize: 10.5, color: "var(--tx)" }}>{ev.event}</span>
-                    {ev.importance === 3 && <span style={{ fontSize: 7, color: "#E74C3C", fontWeight: 700, marginLeft: 4, textTransform: "uppercase" }}>high</span>}
+                    {ev.importance === 3 && <span style={{ fontSize: 7, color: "#E74C3C", fontWeight: 700, marginLeft: 4, textTransform: "uppercase" }}>{t("high")}</span>}
                   </div>
                   <span style={{ fontSize: 9.5, color: "var(--gold)", fontFamily: "var(--mono)", whiteSpace: "nowrap" }}>{ev.date} {ev.time}</span>
                 </div>
@@ -312,7 +388,7 @@ export default function Regime({ go }: { go?: (id: ScreenId, param?: string) => 
           {/* News */}
           <div className="card" style={{ padding: "8px 12px", flex: 1 }}>
             <h3 style={{ cursor: "pointer", marginBottom: 4, fontSize: 11 }} onClick={() => go?.("news-broadcast")}>
-              <i className="ti ti-broadcast" />News<i className="ti ti-arrow-right" style={{ fontSize: 10, marginLeft: "auto", opacity: 0.4 }} />
+              <i className="ti ti-broadcast" />{t("news")}<i className="ti ti-arrow-right" style={{ fontSize: 10, marginLeft: "auto", opacity: 0.4 }} />
             </h3>
             {topNews.length > 0 ? topNews.slice(0, 4).map((n, i) => (
               <a key={i} href={n.url} target="_blank" rel="noopener noreferrer" style={{
@@ -323,7 +399,7 @@ export default function Regime({ go }: { go?: (id: ScreenId, param?: string) => 
                 <span style={{ fontSize: 10, color: "var(--tx3)", marginLeft: 4 }}>{n.source}</span>
               </a>
             )) : (
-              <div className="muted" style={{ fontSize: 10, padding: "4px 0" }}>Backend offline (8080)</div>
+              <div className="muted" style={{ fontSize: 10, padding: "4px 0" }}>{t("backendOffline")}</div>
             )}
           </div>
         </div>

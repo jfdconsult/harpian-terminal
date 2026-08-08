@@ -1,6 +1,53 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useI18n } from "@/lib/i18n";
 import { publishScreenData } from "@/lib/jim-data";
+
+const TR = {
+  loadingVault: { pt: "Carregando The Vault…", en: "Loading The Vault…" },
+  vaultUnavailableTitle: { pt: "The Vault está temporariamente indisponível", en: "The Vault is temporarily unavailable" },
+  tryAgainMoment: { pt: "Tente novamente em instantes.", en: "Try again in a moment." },
+  vaultTitle: { pt: "The Vault — o que está dentro, não o quê", en: "The Vault — what's inside, not what" },
+  vaultSubtitle: { pt: "Estado agregado do ETP agora. Os tickers ficam no cofre.", en: "Aggregate state of the ETP right now. Tickers stay in the cofre." },
+  activeLongs: { pt: "LONGS ATIVOS", en: "ACTIVE LONGS" },
+  hedges: { pt: "hedges", en: "hedges" },
+  aumInvested: { pt: "AUM INVESTIDO", en: "AUM INVESTED" },
+  net: { pt: "líquido", en: "net" },
+  portfolioBeta: { pt: "BETA DA CARTEIRA", en: "PORTFOLIO BETA" },
+  vsSp500: { pt: "vs S&P 500", en: "vs S&P 500" },
+  avgHolding: { pt: "PERMANÊNCIA MÉDIA", en: "AVG HOLDING" },
+  turnoverMo: { pt: "giro", en: "turnover" },
+  perMonth: { pt: "/mês", en: "/mo" },
+  hitRate90d: { pt: "TAXA DE ACERTO 90d", en: "HIT RATE 90d" },
+  positionsClosedPositive: { pt: "posições encerradas positivas", en: "positions closed positive" },
+  showcaseTitle: { pt: "The Showcase — 3 posições encerradas · embargo de 4 semanas", en: "The Showcase — 3 closed positions · 4-week embargo" },
+  showcaseSubtitle: { pt: "Operações reais encerradas pelo ETP. Amostra de 3, rotacionada semanalmente. Quando uma posição sai desta vitrine, ela não é arquivada.", en: "Real trades the ETP closed. Sampled to 3, rotated weekly. When a position leaves this showcase, it is not archived." },
+  vsSp: { pt: "vs S&P", en: "vs S&P" },
+  momEntry: { pt: "mom entrada", en: "mom entry" },
+  weatherTitle: { pt: "Momentum Weather — a postura do sistema", en: "Momentum Weather — the system's stance" },
+  weatherSubtitle: { pt: "Estado + postura. A pilha de gatilhos é proprietária e permanece no Cockpit.", en: "State + posture. The trigger stack is proprietary and stays in the Cockpit." },
+  regime: { pt: "REGIME", en: "REGIME" },
+  defenseCash: { pt: "DEFESA / CAIXA", en: "DEFENSE / CASH" },
+  regimeStreak: { pt: "SEQUÊNCIA DO REGIME", en: "REGIME STREAK" },
+  lastFlip: { pt: "ÚLTIMA VIRADA", en: "LAST FLIP" },
+  magnitude: { pt: "magnitude", en: "magnitude" },
+  dntTitle: { pt: "Do Not Touch — pior momentum no SPX500", en: "Do Not Touch — worst momentum in SPX500" },
+  dntSubtitle: { pt: "5 ações + 2 setores que estamos ativamente evitando esta semana. Atualizado segunda 06:00 BRT.", en: "5 stocks + 2 sectors we're actively avoiding this week. Refreshed Monday 06:00 BRT." },
+  stocksHeader: { pt: "⛔ AÇÕES · 5 PIOR MOMENTUM", en: "⛔ STOCKS · 5 WORST MOMENTUM" },
+  ticker: { pt: "Ticker", en: "Ticker" },
+  sector: { pt: "Setor", en: "Sector" },
+  mom: { pt: "Mom", en: "Mom" },
+  signal: { pt: "Sinal", en: "Signal" },
+  sectorsHeader: { pt: "⛔ SETORES EM ALERTA", en: "⛔ SECTORS ON ALERT" },
+  dntNotePre: { pt: "Publicar o que a gente ", en: "Publishing what we " },
+  dntNoteAvoid: { pt: "evita", en: "avoid" },
+  dntNotePost: { pt: " é mais seguro do que publicar o que compramos — o universo do \"ruim\" é ordens de grandeza maior que o universo do \"bom.\" Esta lista alerta você sem ensinar o modelo.", en: " is safer than publishing what we buy — the universe of \"bad\" is orders of magnitude larger than the universe of \"good.\" This list warns you without teaching the model." },
+  disclosureLabel: { pt: "Regras de divulgação (impostas pelo servidor):", en: "Disclosure rules (server-enforced):" },
+  disclosureBody1: { pt: "Vault mostra apenas agregados, nunca tickers ou pesos de posições ativas. Showcase amostra exatamente", en: "Vault shows aggregates only, never tickers or weights of active positions. Showcase samples exactly" },
+  disclosureBody2: { pt: "posições encerradas com embargo de", en: "closed positions with a" },
+  disclosureBody3: { pt: "dias, rotacionadas semanalmente; não há arquivo histórico. Weather mostra o estado do regime e o peso de defesa; a pilha de gatilhos não é exposta. Do Not Touch ranqueia", en: "day embargo, rotated weekly; there is no history archive. Weather shows regime state and defense weight; the trigger stack is not exposed. Do Not Touch ranks" },
+  disclosureBody4: { pt: "(não é o universo real de seleção do ETP). Essas regras existem para manter o edge intacto ao mesmo tempo em que provam que estamos na operação junto com você.", en: "(not the ETP's actual selection universe). These rules exist to keep the edge intact while proving we're in the trade with you." },
+} as const;
 
 // ── Verified Opacity Protocol — client view ──────────────────────────────────
 // Four sections, top-to-bottom:
@@ -32,7 +79,7 @@ interface Payload {
   vault: Vault; showcase: ShowcaseItem[]; weather: Weather; dnt: { stocks: DntStock[]; sectors: DntSector[] };
 }
 
-const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+const fmtDate = (iso: string, locale: string) => new Date(iso).toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" });
 const pct = (n: number) => (n >= 0 ? "+" : "") + n.toFixed(1) + "%";
 
 const REGIME_COLOR: Record<string, string> = {
@@ -40,6 +87,8 @@ const REGIME_COLOR: Record<string, string> = {
 };
 
 export default function TheVault() {
+  const { lang } = useI18n();
+  const t = (k: keyof typeof TR) => TR[k][lang];
   const [data, setData] = useState<Payload | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -83,12 +132,13 @@ export default function TheVault() {
     );
   }, [data]);
 
-  if (loading) return <div className="card"><div className="muted" style={{ padding: 40, textAlign: "center" }}>Loading The Vault…</div></div>;
-  if (err || !data) return <div className="card"><div className="placeholder"><i className="ti ti-lock" /><b>The Vault is temporarily unavailable</b><div className="muted mt">Try again in a moment.</div></div></div>;
+  if (loading) return <div className="card"><div className="muted" style={{ padding: 40, textAlign: "center" }}>{t("loadingVault")}</div></div>;
+  if (err || !data) return <div className="card"><div className="placeholder"><i className="ti ti-lock" /><b>{t("vaultUnavailableTitle")}</b><div className="muted mt">{t("tryAgainMoment")}</div></div></div>;
 
   const v = data.vault;
   const w = data.weather;
   const regimeColor = REGIME_COLOR[w.regime] || "var(--tx)";
+  const locale = lang === "pt" ? "pt-BR" : "en-US";
 
   return (
     <>
@@ -97,34 +147,34 @@ export default function TheVault() {
       {/* ═══════════ 1. THE VAULT ═══════════ */}
       <div className="card mb">
         <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
-          <h3 style={{ margin: 0 }}><i className="ti ti-shield-lock" />The Vault — what&apos;s inside, not what</h3>
-          <div className="muted" style={{ lineHeight: 1.55, fontSize: 12 }}>Aggregate state of the ETP right now. Tickers stay in the cofre.</div>
+          <h3 style={{ margin: 0 }}><i className="ti ti-shield-lock" />{t("vaultTitle")}</h3>
+          <div className="muted" style={{ lineHeight: 1.55, fontSize: 12 }}>{t("vaultSubtitle")}</div>
         </div>
         <div className="grid g4" style={{ gridTemplateColumns: "repeat(5,1fr)" }}>
           <div className="card" style={{ textAlign: "center", padding: 14 }}>
             <div className="big" style={{ fontSize: 26, color: "var(--gold)" }}>{v.n_positions}</div>
-            <div style={{ fontSize: 10, color: "var(--tx2)", marginTop: 4, fontWeight: 600 }}>ACTIVE LONGS</div>
-            <div className="muted" style={{ fontSize: 10 }}>+ {v.n_hedges} hedges</div>
+            <div style={{ fontSize: 10, color: "var(--tx2)", marginTop: 4, fontWeight: 600 }}>{t("activeLongs")}</div>
+            <div className="muted" style={{ fontSize: 10 }}>+ {v.n_hedges} {t("hedges")}</div>
           </div>
           <div className="card" style={{ textAlign: "center", padding: 14 }}>
             <div className="big" style={{ fontSize: 26, color: "var(--gold)" }}>{v.aum_alloc_pct}%</div>
-            <div style={{ fontSize: 10, color: "var(--tx2)", marginTop: 4, fontWeight: 600 }}>AUM INVESTED</div>
-            <div className="muted" style={{ fontSize: 10 }}>net {v.net_exposure_pct}%</div>
+            <div style={{ fontSize: 10, color: "var(--tx2)", marginTop: 4, fontWeight: 600 }}>{t("aumInvested")}</div>
+            <div className="muted" style={{ fontSize: 10 }}>{t("net")} {v.net_exposure_pct}%</div>
           </div>
           <div className="card" style={{ textAlign: "center", padding: 14 }}>
             <div className="big" style={{ fontSize: 26, color: "var(--gold)" }}>{v.beta.toFixed(2)}</div>
-            <div style={{ fontSize: 10, color: "var(--tx2)", marginTop: 4, fontWeight: 600 }}>PORTFOLIO BETA</div>
-            <div className="muted" style={{ fontSize: 10 }}>vs S&amp;P 500</div>
+            <div style={{ fontSize: 10, color: "var(--tx2)", marginTop: 4, fontWeight: 600 }}>{t("portfolioBeta")}</div>
+            <div className="muted" style={{ fontSize: 10 }}>{t("vsSp500")}</div>
           </div>
           <div className="card" style={{ textAlign: "center", padding: 14 }}>
             <div className="big" style={{ fontSize: 26, color: "var(--gold)" }}>{v.avg_holding_days}d</div>
-            <div style={{ fontSize: 10, color: "var(--tx2)", marginTop: 4, fontWeight: 600 }}>AVG HOLDING</div>
-            <div className="muted" style={{ fontSize: 10 }}>turnover {v.monthly_turnover_pct}%/mo</div>
+            <div style={{ fontSize: 10, color: "var(--tx2)", marginTop: 4, fontWeight: 600 }}>{t("avgHolding")}</div>
+            <div className="muted" style={{ fontSize: 10 }}>{t("turnoverMo")} {v.monthly_turnover_pct}%{t("perMonth")}</div>
           </div>
           <div className="card" style={{ textAlign: "center", padding: 14 }}>
             <div className="big" style={{ fontSize: 26, color: "var(--green)" }}>{v.hit_rate_90d_pct}%</div>
-            <div style={{ fontSize: 10, color: "var(--tx2)", marginTop: 4, fontWeight: 600 }}>HIT RATE 90d</div>
-            <div className="muted" style={{ fontSize: 10 }}>positions closed positive</div>
+            <div style={{ fontSize: 10, color: "var(--tx2)", marginTop: 4, fontWeight: 600 }}>{t("hitRate90d")}</div>
+            <div className="muted" style={{ fontSize: 10 }}>{t("positionsClosedPositive")}</div>
           </div>
         </div>
       </div>
@@ -132,9 +182,9 @@ export default function TheVault() {
       {/* ═══════════ 2. THE SHOWCASE ═══════════ */}
       <div className="card mb">
         <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
-          <h3 style={{ margin: 0 }}><i className="ti ti-award" />The Showcase — 3 closed positions · 4-week embargo</h3>
+          <h3 style={{ margin: 0 }}><i className="ti ti-award" />{t("showcaseTitle")}</h3>
           <div className="muted" style={{ lineHeight: 1.55, fontSize: 12 }}>
-            Real trades the ETP closed. Sampled to 3, rotated weekly. When a position leaves this showcase, it is not archived.
+            {t("showcaseSubtitle")}
           </div>
         </div>
         <div className="grid g4" style={{ gridTemplateColumns: "repeat(3,1fr)" }}>
@@ -147,15 +197,15 @@ export default function TheVault() {
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div className="big" style={{ fontSize: 20, color: s.retPct >= 0 ? "var(--green)" : "var(--red)" }}>{pct(s.retPct)}</div>
-                  <div className="muted" style={{ fontSize: 10 }}>vs S&amp;P {pct(s.retVsSpx)}</div>
+                  <div className="muted" style={{ fontSize: 10 }}>{t("vsSp")} {pct(s.retVsSpx)}</div>
                 </div>
               </div>
               <div style={{ display: "flex", gap: 12, fontSize: 11, color: "var(--tx2)", marginBottom: 10, paddingBottom: 10, borderBottom: "1px solid var(--line2)" }}>
                 <span><i className="ti ti-clock" style={{ marginRight: 4, color: "var(--tx3)" }} />{s.holdingDays}d</span>
-                <span><i className="ti ti-flame" style={{ marginRight: 4, color: "var(--tx3)" }} />mom entry {s.momentumEntry}</span>
+                <span><i className="ti ti-flame" style={{ marginRight: 4, color: "var(--tx3)" }} />{t("momEntry")} {s.momentumEntry}</span>
               </div>
               <div style={{ fontSize: 11, color: "var(--tx3)", marginBottom: 6 }}>
-                {fmtDate(s.entry)} → {fmtDate(s.exit)}
+                {fmtDate(s.entry, locale)} → {fmtDate(s.exit, locale)}
               </div>
               <div style={{ fontSize: 12, color: "var(--tx)", lineHeight: 1.55, fontStyle: "italic" }}>
                 &ldquo;{s.thesis}&rdquo;
@@ -168,28 +218,28 @@ export default function TheVault() {
       {/* ═══════════ 3. MOMENTUM WEATHER ═══════════ */}
       <div className="card mb">
         <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
-          <h3 style={{ margin: 0 }}><i className="ti ti-temperature" />Momentum Weather — the system&apos;s stance</h3>
+          <h3 style={{ margin: 0 }}><i className="ti ti-temperature" />{t("weatherTitle")}</h3>
           <div className="muted" style={{ lineHeight: 1.55, fontSize: 12 }}>
-            State + posture. The trigger stack is proprietary and stays in the Cockpit.
+            {t("weatherSubtitle")}
           </div>
         </div>
         <div className="grid g4" style={{ gridTemplateColumns: "repeat(4,1fr)" }}>
           <div className="card" style={{ textAlign: "center", padding: 14, borderColor: regimeColor + "44" }}>
             <div className="big" style={{ fontSize: 22, color: regimeColor }}>{w.regime_label}</div>
-            <div style={{ fontSize: 10, color: "var(--tx2)", marginTop: 4, fontWeight: 600 }}>REGIME</div>
+            <div style={{ fontSize: 10, color: "var(--tx2)", marginTop: 4, fontWeight: 600 }}>{t("regime")}</div>
           </div>
           <div className="card" style={{ textAlign: "center", padding: 14 }}>
             <div className="big" style={{ fontSize: 22, color: "var(--tx)" }}>{w.defense_pct}%</div>
-            <div style={{ fontSize: 10, color: "var(--tx2)", marginTop: 4, fontWeight: 600 }}>DEFENSE / CASH</div>
+            <div style={{ fontSize: 10, color: "var(--tx2)", marginTop: 4, fontWeight: 600 }}>{t("defenseCash")}</div>
           </div>
           <div className="card" style={{ textAlign: "center", padding: 14 }}>
             <div className="big" style={{ fontSize: 22, color: "var(--tx)" }}>{w.streak_days}d</div>
-            <div style={{ fontSize: 10, color: "var(--tx2)", marginTop: 4, fontWeight: 600 }}>REGIME STREAK</div>
+            <div style={{ fontSize: 10, color: "var(--tx2)", marginTop: 4, fontWeight: 600 }}>{t("regimeStreak")}</div>
           </div>
           <div className="card" style={{ textAlign: "center", padding: 14 }}>
             <div style={{ fontSize: 13, color: "var(--tx)", fontWeight: 600 }}>{w.last_change.from} → {w.last_change.to}</div>
-            <div style={{ fontSize: 10, color: "var(--tx2)", marginTop: 4, fontWeight: 600 }}>LAST FLIP · {fmtDate(w.last_change.date)}</div>
-            <div className="muted" style={{ fontSize: 10 }}>magnitude {w.last_change.magnitude_sigma}σ</div>
+            <div style={{ fontSize: 10, color: "var(--tx2)", marginTop: 4, fontWeight: 600 }}>{t("lastFlip")} · {fmtDate(w.last_change.date, locale)}</div>
+            <div className="muted" style={{ fontSize: 10 }}>{t("magnitude")} {w.last_change.magnitude_sigma}σ</div>
           </div>
         </div>
       </div>
@@ -197,17 +247,17 @@ export default function TheVault() {
       {/* ═══════════ 4. DO NOT TOUCH ═══════════ */}
       <div className="card mb">
         <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
-          <h3 style={{ margin: 0 }}><i className="ti ti-hand-stop" />Do Not Touch — worst momentum in SPX500</h3>
+          <h3 style={{ margin: 0 }}><i className="ti ti-hand-stop" />{t("dntTitle")}</h3>
           <div className="muted" style={{ lineHeight: 1.55, fontSize: 12 }}>
-            5 stocks + 2 sectors we&apos;re actively avoiding this week. Refreshed Monday 06:00 BRT.
+            {t("dntSubtitle")}
           </div>
         </div>
 
         <div className="grid g2">
           <div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "var(--tx2)", marginBottom: 8, letterSpacing: 0.5 }}>⛔ STOCKS · 5 WORST MOMENTUM</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "var(--tx2)", marginBottom: 8, letterSpacing: 0.5 }}>{t("stocksHeader")}</div>
             <table>
-              <thead><tr><th>Ticker</th><th>Sector</th><th className="num">Mom</th><th>Signal</th></tr></thead>
+              <thead><tr><th>{t("ticker")}</th><th>{t("sector")}</th><th className="num">{t("mom")}</th><th>{t("signal")}</th></tr></thead>
               <tbody>
                 {data.dnt.stocks.map((s) => (
                   <tr key={s.ticker}>
@@ -224,9 +274,9 @@ export default function TheVault() {
             </table>
           </div>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "var(--tx2)", marginBottom: 8, letterSpacing: 0.5 }}>⛔ SECTORS ON ALERT</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "var(--tx2)", marginBottom: 8, letterSpacing: 0.5 }}>{t("sectorsHeader")}</div>
             <table>
-              <thead><tr><th>Sector</th><th className="num">Mom</th><th>Signal</th></tr></thead>
+              <thead><tr><th>{t("sector")}</th><th className="num">{t("mom")}</th><th>{t("signal")}</th></tr></thead>
               <tbody>
                 {data.dnt.sectors.map((s) => (
                   <tr key={s.sector}>
@@ -240,7 +290,7 @@ export default function TheVault() {
             <div className="card mt" style={{ background: "transparent", borderStyle: "dashed", padding: 12 }}>
               <div style={{ fontSize: 11, color: "var(--tx2)", lineHeight: 1.55 }}>
                 <i className="ti ti-info-circle" style={{ marginRight: 6, color: "var(--gold)" }} />
-                Publishing what we <b>avoid</b> is safer than publishing what we buy — the universe of &ldquo;bad&rdquo; is orders of magnitude larger than the universe of &ldquo;good.&rdquo; This list warns you without teaching the model.
+                {t("dntNotePre")}<b>{t("dntNoteAvoid")}</b>{t("dntNotePost")}
               </div>
             </div>
           </div>
@@ -252,7 +302,7 @@ export default function TheVault() {
         <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
           <i className="ti ti-book" style={{ color: "var(--gold)", fontSize: 15, flexShrink: 0, marginTop: 2 }} />
           <div className="muted" style={{ fontSize: 10.5, lineHeight: 1.7 }}>
-            <b style={{ color: "var(--tx2)" }}>Disclosure rules (server-enforced):</b> Vault shows aggregates only, never tickers or weights of active positions. Showcase samples exactly {data.protocol.showcase_size} closed positions with a {data.protocol.showcase_embargo_days}-day embargo, rotated weekly; there is no history archive. Weather shows regime state and defense weight; the trigger stack is not exposed. Do Not Touch ranks {data.protocol.dnt_universe} (not the ETP's actual selection universe). These rules exist to keep the edge intact while proving we're in the trade with you.
+            <b style={{ color: "var(--tx2)" }}>{t("disclosureLabel")}</b> {t("disclosureBody1")} {data.protocol.showcase_size} {t("disclosureBody2")} {data.protocol.showcase_embargo_days}{lang === "pt" ? "" : "-"}{t("disclosureBody3")} {data.protocol.dnt_universe} {t("disclosureBody4")}
           </div>
         </div>
       </div>

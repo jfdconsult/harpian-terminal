@@ -1,6 +1,35 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useI18n } from "@/lib/i18n";
 import { publishScreenData } from "@/lib/jim-data";
+
+// ════════════════════════════════════════════════════════════════
+// i18n — local dictionary for this screen. One entry per user-visible
+// English string. en = current text (kept EXACTLY), pt = natural
+// institutional Brazilian-Portuguese. Brand/product terms (HARPIAN,
+// HPC22, PDF, Risk Nº) intentionally NOT translated.
+// ════════════════════════════════════════════════════════════════
+const TR = {
+  brandWhiteLabel: { pt: "Marca (white-label)", en: "Brand (white-label)" },
+  advisorIdentitySub: { pt: "A identidade do assessor nos relatórios gerados para o cliente final.", en: "The advisor's identity in reports generated for the end client." },
+  saved: { pt: "salvo", en: "saved" },
+  yourIdentity: { pt: "Sua identidade", en: "Your identity" },
+  advisorOfficeName: { pt: "Nome do assessor / escritório", en: "Advisor / office name" },
+  primaryColor: { pt: "Cor primária", en: "Primary color" },
+  logoColorsNamePdf: { pt: "Logo, cores e nome aparecem nos PDFs gerados para o cliente. (Upload de logo na fase 2.)", en: "Logo, colors and name appear on PDFs generated for the client. (Logo upload in phase 2.)" },
+  jimDescription: { pt: "Marca (white-label): identidade do assessor nos relatórios para o cliente final — nome e cor primária. Aparece na prévia do PDF.", en: "Brand (white-label): advisor's identity in reports for the end client — name and primary color. Shows up in the PDF preview." },
+  jimBriefingPrefix: { pt: "Sua marca hoje:", en: "Your brand today:" },
+  jimColorWord: { pt: "cor", en: "color" },
+  jimBriefingColorSuffix: { pt: "Aparece no cabeçalho dos relatórios do cliente.", en: "Appears in the header of client reports." },
+  jimSuggestWhereShows: { pt: "Onde essa marca aparece para o cliente?", en: "Where does this brand show up for the client?" },
+  jimSuggestLogoUpload: { pt: "Como funciona o upload do logo?", en: "How does the logo upload work?" },
+  jimSuggestDifferentBrand: { pt: "Posso ter uma marca diferente por cliente?", en: "Can I have a different brand per client?" },
+  reportPreview: { pt: "Prévia do relatório", en: "Report preview" },
+  clientPortfolioJune: { pt: "Carteira do cliente · junho de 2026", en: "Client portfolio · June 2026" },
+  returnLabel: { pt: "Retorno", en: "Return" },
+  riskNLabel: { pt: "Risk Nº", en: "Risk Nº" },
+  illustrativePreview: { pt: "Prévia ilustrativa de como sua marca aparece no relatório do cliente.", en: "Illustrative preview of how your brand appears in the client's report." },
+} as const;
 
 const COLORS = [
   { name: "Harpian Gold", v: "#C9A02C" },
@@ -24,6 +53,8 @@ function load(): Saved {
 }
 
 export default function Marca() {
+  const { lang } = useI18n();
+  const t = (k: keyof typeof TR) => TR[k][lang];
   // Initializes already with what was saved (lazy initializer — runs on the 1st render,
   // before any effect). Avoids the "save" vs. "load" race on mount.
   const [advisor, setAdvisor] = useState(() => load().advisor);
@@ -34,54 +65,54 @@ export default function Marca() {
   useEffect(() => {
     localStorage.setItem(KEY, JSON.stringify({ advisor, color }));
     setSaved(true);
-    const t = setTimeout(() => setSaved(false), 1400);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setSaved(false), 1400);
+    return () => clearTimeout(timer);
   }, [advisor, color]);
 
   useEffect(() => {
     const colorName = COLORS.find((c) => c.v === color)?.name || color;
     publishScreenData(
       "marca",
-      "Brand (white-label): advisor's identity in reports for the end client — name and primary color. Shows up in the PDF preview.",
+      t("jimDescription"),
       { nomeAssessor: advisor, corPrimaria: colorName },
       {
-        briefing: `Your brand today: **${advisor}**, color ${colorName}. Appears in the header of client reports.`,
+        briefing: `${t("jimBriefingPrefix")} **${advisor}**, ${t("jimColorWord")} ${colorName}. ${t("jimBriefingColorSuffix")}`,
         suggestions: [
-          "Where does this brand show up for the client?",
-          "How does the logo upload work?",
-          "Can I have a different brand per client?",
+          t("jimSuggestWhereShows"),
+          t("jimSuggestLogoUpload"),
+          t("jimSuggestDifferentBrand"),
         ],
       }
     );
-  }, [advisor, color]);
+  }, [advisor, color, t]);
 
   return (
     <div className="screen">
       <div className="flex between wrap" style={{ alignItems: "flex-start", gap: 10 }}>
         <div className="flex" style={{ alignItems: "baseline", gap: 14, flexWrap: "wrap", flex: 1 }}>
-          <div className="h1" style={{ margin: 0 }}>Brand (white-label)</div>
-          <div className="sub" style={{ margin: 0 }}>The advisor&apos;s identity in reports generated for the end client.</div>
+          <div className="h1" style={{ margin: 0 }}>{t("brandWhiteLabel")}</div>
+          <div className="sub" style={{ margin: 0 }}>{t("advisorIdentitySub")}</div>
         </div>
-        {saved && <span className="muted" style={{ fontSize: 11, color: "var(--green)", display: "flex", alignItems: "center", gap: 4 }}><i className="ti ti-circle-check" />saved</span>}
+        {saved && <span className="muted" style={{ fontSize: 11, color: "var(--green)", display: "flex", alignItems: "center", gap: 4 }}><i className="ti ti-circle-check" />{t("saved")}</span>}
       </div>
 
       <div className="grid g2">
         <div className="card">
-          <h3><i className="ti ti-palette" />Your identity</h3>
-          <label className="muted" style={{ display: "block", fontSize: 11, marginBottom: 4 }}>Advisor / office name</label>
+          <h3><i className="ti ti-palette" />{t("yourIdentity")}</h3>
+          <label className="muted" style={{ display: "block", fontSize: 11, marginBottom: 4 }}>{t("advisorOfficeName")}</label>
           <input className="wl-input" style={{ width: "100%" }} value={advisor} onChange={(e) => setAdvisor(e.target.value)} />
-          <label className="muted" style={{ display: "block", fontSize: 11, margin: "14px 0 6px" }}>Primary color</label>
+          <label className="muted" style={{ display: "block", fontSize: 11, margin: "14px 0 6px" }}>{t("primaryColor")}</label>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {COLORS.map((c) => (
               <button key={c.v} onClick={() => setColor(c.v)} title={c.name}
                 style={{ width: 30, height: 30, borderRadius: 8, background: c.v, cursor: "pointer", border: color === c.v ? "2px solid var(--tx)" : "2px solid transparent", outline: color === c.v ? `2px solid ${c.v}` : "none" }} />
             ))}
           </div>
-          <div className="muted mt" style={{ fontSize: 11 }}>Logo, colors and name appear on PDFs generated for the client. (Logo upload in phase 2.)</div>
+          <div className="muted mt" style={{ fontSize: 11 }}>{t("logoColorsNamePdf")}</div>
         </div>
 
         <div className="card">
-          <h3><i className="ti ti-file-text" />Report preview</h3>
+          <h3><i className="ti ti-file-text" />{t("reportPreview")}</h3>
           <div style={{ border: "1px solid var(--line2)", borderRadius: 10, overflow: "hidden", background: "#fff" }}>
             <div style={{ background: color, padding: "14px 16px", display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ width: 26, height: 26, borderRadius: 6, background: "rgba(255,255,255,.25)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700 }}>{advisor.charAt(0) || "H"}</div>
@@ -89,15 +120,15 @@ export default function Marca() {
               <div style={{ marginLeft: "auto", color: "rgba(255,255,255,.85)", fontSize: 10, fontFamily: "var(--mono)" }}>REPORT · HPC22</div>
             </div>
             <div style={{ padding: 16 }}>
-              <div style={{ color: "#1a2233", fontWeight: 600, fontSize: 13 }}>Client portfolio · June 2026</div>
+              <div style={{ color: "#1a2233", fontWeight: 600, fontSize: 13 }}>{t("clientPortfolioJune")}</div>
               <div style={{ height: 1, background: "#e5e9f0", margin: "10px 0" }} />
               <div style={{ display: "flex", gap: 16 }}>
-                <div><div style={{ fontSize: 9, color: "#8892a4", textTransform: "uppercase", letterSpacing: ".5px" }}>Return</div><div style={{ color, fontWeight: 700, fontSize: 18, fontFamily: "var(--mono)" }}>+14.2%</div></div>
-                <div><div style={{ fontSize: 9, color: "#8892a4", textTransform: "uppercase", letterSpacing: ".5px" }}>Risk Nº</div><div style={{ color: "#1a2233", fontWeight: 700, fontSize: 18, fontFamily: "var(--mono)" }}>38</div></div>
+                <div><div style={{ fontSize: 9, color: "#8892a4", textTransform: "uppercase", letterSpacing: ".5px" }}>{t("returnLabel")}</div><div style={{ color, fontWeight: 700, fontSize: 18, fontFamily: "var(--mono)" }}>+14.2%</div></div>
+                <div><div style={{ fontSize: 9, color: "#8892a4", textTransform: "uppercase", letterSpacing: ".5px" }}>{t("riskNLabel")}</div><div style={{ color: "#1a2233", fontWeight: 700, fontSize: 18, fontFamily: "var(--mono)" }}>38</div></div>
               </div>
             </div>
           </div>
-          <div className="muted mt" style={{ fontSize: 11 }}>Illustrative preview of how your brand appears in the client's report.</div>
+          <div className="muted mt" style={{ fontSize: 11 }}>{t("illustrativePreview")}</div>
         </div>
       </div>
     </div>

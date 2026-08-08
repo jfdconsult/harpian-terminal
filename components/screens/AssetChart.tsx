@@ -2,12 +2,23 @@
 import { useEffect, useRef } from "react";
 import { createChart, ColorType, LineStyle, type IChartApi } from "lightweight-charts";
 import { emaEuler, bollinger, rsiSeries, demaReturns, toLine } from "@/lib/indicators";
+import { useI18n } from "@/lib/i18n";
 
 type Candle = { time: number; open: number; high: number; low: number; close: number };
 type Vol = { time: number; value: number; up: boolean };
 export interface Studies { ema: boolean; bb: boolean; vol: boolean; rsi: boolean; momD: boolean; momJ: boolean }
 
+const TR = {
+  rsiLabel: { pt: "RSI (14)", en: "RSI (14)" },
+  momentumLabel: { pt: "MOMENTUM", en: "MOMENTUM" },
+  momentumBoth: { pt: " · D (dourado) / J (azul)", en: " · D (gold) / J (blue)" },
+  momentumD: { pt: " D", en: " D" },
+  momentumJ: { pt: " J", en: " J" },
+} as const;
+
 export default function AssetChart({ candles, volume, studies, compareLine }: { candles: Candle[]; volume: Vol[]; studies: Studies; compareLine?: { time: number; value: number }[] | null }) {
+  const { lang } = useI18n();
+  const t = (k: keyof typeof TR) => TR[k][lang];
   const mainRef = useRef<HTMLDivElement>(null);
   const rsiRef = useRef<HTMLDivElement>(null);
   const momRef = useRef<HTMLDivElement>(null);
@@ -90,9 +101,9 @@ export default function AssetChart({ candles, volume, studies, compareLine }: { 
   return (
     <div>
       <div ref={mainRef} style={{ width: "100%" }} />
-      {studies.rsi && <div style={{ fontSize: 9, color: "var(--tx3)", fontFamily: "var(--mono)", margin: "6px 0 0", letterSpacing: ".08em" }}>RSI (14)</div>}
+      {studies.rsi && <div style={{ fontSize: 9, color: "var(--tx3)", fontFamily: "var(--mono)", margin: "6px 0 0", letterSpacing: ".08em" }}>{t("rsiLabel")}</div>}
       <div ref={rsiRef} style={{ width: "100%", display: studies.rsi ? "block" : "none" }} />
-      {(studies.momD || studies.momJ) && <div style={{ fontSize: 9, color: "var(--tx3)", fontFamily: "var(--mono)", margin: "6px 0 0", letterSpacing: ".08em" }}>MOMENTUM{studies.momD && studies.momJ ? " · D (gold) / J (blue)" : studies.momD ? " D" : " J"}</div>}
+      {(studies.momD || studies.momJ) && <div style={{ fontSize: 9, color: "var(--tx3)", fontFamily: "var(--mono)", margin: "6px 0 0", letterSpacing: ".08em" }}>{t("momentumLabel")}{studies.momD && studies.momJ ? t("momentumBoth") : studies.momD ? t("momentumD") : t("momentumJ")}</div>}
       <div ref={momRef} style={{ width: "100%", display: (studies.momD || studies.momJ) ? "block" : "none" }} />
     </div>
   );
