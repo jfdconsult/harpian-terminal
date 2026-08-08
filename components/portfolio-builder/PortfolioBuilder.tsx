@@ -232,6 +232,8 @@ export default function PortfolioBuilder() {
   const [janela, setJanela] = useState<Janela>("max");
   const [windowMode, setWindowMode] = useState<WindowMode>("inception");
   const [dropNegative, setDropNegative] = useState(false);
+  /** Piso ajustavel de momento (custom-only, nunca em SET — ver comentario em types.ts). */
+  const [momentumFloor, setMomentumFloor] = useState<number | null>(null);
   const [capital, setCapital] = useState(100000);
 
   // SETs pre-montados: carregam um setup inteiro no builder. `setAtivo` guarda
@@ -347,6 +349,7 @@ export default function PortfolioBuilder() {
     setRebalance(cfg.rebalance);
     setWindowMode(cfg.window);
     setDropNegative(cfg.dropNegative);
+    setMomentumFloor(null); // SET nunca traz piso — e config exclusiva do custom
     setVolTarget(cfg.volTarget ?? null);
     setPeriodoFixo(cfg.periodoFixo ?? null);
     setSetAtivo(setId);
@@ -411,9 +414,9 @@ export default function PortfolioBuilder() {
   };
 
   const cfg: PortfolioConfig = useMemo(() => ({
-    sleeves, mode, basis, rebalance, janela, window: windowMode, dropNegative, capital,
+    sleeves, mode, basis, rebalance, janela, window: windowMode, dropNegative, momentumFloor, capital,
     volTarget, periodoFixo,
-  }), [sleeves, mode, basis, rebalance, janela, windowMode, dropNegative, capital,
+  }), [sleeves, mode, basis, rebalance, janela, windowMode, dropNegative, momentumFloor, capital,
        volTarget, periodoFixo]);
 
   const viab = useMemo(() => checkFeasibility(cfg), [cfg]);
@@ -1132,10 +1135,27 @@ export default function PortfolioBuilder() {
                     <option value="ir">Momento ajustado a risco (IR)</option>
                   </select>
                 </Campo>
-                <label style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: 12, color: "var(--tx2)", marginTop: 8, cursor: "pointer" }}>
-                  <input type="checkbox" checked={dropNegative} onChange={(e) => setDropNegative(e.target.checked)} style={{ marginTop: 2 }} />
-                  <span>Zerar quem está com momento negativo <span style={{ color: "var(--tx3)" }}>— em vez de deixar no piso</span></span>
-                </label>
+                <Campo
+                  label="Piso de momento para comprar"
+                  hint={`estratégia com ${basis === "ir" ? "IR" : "RetMes%"} abaixo do piso zera a posição, mesmo com o ativo líder dela em alta`}
+                >
+                  <select
+                    value={momentumFloor == null ? "none" : String(momentumFloor)}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "none") { setMomentumFloor(null); setDropNegative(false); return; }
+                      setMomentumFloor(Number(v));
+                      setDropNegative(false); // momentumFloor manda; nao precisa dos dois
+                    }}
+                    style={sel}
+                  >
+                    <option value="none">Sem piso (so sai do 0 pro fundo, como sempre)</option>
+                    <option value="0">0 — zera quem está com momento negativo</option>
+                    <option value="-1">-1 — aceita momento levemente negativo</option>
+                    <option value="-2">-2 — aceita momento mais negativo</option>
+                    <option value="-3">-3 — piso mais permissivo</option>
+                  </select>
+                </Campo>
               </>
             )}
           </Painel>

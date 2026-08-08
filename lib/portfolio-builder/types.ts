@@ -74,8 +74,22 @@ export interface PortfolioConfig {
   /**
    * Modo dinamico: estrategia com momento negativo cai para zero em vez de
    * parar no piso. Deixa o portfolio sair de quem esta perdendo forca.
+   * Equivale a `momentumFloor: 0` — mantido por compatibilidade com quem
+   * ja usa este campo; quando `momentumFloor` esta presente, ele manda.
    */
   dropNegative: boolean;
+  /**
+   * Modo dinamico, so no Portfolio Builder do Terminal (nao no site publico,
+   * nao nos SETs pre-montados — `configDoSet` nunca preenche este campo):
+   * piso ajustavel de momento, na escala do `basis` escolhido (RetMes% ou
+   * IR). Estrategia com score abaixo do piso cai para zero, mesmo que o
+   * ativo lider dela esteja forte — o piso e sobre o score da ESTRATEGIA
+   * (o mesmo RetMes%/IR ja calculado pelo motor do Diogo), nao sobre o
+   * ativo individual. `null`/`undefined` = sem piso (comportamento antigo,
+   * so o clamp em 0 do `scoresEm`). Ex.: -1 aceita estrategias com IR ate
+   * -1 antes de zerar a posicao.
+   */
+  momentumFloor?: number | null;
   /** capital inicial, so para exibicao */
   capital: number;
   /**

@@ -310,16 +310,23 @@ export function simulate(
   const ativo = (i: number, t: number) => t >= ini[i] && t <= fim[i];
   const local = (i: number, t: number) => t - ini[i];
 
-  /** score de cada sleeve no fechamento do dia t (0 quando inativo/negativo) */
-  const scoresEm = (t: number): number[] => {
+  /** score bruto de cada sleeve no fechamento do dia t, SEM clamp em zero —
+   * so para comparar contra `momentumFloor` (que pode ser negativo). Inativa
+   * ou sem dado vira null (nunca passa no piso). */
+  const scoresBrutoEm = (t: number): (number | null)[] => {
     return sleeves.map((s, i) => {
-      if (!ativo(i, t)) return 0;
+      if (!ativo(i, t)) return null;
       const ser = series[s.id];
       const arr = cfg.basis === "ir" ? ser.ir : ser.retmes;
       const v = arr[local(i, t)];
-      if (v === null || !Number.isFinite(v)) return 0;
-      return Math.max(0, v);
+      if (v === null || !Number.isFinite(v)) return null;
+      return v;
     });
+  };
+
+  /** score de cada sleeve no fechamento do dia t (0 quando inativo/negativo) */
+  const scoresEm = (t: number): number[] => {
+    return scoresBrutoEm(t).map((v) => (v == null ? 0 : Math.max(0, v)));
   };
 
   const pesosAlvo = (t: number): number[] => {
@@ -335,15 +342,24 @@ export function simulate(
     }
 
     const sc = scoresEm(t);
+    const bruto = scoresBrutoEm(t);
+    // piso de momento: numerico se `momentumFloor` foi definido, senao o
+    // corte binario em 0 do `dropNegative` de sempre. Estrategia sem dado no
+    // dia (bruto == null) sempre cai — nao tem score pra avaliar.
+    const abaixoDoPiso = (i: number): boolean => {
+      const v = bruto[i];
+      if (v == null) return true;
+      if (cfg.momentumFloor != null) return v < cfg.momentumFloor;
+      return cfg.dropNegative && v <= 0;
+    };
     const mins = sleeves.map((s, i) => {
       if (!vivos[i]) return 0;
-      // momento negativo (score 0) zera a posicao, se o cliente pediu isso
-      if (cfg.dropNegative && sc[i] <= 0) return 0;
+      if (abaixoDoPiso(i)) return 0;
       return s.min;
     });
     const maxs = sleeves.map((s, i) => {
       if (!vivos[i]) return 0;
-      if (cfg.dropNegative && sc[i] <= 0) return 0;
+      if (abaixoDoPiso(i)) return 0;
       return s.max;
     });
 
