@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, useEffect, useMemo, type ReactNode } from "react";
+import { useI18n } from "@/lib/i18n";
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent,
 } from "@dnd-kit/core";
@@ -22,6 +23,266 @@ import { HPC22_RN, TOLERANCE } from "@/lib/riskLevels";
 import { MiniRegua } from "./Risco";
 
 // ════════════════════════════════════════════════════════════════
+// i18n — local dictionary for this screen (CANONICAL reference pattern)
+// One entry per user-visible English string. en = current text (kept
+// EXACTLY), pt = natural institutional Brazilian-Portuguese. Brand/product
+// terms (Harpian, JIM, XRI, ARI, Market DNA, VIX, Fear & Greed, S&P, COT,
+// HPC22, HPC11, AUM, RN…) and data-driven regime STATE codes (RISK-ON,
+// CAUTION, RISK-OFF, ARMED/DISARMED) are intentionally NOT translated.
+// ════════════════════════════════════════════════════════════════
+const TR = {
+  // Painel header
+  goodMorning: { pt: "Bom dia", en: "Good morning" },
+  essentials: { pt: "O essencial do dia.", en: "The essentials of the day." },
+  dragToReorganize: { pt: "Arraste para reorganizar, adicione módulos (Cotações e Carteira podem repetir, cada um com sua própria configuração — clique na engrenagem) ou remova-os.", en: "Drag to reorganize, add modules (Quotes and Portfolio can repeat, each with its own configuration — click the gear) or remove them." },
+  everythingClickAway: { pt: "Todo o resto está a um clique nos menus do topo.", en: "Everything else is a click away in the top menus." },
+
+  // JIM Morning Briefing — greetings & chrome
+  welcome: { pt: "Bem-vindo", en: "Welcome" },
+  goodAfternoon: { pt: "Boa tarde", en: "Good afternoon" },
+  goodEvening: { pt: "Boa noite", en: "Good evening" },
+  jimMorningBriefing: { pt: "JIM — Resumo Matinal", en: "JIM — Morning Briefing" },
+  updated: { pt: "Atualizado", en: "Updated" },
+  collapse: { pt: "Recolher", en: "Collapse" },
+  expand: { pt: "Expandir", en: "Expand" },
+  analyzingMarketData: { pt: "Analisando dados de mercado...", en: "Analyzing market data..." },
+  consolidatingIntel: { pt: "Consolidando inteligência de mercado...", en: "Consolidating market intelligence..." },
+
+  // Briefing — Portfolio section
+  portfolio: { pt: "Carteira", en: "Portfolio" },
+  aggressive: { pt: "Agressivo", en: "Aggressive" },
+  today: { pt: "hoje", en: "today" },
+  fullExposureNoHedge: { pt: "Exposição total — sem hedge ativo", en: "Full exposure — no active hedge" },
+  investmentGradeRange: { pt: "Investment Grade — dentro da faixa", en: "Investment Grade — within range" },
+  activity: { pt: "Atividade", en: "Activity" },
+  noAdjustments: { pt: "Sem ajustes", en: "No adjustments" },
+  lastRebalancing: { pt: "Último rebalanceamento em 1 Jul", en: "Last rebalancing on Jul 1" },
+
+  // Briefing — Regime & Defense section
+  regimeDefense: { pt: "Regime & Defesa", en: "Regime & Defense" },
+  currentRegime: { pt: "Regime atual", en: "Current regime" },
+  unavailable: { pt: "indisponível", en: "unavailable" },
+  overnightFeedNotUpdated: { pt: "Feed overnight ainda não atualizado", en: "Overnight feed not yet updated" },
+  defense: { pt: "Defesa", en: "Defense" },
+  waitingOvernightSnapshot: { pt: "Aguardando snapshot overnight", en: "Waiting for overnight snapshot" },
+  asOf: { pt: "Em", en: "As of" },
+  source: { pt: "Fonte", en: "Source" },
+  unknown: { pt: "desconhecido", en: "unknown" },
+  noTimestampSnapshot: { pt: "Sem timestamp no snapshot", en: "No timestamp on snapshot" },
+
+  // regimeView() — regime narrative + defense narrative
+  sustainedTrendFavorable: { pt: "Tendência sustentada — ambiente favorável ao risco", en: "Sustained trend — favorable environment for risk" },
+  disarmed: { pt: "Desarmada", en: "Disarmed" },
+  fullRiskNoRotation: { pt: "Exposição total ao risco — sem rotação para proteção", en: "Full risk exposure — no rotation to protection" },
+  adverseActiveInPlace: { pt: "Ambiente adverso — defesa ativa em vigor", en: "Adverse environment — active defense in place" },
+  active: { pt: "Ativa", en: "Active" },
+  defensiveReduced: { pt: "Rotação defensiva acionada — exposição reduzida", en: "Defensive rotation engaged — reduced exposure" },
+  mixedSignalsRegime: { pt: "Sinais mistos — nem tendência nem estresse dominam", en: "Mixed signals — neither trend nor stress dominates" },
+  monitoring: { pt: "Monitorando", en: "Monitoring" },
+  noRotationWatching: { pt: "Sem rotação defensiva — observando direção", en: "No defensive rotation — watching for direction" },
+  broadStressFullDefense: { pt: "Estresse amplo — mandato de defesa total", en: "Broad stress — full defense mandate" },
+  defensiveMaxProtection: { pt: "Rotação defensiva acionada — proteção máxima", en: "Defensive rotation engaged — maximum protection" },
+
+  // Briefing — Market DNA section
+  lowVolFavorable: { pt: "Baixa volatilidade — ambiente favorável ao risco", en: "Low volatility — favorable environment for risk" },
+  elevatedVolMonitor: { pt: "Volatilidade elevada — monitorar", en: "Elevated volatility — monitor" },
+  breadthLabel: { pt: "Amplitude (>200MA)", en: "Breadth (>200MA)" },
+  broadParticipation: { pt: "Participação ampla — alta saudável", en: "Broad participation — healthy rally" },
+  narrowParticipation: { pt: "Participação estreita — risco de concentração", en: "Narrow participation — concentration risk" },
+  greedyMarket: { pt: "Mercado ganancioso — atenção ao excesso", en: "Greedy market — watch for excess" },
+  fearDominates: { pt: "Medo domina — oportunidade ou cautela?", en: "Fear dominates — opportunity or caution?" },
+  neutralSentiment: { pt: "Sentimento neutro", en: "Neutral sentiment" },
+  yieldCurve: { pt: "Curva de juros", en: "Yield Curve" },
+  normalizedCurve: { pt: "Curva normalizada — sinal positivo para crescimento", en: "Normalized curve — positive signal for growth" },
+  invertedCurve: { pt: "Curva invertida — alerta de recessão", en: "Inverted curve — recession watch" },
+  positioningLabel: { pt: "Posicionamento (COT)", en: "Positioning (COT)" },
+  outOf: { pt: "de", en: "of" },
+  atExtreme: { pt: "em extremo", en: "at extreme" },
+  speculatorStretched: { pt: "Especulador esticado — sinaliza vulnerabilidade, não timing", en: "Speculator stretched — flags vulnerability, not timing" },
+  noPositioningExtremes: { pt: "Sem extremos de posicionamento significativos", en: "No significant positioning extremes" },
+
+  // Briefing — Clients & Risk section
+  clientsRisk: { pt: "Clientes & Risco", en: "Clients & Risk" },
+  totalAum: { pt: "AUM Total", en: "Total AUM" },
+  activeClients: { pt: "Clientes ativos", en: "Active clients" },
+  outsideMandate: { pt: "Fora do mandato", en: "Outside mandate" },
+  clientsPlural: { pt: "cliente(s)", en: "client(s)" },
+  none: { pt: "Nenhum", en: "None" },
+  attention: { pt: "Atenção", en: "Attention" },
+  allWithinLimits: { pt: "Todos dentro dos limites", en: "All within limits" },
+
+  // Briefing — Calendar section
+  calendar: { pt: "Calendário", en: "Calendar" },
+  loadingLc: { pt: "carregando…", en: "loading…" },
+  fetchingReleases: { pt: "Buscando próximas divulgações.", en: "Fetching upcoming releases." },
+  couldntFetchReleases: { pt: "Não consegui buscar as próximas divulgações agora — prefiro não mostrar uma data que não verifiquei.", en: "Couldn't fetch upcoming releases right now — I'd rather not show a date I haven't verified." },
+  nextEvent: { pt: "Próximo evento", en: "Next event" },
+  forecast: { pt: "projeção", en: "forecast" },
+  previous: { pt: "anterior", en: "previous" },
+  thisWeek: { pt: "Esta semana", en: "This week" },
+  highImpactEvents: { pt: "evento(s) de alto impacto", en: "high-impact event(s)" },
+  openAlertsFullList: { pt: "Abra Alertas para a lista completa.", en: "Open Alerts for the full list." },
+  calendarAlerts: { pt: "Calendário & Alertas", en: "Calendar & Alerts" },
+
+  // generateHeadline()
+  regimeWord: { pt: "Regime", en: "Regime" },
+  regimeUnavailable: { pt: "Regime indisponível", en: "Regime unavailable" },
+  clientsOutsideRiskMandate: { pt: "cliente(s) fora do mandato de risco.", en: "client(s) outside the risk mandate." },
+  complianceActionRequired: { pt: "ação de compliance necessária.", en: "compliance action required." },
+  vixAt: { pt: "VIX em", en: "VIX at" },
+  elevatedVolatility: { pt: "volatilidade elevada", en: "elevated volatility" },
+  monitorClosely: { pt: "Monitore de perto.", en: "Monitor closely." },
+  fearGreedAt: { pt: "Fear & Greed em", en: "Fear & Greed at" },
+  extremeFear: { pt: "medo extremo", en: "extreme fear" },
+  historicallyPrecededRecoveries: { pt: "Esses níveis historicamente precederam recuperações.", en: "These levels have historically preceded recoveries." },
+  extremeGreed: { pt: "ganância extrema", en: "extreme greed" },
+  excessiveOptimismCorrections: { pt: "Cautela — otimismo excessivo frequentemente precede correções.", en: "Caution — excessive optimism often precedes corrections." },
+  adverseActiveReduced: { pt: "ambiente adverso, defesa ativa e exposição reduzida.", en: "adverse environment, active defense and reduced exposure." },
+  allClientsWithinMandate: { pt: "Todos os clientes dentro do mandato.", en: "All clients within mandate." },
+  adverseActiveDefense: { pt: "ambiente adverso, defesa ativa.", en: "adverse environment, active defense." },
+  quietDay: { pt: "Dia tranquilo.", en: "Quiet day." },
+  allWithinNoAction: { pt: "todos os clientes dentro do mandato. Nenhuma ação urgente necessária.", en: "all clients within mandate. No urgent action required." },
+
+  // Cotacoes widget
+  loading: { pt: "Carregando", en: "Loading" },
+  seeAllQuotes: { pt: "Ver todas as cotações", en: "See all quotes" },
+
+  // Carteira widget
+  noClients: { pt: "Nenhum cliente cadastrado.", en: "No clients registered." },
+  units: { pt: "unidades", en: "units" },
+  openFullPortfolio: { pt: "Abrir carteira completa", en: "Open full portfolio" },
+
+  // Risco cliente widget
+  product: { pt: "Produto", en: "Product" },
+  mandate: { pt: "Mandato", en: "Mandate" },
+  tolerance: { pt: "Tolerância", en: "Tolerance" },
+  within: { pt: "dentro", en: "within" },
+  seeFullRuler: { pt: "Ver régua completa", en: "See full ruler" },
+
+  // Todos-clientes ruler widget
+  clientsWord: { pt: "clientes", en: "clients" },
+  outsideMandateLc: { pt: "fora do mandato", en: "outside mandate" },
+  allWithin: { pt: "todos dentro", en: "all within" },
+  colClient: { pt: "Cliente", en: "Client" },
+  colDistribution: { pt: "Distribuição", en: "Distribution" },
+  colAlignment: { pt: "Alinhamento", en: "Alignment" },
+  seeDetailByClient: { pt: "Ver detalhe por cliente", en: "See detail by client" },
+
+  // Regime gauge widget — sub-labels
+  fullExposureStandby: { pt: "exposição total · defesa em espera", en: "full exposure · defense on standby" },
+  reducingRiskActivating: { pt: "reduzindo risco · defesa ativando", en: "reducing risk · defense activating" },
+  moderateMonitoring: { pt: "exposição moderada · monitorando", en: "moderate exposure · monitoring" },
+  activeDefenseReduced: { pt: "defesa ativa · exposição reduzida", en: "active defense · reduced exposure" },
+  seeMarketOverview: { pt: "Ver panorama de mercado", en: "See Market Overview" },
+
+  // Intel radar widget
+  loadingRadar: { pt: "Carregando radar…", en: "Loading radar…" },
+  radarUnavailable: { pt: "Radar indisponível.", en: "Radar unavailable." },
+  conviction: { pt: "convicção", en: "conviction" },
+  seeMarketDna: { pt: "Ver Market DNA", en: "See Market DNA" },
+
+  // News widget
+  loadingNews: { pt: "Carregando notícias…", en: "Loading news…" },
+  noNews: { pt: "Nenhuma notícia no momento.", en: "No news at the moment." },
+  seeNewsBroadcast: { pt: "Ver transmissão de notícias", en: "See News Broadcast" },
+
+  // Social widget
+  loadingSocial: { pt: "Carregando radar social…", en: "Loading social radar…" },
+  noPosts: { pt: "Nenhum post no momento.", en: "No posts at the moment." },
+  seeSocialRadar: { pt: "Ver radar social", en: "See Social Radar" },
+
+  // Veredito widget
+  internalAri: { pt: "INTERNO · ARI", en: "INTERNAL · ARI" },
+  waiting: { pt: "aguardando…", en: "waiting…" },
+  externalXri: { pt: "EXTERNO · XRI", en: "EXTERNAL · XRI" },
+  scoreLc: { pt: "pontuação", en: "score" },
+  defenseUpper: { pt: "DEFESA", en: "DEFENSE" },
+  rotatingIn: { pt: "entrando em rotação", en: "rotating in" },
+  fullExposureLc: { pt: "exposição total", en: "full exposure" },
+  sustainedTrend: { pt: "tendência sustentada", en: "sustained trend" },
+  activeDefenseSub: { pt: "defesa ativa", en: "active defense" },
+  mixedSignals: { pt: "sinais mistos", en: "mixed signals" },
+  broadStress: { pt: "estresse amplo", en: "broad stress" },
+
+  // XRI widget
+  loadingXri: { pt: "Carregando XRI…", en: "Loading XRI…" },
+  direction: { pt: "Direção:", en: "Direction:" },
+  conf: { pt: "Conf.", en: "Conf." },
+  scoreUpper: { pt: "PONTUAÇÃO", en: "SCORE" },
+  topDrivers: { pt: "PRINCIPAIS FATORES", en: "TOP DRIVERS" },
+  seeXriDetail: { pt: "Ver detalhe do XRI", en: "See XRI detail" },
+
+  // Vault preview widget
+  kpiPositions: { pt: "POSIÇÕES", en: "POSITIONS" },
+  kpiAumInv: { pt: "AUM INV.", en: "AUM INV." },
+  kpiHit90d: { pt: "ACERTO 90d", en: "HIT 90d" },
+  kpiAvgHold: { pt: "HOLD MÉD.", en: "AVG HOLD" },
+  nextShowcaseRotation: { pt: "Próxima rotação Showcase", en: "Next Showcase rotation" },
+  loadingVault: { pt: "Carregando Vault…", en: "Loading Vault…" },
+  openTheVault: { pt: "Abrir The Vault", en: "Open The Vault" },
+
+  // Catalog — fundos
+  yourFunds: { pt: "Seus fundos", en: "Your funds" },
+  openHpc22: { pt: "Abrir HPC22", en: "Open HPC22" },
+
+  // Catalog — alocacao
+  allocationByFund: { pt: "Alocação por fundo", en: "Allocation by fund" },
+  cash: { pt: "Caixa", en: "Cash" },
+
+  // Catalog — clientes
+  clientsTitle: { pt: "Clientes", en: "Clients" },
+  seeClients: { pt: "Ver clientes", en: "See clients" },
+
+  // Catalog — alertas
+  alertsTitle: { pt: "Alertas", en: "Alerts" },
+  outsideTag: { pt: "fora", en: "outside" },
+  watchTag: { pt: "observar", en: "watch" },
+  mandateLc: { pt: "mandato", en: "mandate" },
+  ptBelowMandate: { pt: "pt abaixo do mandato", en: "pt below mandate" },
+  allWithinNothingFlag: { pt: "Todos os clientes dentro do mandato · nada a sinalizar agora.", en: "All clients within mandate · nothing to flag right now." },
+  seeAlerts: { pt: "Ver alertas", en: "See alerts" },
+
+  // Catalog — titles & config
+  verdictTitle: { pt: "Veredito — ARI · XRI · Defesa", en: "Verdict — ARI · XRI · Defense" },
+  vaultAggregate: { pt: "The Vault — agregado", en: "The Vault — aggregate" },
+  xriExternalRegime: { pt: "XRI — Regime Externo", en: "XRI — External Regime" },
+  marketRegimeGauge: { pt: "Regime de Mercado (medidor)", en: "Market Regime (gauge)" },
+  intelligenceRadar: { pt: "Radar de Inteligência", en: "Intelligence Radar" },
+  newsBroadcastTitle: { pt: "Transmissão de Notícias", en: "News Broadcast" },
+  quotesTitle: { pt: "Cotações", en: "Quotes" },
+  clientPortfolioTitle: { pt: "Carteira do cliente", en: "Client portfolio" },
+  socialRadarTitle: { pt: "Radar Social", en: "Social Radar" },
+  riskLevelsTitle: { pt: "Risco · 4 níveis por cliente", en: "Risk · 4 levels per client" },
+  allClientsRuler: { pt: "Todos os clientes na régua", en: "All clients on the ruler" },
+  classLabel: { pt: "Classe", en: "Class" },
+  clientLabel: { pt: "Cliente", en: "Client" },
+  riskWord: { pt: "Risco", en: "Risk" },
+
+  // Painel — customize controls
+  addModule: { pt: "Adicionar módulo", en: "Add module" },
+  addAnother: { pt: "+ adicionar outro", en: "+ add another" },
+  allModulesOnDashboard: { pt: "Todos os módulos já estão no painel.", en: "All modules are already on the dashboard." },
+  restoreDefault: { pt: "Restaurar padrão", en: "Restore default" },
+  done: { pt: "Concluído", en: "Done" },
+  customizeDashboard: { pt: "Personalizar painel", en: "Customize dashboard" },
+  customize: { pt: "Personalizar", en: "Customize" },
+  modulesAvailableSuffix: { pt: "módulo(s) disponíveis para adicionar · Cotações e Carteira do cliente podem ser adicionados várias vezes, cada um com sua própria configuração.", en: "module(s) available to add · Quotes and Client portfolio can be added multiple times, each with its own configuration." },
+  configureModule: { pt: "Configurar módulo", en: "Configure module" },
+
+  // publishScreenData → JIM (user-visible briefing + suggestion chips)
+  jimGoodMorningSummary: { pt: "Bom dia! Resumo de hoje:", en: "Good morning! Today's summary:" },
+  jimRegimeRiskOnDefense: { pt: "Regime **RISK-ON** (defesa desarmada).", en: "Regime **RISK-ON** (defense disarmed)." },
+  allWithinMandateLc: { pt: "todos dentro do mandato.", en: "all within mandate." },
+  suggestFunds: { pt: "Como estão os fundos hoje?", en: "How are the funds doing today?" },
+  suggestOutside: { pt: "Quais clientes estão fora do mandato?", en: "Which clients are outside the mandate?" },
+  suggestAttention: { pt: "Algum cliente precisa de atenção?", en: "Does any client need attention?" },
+  suggestWhyRiskOn: { pt: "Por que o regime está RISK-ON?", en: "Why is the regime RISK-ON?" },
+} as const;
+
+type TKey = keyof typeof TR;
+type TFn = (k: TKey) => string;
+
+// ════════════════════════════════════════════════════════════════
 // JIM MORNING BRIEFING — proactive intelligence box
 // ════════════════════════════════════════════════════════════════
 
@@ -35,56 +296,61 @@ interface BriefingItem { label: string; value: string; color?: string; detail?: 
 
 // Live regime → label + color + narrative for the Regime & Defense card.
 // Kept confidentiality-safe: only names and directional labels, no CRS/thresholds.
-const REGIME_VIEW: Record<RegimeState, { label: string; color: string; detail: string; defenseLabel: string; defenseColor: string; defenseDetail: string }> = {
-  BULL:    { label: "RISK-ON",  color: "var(--green)", detail: "Sustained trend — favorable environment for risk",
-             defenseLabel: "Disarmed", defenseColor: "var(--tx2)", defenseDetail: "Full risk exposure — no rotation to protection" },
-  CAUTELA: { label: "CAUTION",  color: "var(--gold)",  detail: "Adverse environment — active defense in place",
-             defenseLabel: "Active",   defenseColor: "var(--gold)", defenseDetail: "Defensive rotation engaged — reduced exposure" },
-  NEUTRO:  { label: "NEUTRAL",  color: "var(--tx2)",   detail: "Mixed signals — neither trend nor stress dominates",
-             defenseLabel: "Monitoring", defenseColor: "var(--tx2)", defenseDetail: "No defensive rotation — watching for direction" },
-  BEAR:    { label: "RISK-OFF", color: "var(--red)",   detail: "Broad stress — full defense mandate",
-             defenseLabel: "Active",   defenseColor: "var(--red)",  defenseDetail: "Defensive rotation engaged — maximum protection" },
-};
+// State code labels (RISK-ON, CAUTION…) come from data → not translated; the
+// narrative details are user-visible descriptive text → translated via t.
+function regimeView(t: TFn): Record<RegimeState, { label: string; color: string; detail: string; defenseLabel: string; defenseColor: string; defenseDetail: string }> {
+  return {
+    BULL:    { label: "RISK-ON",  color: "var(--green)", detail: t("sustainedTrendFavorable"),
+               defenseLabel: t("disarmed"), defenseColor: "var(--tx2)", defenseDetail: t("fullRiskNoRotation") },
+    CAUTELA: { label: "CAUTION",  color: "var(--gold)",  detail: t("adverseActiveInPlace"),
+               defenseLabel: t("active"),   defenseColor: "var(--gold)", defenseDetail: t("defensiveReduced") },
+    NEUTRO:  { label: "NEUTRAL",  color: "var(--tx2)",   detail: t("mixedSignalsRegime"),
+               defenseLabel: t("monitoring"), defenseColor: "var(--tx2)", defenseDetail: t("noRotationWatching") },
+    BEAR:    { label: "RISK-OFF", color: "var(--red)",   detail: t("broadStressFullDefense"),
+               defenseLabel: t("active"),   defenseColor: "var(--red)",  defenseDetail: t("defensiveMaxProtection") },
+  };
+}
 
 function generateBriefingSections(
   dna: DnaRaw | null,
   cal: CalendarResp | null,
   snap: Snapshot | null,
+  t: TFn,
 ): BriefingSection[] {
   const sections: BriefingSection[] = [];
 
   // 1) PORTFOLIO STATUS
   sections.push({
-    title: "Portfolio", icon: "ti-coin", color: "var(--green)", screenId: "fundo" as ScreenId,
+    title: t("portfolio"), icon: "ti-coin", color: "var(--green)", screenId: "fundo" as ScreenId,
     items: [
-      { label: "HPC22 Aggressive", value: "+2.31% today", color: "var(--green)", detail: "Full exposure — no active hedge" },
-      { label: "HPC11 I.G.", value: "+1.44% today", color: "var(--green)", detail: "Investment Grade — within range" },
-      { label: "Activity", value: "No adjustments", detail: "Last rebalancing on Jul 1" },
+      { label: `HPC22 ${t("aggressive")}`, value: `+2.31% ${t("today")}`, color: "var(--green)", detail: t("fullExposureNoHedge") },
+      { label: "HPC11 I.G.", value: `+1.44% ${t("today")}`, color: "var(--green)", detail: t("investmentGradeRange") },
+      { label: t("activity"), value: t("noAdjustments"), detail: t("lastRebalancing") },
     ],
   });
 
   // 2) REGIME & DEFENSE — real values from /api/snapshot (overnight cloud)
   const regimeState = snap?.regime?.state ?? null;
-  const view = regimeState ? REGIME_VIEW[regimeState] : null;
+  const view = regimeState ? regimeView(t)[regimeState] : null;
   const defenseLabelFromSnap = snap?.defense?.label?.trim();
 
   sections.push({
-    title: "Regime & Defense", icon: "ti-shield-check", color: view?.color ?? "var(--tx2)", screenId: "regime" as ScreenId,
+    title: t("regimeDefense"), icon: "ti-shield-check", color: view?.color ?? "var(--tx2)", screenId: "regime" as ScreenId,
     items: [
       view
-        ? { label: "Current regime", value: view.label, color: view.color, detail: view.detail }
-        : { label: "Current regime", value: "unavailable", color: "var(--tx2)", detail: "Overnight feed not yet updated" },
+        ? { label: t("currentRegime"), value: view.label, color: view.color, detail: view.detail }
+        : { label: t("currentRegime"), value: t("unavailable"), color: "var(--tx2)", detail: t("overnightFeedNotUpdated") },
       view
         ? {
-            label: "Defense",
+            label: t("defense"),
             value: defenseLabelFromSnap && regimeState !== "BULL" ? defenseLabelFromSnap : view.defenseLabel,
             color: view.defenseColor,
             detail: view.defenseDetail,
           }
-        : { label: "Defense", value: "unavailable", color: "var(--tx2)", detail: "Waiting for overnight snapshot" },
+        : { label: t("defense"), value: t("unavailable"), color: "var(--tx2)", detail: t("waitingOvernightSnapshot") },
       snap?.as_of
-        ? { label: "As of", value: snap.as_of, detail: `Source: ${snap.source_file ?? "overnight"}` }
-        : { label: "As of", value: "unknown", detail: "No timestamp on snapshot" },
+        ? { label: t("asOf"), value: snap.as_of, detail: `${t("source")}: ${snap.source_file ?? "overnight"}` }
+        : { label: t("asOf"), value: t("unknown"), detail: t("noTimestampSnapshot") },
     ],
   });
 
@@ -98,37 +364,37 @@ function generateBriefingSections(
     if (vix != null) dnaItems.push({
       label: "VIX", value: `${vix.toFixed(1)} (${vol?.regime || "Normal"})`,
       color: vix < 20 ? "var(--green)" : vix < 30 ? "var(--gold)" : "var(--red)",
-      detail: vix < 20 ? "Low volatility — favorable environment for risk" : "Elevated volatility — monitor",
+      detail: vix < 20 ? t("lowVolFavorable") : t("elevatedVolMonitor"),
     });
 
     const fg = L.sentiment?.data?.score;
     if (fg != null) dnaItems.push({
       label: "Fear & Greed", value: `${fg.toFixed(0)} (${L.sentiment?.data?.rating || ""})`,
       color: fg > 60 ? "var(--green)" : fg > 40 ? "var(--gold)" : "var(--red)",
-      detail: fg > 60 ? "Greedy market — watch for excess" : fg < 40 ? "Fear dominates — opportunity or caution?" : "Neutral sentiment",
+      detail: fg > 60 ? t("greedyMarket") : fg < 40 ? t("fearDominates") : t("neutralSentiment"),
     });
 
     const breadth = L.breadth?.data?.pct_above_200ma;
     if (breadth != null) dnaItems.push({
-      label: "Breadth (>200MA)", value: `${breadth.toFixed(0)}%`,
+      label: t("breadthLabel"), value: `${breadth.toFixed(0)}%`,
       color: breadth > 60 ? "var(--green)" : breadth > 40 ? "var(--gold)" : "var(--red)",
-      detail: breadth > 60 ? "Broad participation — healthy rally" : "Narrow participation — concentration risk",
+      detail: breadth > 60 ? t("broadParticipation") : t("narrowParticipation"),
     });
 
     const curve = L.macro?.data?.yield_curve_spread;
     if (curve != null) dnaItems.push({
-      label: "Yield Curve", value: `${curve > 0 ? "+" : ""}${(curve * 100).toFixed(0)}bps (${L.macro?.data?.yield_curve_signal || ""})`,
+      label: t("yieldCurve"), value: `${curve > 0 ? "+" : ""}${(curve * 100).toFixed(0)}bps (${L.macro?.data?.yield_curve_signal || ""})`,
       color: curve > 0 ? "var(--green)" : "var(--red)",
-      detail: curve > 0 ? "Normalized curve — positive signal for growth" : "Inverted curve — recession watch",
+      detail: curve > 0 ? t("normalizedCurve") : t("invertedCurve"),
     });
 
     const cot = L.positioning?.data;
     if (cot?.length) {
       const ext = cot.filter((r) => (r.spec_sentiment || "").startsWith("EXTREME")).length;
       dnaItems.push({
-        label: "Positioning (COT)", value: `${ext} of ${cot.length} at extreme`,
+        label: t("positioningLabel"), value: `${ext} ${t("outOf")} ${cot.length} ${t("atExtreme")}`,
         color: ext >= 3 ? "var(--red)" : ext >= 1 ? "var(--gold)" : "var(--green)",
-        detail: ext ? "Speculator stretched — flags vulnerability, not timing" : "No significant positioning extremes",
+        detail: ext ? t("speculatorStretched") : t("noPositioningExtremes"),
       });
     }
 
@@ -141,14 +407,14 @@ function generateBriefingSections(
   const fora = CLIENTS.filter((c) => c.riskNumber > c.mandate);
   const aum = CLIENTS.reduce((s, c) => s + c.current, 0);
   sections.push({
-    title: "Clients & Risk", icon: "ti-users", color: fora.length ? "var(--red)" : "var(--green)", screenId: "risco" as ScreenId,
+    title: t("clientsRisk"), icon: "ti-users", color: fora.length ? "var(--red)" : "var(--green)", screenId: "risco" as ScreenId,
     items: [
-      { label: "Total AUM", value: brl(aum) },
-      { label: "Active clients", value: `${CLIENTS.length}` },
+      { label: t("totalAum"), value: brl(aum) },
+      { label: t("activeClients"), value: `${CLIENTS.length}` },
       {
-        label: "Outside mandate", value: fora.length ? `${fora.length} client(s)` : "None",
+        label: t("outsideMandate"), value: fora.length ? `${fora.length} ${t("clientsPlural")}` : t("none"),
         color: fora.length ? "var(--red)" : "var(--green)",
-        detail: fora.length ? `Attention: ${fora.map(c => c.name).join(", ")}` : "All within limits",
+        detail: fora.length ? `${t("attention")}: ${fora.map(c => c.name).join(", ")}` : t("allWithinLimits"),
       },
     ],
   });
@@ -158,28 +424,28 @@ function generateBriefingSections(
   // as the "next event". Now: if no data comes back, it says so.
   const calItems: BriefingItem[] = [];
   if (cal === null) {
-    calItems.push({ label: "Calendar", value: "loading…", detail: "Fetching upcoming releases." });
+    calItems.push({ label: t("calendar"), value: t("loadingLc"), detail: t("fetchingReleases") });
   } else if (!cal.ok || !cal.events.length) {
-    calItems.push({ label: "Calendar", value: "unavailable", color: "var(--tx3)", detail: "Couldn't fetch upcoming releases right now — I'd rather not show a date I haven't verified." });
+    calItems.push({ label: t("calendar"), value: t("unavailable"), color: "var(--tx3)", detail: t("couldntFetchReleases") });
   } else {
     const altos = cal.events.filter((e) => e.importance === 3);
     const prox = altos[0] || cal.events[0];
     calItems.push({
-      label: "Next event", value: `${prox.event} — ${prox.date}`, color: "var(--gold)",
-      detail: `${prox.time}${prox.forecast ? ` · forecast ${prox.forecast}` : ""}${prox.previous ? ` · previous ${prox.previous}` : ""}`,
+      label: t("nextEvent"), value: `${prox.event} — ${prox.date}`, color: "var(--gold)",
+      detail: `${prox.time}${prox.forecast ? ` · ${t("forecast")} ${prox.forecast}` : ""}${prox.previous ? ` · ${t("previous")} ${prox.previous}` : ""}`,
     });
     for (const e of altos.slice(1, 3)) {
       calItems.push({
         label: e.date, value: e.event,
-        detail: `${e.time}${e.forecast ? ` · forecast ${e.forecast}` : ""}${e.previous ? ` · previous ${e.previous}` : ""}`,
+        detail: `${e.time}${e.forecast ? ` · ${t("forecast")} ${e.forecast}` : ""}${e.previous ? ` · ${t("previous")} ${e.previous}` : ""}`,
       });
     }
     if (altos.length > 3) {
-      calItems.push({ label: "This week", value: `+${altos.length - 3} high-impact event(s)`, color: "var(--tx3)", detail: "Open Alerts for the full list." });
+      calItems.push({ label: t("thisWeek"), value: `+${altos.length - 3} ${t("highImpactEvents")}`, color: "var(--tx3)", detail: t("openAlertsFullList") });
     }
   }
   sections.push({
-    title: "Calendar & Alerts", icon: "ti-calendar-event", color: "var(--gold)", screenId: "alertas" as ScreenId,
+    title: t("calendarAlerts"), icon: "ti-calendar-event", color: "var(--gold)", screenId: "alertas" as ScreenId,
     items: calItems,
   });
 
@@ -193,14 +459,14 @@ const REGIME_TXT: Record<string, string> = {
   BULL: "RISK-ON", CAUTELA: "CAUTION", NEUTRO: "NEUTRAL", BEAR: "RISK-OFF",
 };
 
-function generateHeadline(dna: DnaRaw | null, regime: RegimeState | null): { text: string; color: string } {
+function generateHeadline(dna: DnaRaw | null, regime: RegimeState | null, t: TFn): { text: string; color: string } {
   const reg = regime ? REGIME_TXT[regime] : null;
-  const regFrase = reg ? `Regime ${reg}` : "Regime unavailable";
+  const regFrase = reg ? `${t("regimeWord")} ${reg}` : t("regimeUnavailable");
   const defensivo = regime === "BEAR" || regime === "CAUTELA";
 
   const fora = CLIENTS.filter((c) => c.riskNumber > c.mandate).length;
   if (fora > 0) return {
-    text: `Attention: ${fora} client(s) outside the risk mandate. ${regFrase} — compliance action required.`,
+    text: `${t("attention")}: ${fora} ${t("clientsOutsideRiskMandate")} ${regFrase} — ${t("complianceActionRequired")}`,
     color: "var(--red)",
   };
 
@@ -210,34 +476,36 @@ function generateHeadline(dna: DnaRaw | null, regime: RegimeState | null): { tex
     const fg = L.sentiment?.data?.score;
 
     if (vix != null && vix > 25) return {
-      text: `VIX at ${vix.toFixed(1)} — elevated volatility. ${regFrase}. Monitor closely.`,
+      text: `${t("vixAt")} ${vix.toFixed(1)} — ${t("elevatedVolatility")}. ${regFrase}. ${t("monitorClosely")}`,
       color: "var(--gold)",
     };
     if (fg != null && fg < 30) return {
-      text: `Fear & Greed at ${fg.toFixed(0)} (extreme fear). These levels have historically preceded recoveries. ${regFrase}.`,
+      text: `${t("fearGreedAt")} ${fg.toFixed(0)} (${t("extremeFear")}). ${t("historicallyPrecededRecoveries")} ${regFrase}.`,
       color: "var(--gold)",
     };
     if (fg != null && fg > 80) return {
-      text: `Fear & Greed at ${fg.toFixed(0)} (extreme greed). Caution — excessive optimism often precedes corrections. ${regFrase}.`,
+      text: `${t("fearGreedAt")} ${fg.toFixed(0)} (${t("extremeGreed")}). ${t("excessiveOptimismCorrections")} ${regFrase}.`,
       color: "var(--gold)",
     };
     if (defensivo) return {
-      text: `${regFrase} — adverse environment, active defense and reduced exposure. All clients within mandate.`,
+      text: `${regFrase} — ${t("adverseActiveReduced")} ${t("allClientsWithinMandate")}`,
       color: "var(--gold)",
     };
   }
 
   if (defensivo) return {
-    text: `${regFrase} — adverse environment, active defense. All clients within mandate.`,
+    text: `${regFrase} — ${t("adverseActiveDefense")} ${t("allClientsWithinMandate")}`,
     color: "var(--gold)",
   };
   return {
-    text: `Quiet day. ${regFrase}, all clients within mandate. No urgent action required.`,
+    text: `${t("quietDay")} ${regFrase}, ${t("allWithinNoAction")}`,
     color: reg ? "var(--green)" : "var(--tx3)",
   };
 }
 
 function JimMorningBriefing({ go }: { go: (id: ScreenId, param?: string) => void }) {
+  const { lang } = useI18n();
+  const t = (k: TKey) => TR[k][lang];
   const [dna, setDna] = useState<DnaRaw | null>(null);
   const [cal, setCal] = useState<CalendarResp | null>(null);
   const [snap, setSnap] = useState<Snapshot | null>(null);
@@ -254,8 +522,8 @@ function JimMorningBriefing({ go }: { go: (id: ScreenId, param?: string) => void
   }, []);
 
   const regime = snap?.ok && snap.regime ? snap.regime.state : null;
-  const sections = generateBriefingSections(dna, cal, snap);
-  const headline = generateHeadline(dna, regime);
+  const sections = generateBriefingSections(dna, cal, snap, t);
+  const headline = generateHeadline(dna, regime, t);
 
   // `now` só é preenchido no client, depois do mount — new Date() direto no
   // render diverge entre o timezone do server (SSR) e do browser, causando
@@ -264,8 +532,9 @@ function JimMorningBriefing({ go }: { go: (id: ScreenId, param?: string) => void
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => { setNow(new Date()); }, []);
   const hora = now ? now.getHours() : null;
-  const saudacao = hora === null ? "Welcome" : hora < 12 ? "Good morning" : hora < 18 ? "Good afternoon" : "Good evening";
-  const dataStr = now ? now.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "";
+  const saudacao = hora === null ? t("welcome") : hora < 12 ? t("goodMorning") : hora < 18 ? t("goodAfternoon") : t("goodEvening");
+  const locale = lang === "pt" ? "pt-BR" : "en-US";
+  const dataStr = now ? now.toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "";
 
   return (
     <div style={{
@@ -293,10 +562,10 @@ function JimMorningBriefing({ go }: { go: (id: ScreenId, param?: string) => void
           </div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: "var(--tx)", letterSpacing: "0.5px" }}>
-              JIM — Morning Briefing
+              {t("jimMorningBriefing")}
             </div>
             <div style={{ fontSize: 11.5, color: "var(--tx3)" }}>
-              {saudacao}, João{dataStr ? ` · ${dataStr}` : ""}{now ? ` · Updated ${now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}` : ""}
+              {saudacao}, João{dataStr ? ` · ${dataStr}` : ""}{now ? ` · ${t("updated")} ${now.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}` : ""}
             </div>
           </div>
         </div>
@@ -310,7 +579,7 @@ function JimMorningBriefing({ go }: { go: (id: ScreenId, param?: string) => void
               background: "none", border: "1px solid var(--line2)", borderRadius: 6,
               padding: "4px 8px", cursor: "pointer", color: "var(--tx3)", fontSize: 12,
             }}
-            title={expanded ? "Collapse" : "Expand"}
+            title={expanded ? t("collapse") : t("expand")}
           >
             <i className={`ti ${expanded ? "ti-chevron-up" : "ti-chevron-down"}`} />
           </button>
@@ -326,7 +595,7 @@ function JimMorningBriefing({ go }: { go: (id: ScreenId, param?: string) => void
         <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
           <i className="ti ti-bulb" style={{ color: headline.color, fontSize: 18, marginTop: 1, flexShrink: 0 }} />
           <div style={{ fontSize: 14, color: "var(--tx)", lineHeight: 1.55 }}>
-            {loading ? <span className="muted">Analyzing market data...</span> : headline.text}
+            {loading ? <span className="muted">{t("analyzingMarketData")}</span> : headline.text}
           </div>
         </div>
       </div>
@@ -381,7 +650,7 @@ function JimMorningBriefing({ go }: { go: (id: ScreenId, param?: string) => void
       {expanded && loading && (
         <div style={{ textAlign: "center", padding: "20px 0", color: "var(--tx3)", fontSize: 13 }}>
           <i className="ti ti-loader" style={{ marginRight: 8, animation: "spin 1s linear infinite" }} />
-          Consolidating market intelligence...
+          {t("consolidatingIntel")}
         </div>
       )}
     </div>
@@ -412,6 +681,8 @@ interface Quote { symbol: string; price?: number; dayPct?: number | null; error?
 const QUOTE_CLASSES = Object.keys(MARKET_GROUPS);
 
 function CotacoesWidgetBody({ go, config }: { go: (id: ScreenId, param?: string) => void; config?: Record<string, string> }) {
+  const { lang } = useI18n();
+  const t = (k: TKey) => TR[k][lang];
   const classe = config?.classe && MARKET_GROUPS[config.classe] ? config.classe : QUOTE_CLASSES[0];
   const symbols = (MARKET_GROUPS[classe] || []).slice(0, 5);
   const [rows, setRows] = useState<Quote[]>([]);
@@ -431,7 +702,7 @@ function CotacoesWidgetBody({ go, config }: { go: (id: ScreenId, param?: string)
   return (
     <>
       {loading ? (
-        <div className="muted" style={{ padding: "10px 0" }}>Loading {classe.toLowerCase()}…</div>
+        <div className="muted" style={{ padding: "10px 0" }}>{t("loading")} {classe.toLowerCase()}…</div>
       ) : (
         rows.map((q) => (
           <div className="kv" key={q.symbol}>
@@ -440,13 +711,15 @@ function CotacoesWidgetBody({ go, config }: { go: (id: ScreenId, param?: string)
           </div>
         ))
       )}
-      <div className="mt"><button className="btn ghost" onClick={() => go("cotacoes")}><i className="ti ti-arrow-right" />See all quotes</button></div>
+      <div className="mt"><button className="btn ghost" onClick={() => go("cotacoes")}><i className="ti ti-arrow-right" />{t("seeAllQuotes")}</button></div>
     </>
   );
 }
 
 // ---- Client portfolio (configurable by client) — the real detail: what they hold and what they're earning ----
 function CarteiraWidgetBody({ go, config }: { go: (id: ScreenId, param?: string) => void; config?: Record<string, string> }) {
+  const { lang } = useI18n();
+  const t = (k: TKey) => TR[k][lang];
   const [clients, setClients] = useState(CLIENTS);
   useEffect(() => setClients(allClients()), []);
   const client = (config?.clientId && findClient(config.clientId)) || clients[0];
@@ -463,7 +736,7 @@ function CarteiraWidgetBody({ go, config }: { go: (id: ScreenId, param?: string)
       .catch(() => {});
   }, [portfolio]);
 
-  if (!client) return <div className="muted">No clients registered.</div>;
+  if (!client) return <div className="muted">{t("noClients")}</div>;
   const ganhoPct = client.invested ? (client.current / client.invested - 1) * 100 : 0;
 
   return (
@@ -475,7 +748,7 @@ function CarteiraWidgetBody({ go, config }: { go: (id: ScreenId, param?: string)
           const gainPct = q?.price ? ((q.price - pos.avgPrice) / pos.avgPrice) * 100 : null;
           return (
             <div className="kv" key={pos.ticker}>
-              <span>{pos.ticker} <span className="muted">{pos.qty.toLocaleString("en-US")} units</span></span>
+              <span>{pos.ticker} <span className="muted">{pos.qty.toLocaleString(lang === "pt" ? "pt-BR" : "en-US")} {t("units")}</span></span>
               <span className={`v ${pctClass(gainPct)}`}>{gainPct != null ? pctText(gainPct) : "…"}</span>
             </div>
           );
@@ -485,92 +758,100 @@ function CarteiraWidgetBody({ go, config }: { go: (id: ScreenId, param?: string)
           <div className="kv" key={a.label}><span>{a.label}</span><span className="v">{a.pct}%</span></div>
         ))
       )}
-      <div className="mt"><button className="btn ghost" onClick={() => go("cliente", client.id)}><i className="ti ti-arrow-right" />Open full portfolio</button></div>
+      <div className="mt"><button className="btn ghost" onClick={() => go("cliente", client.id)}><i className="ti ti-arrow-right" />{t("openFullPortfolio")}</button></div>
     </>
   );
 }
 
 // ---- Client risk (configurable by client) — the 4-level ruler, compact version ----
 function RiscoClienteWidgetBody({ go, config }: { go: (id: ScreenId, param?: string) => void; config?: Record<string, string> }) {
+  const { lang } = useI18n();
+  const t = (k: TKey) => TR[k][lang];
   const [clients, setClients] = useState(CLIENTS);
   useEffect(() => setClients(allClients()), []);
   const client = (config?.clientId && findClient(config.clientId)) || clients[0];
-  if (!client) return <div className="muted">No clients registered.</div>;
+  if (!client) return <div className="muted">{t("noClients")}</div>;
 
   const tol = TOLERANCE[client.profile];
   const gap = client.riskNumber - client.mandate;
   const markers = [
-    { v: HPC22_RN, color: "#C9A02C", label: "product" },
-    { v: client.mandate, color: "#4A90D9", label: "mandate" },
-    { v: tol, color: "#EAF0F7", label: "tolerance" },
-    { v: client.riskNumber, color: gap > 0 ? "#E74C3C" : "#2ECC71", label: "portfolio" },
+    { v: HPC22_RN, color: "#C9A02C", id: "product", label: t("product").toLowerCase() },
+    { v: client.mandate, color: "#4A90D9", id: "mandate", label: t("mandate").toLowerCase() },
+    { v: tol, color: "#EAF0F7", id: "tolerance", label: t("tolerance").toLowerCase() },
+    { v: client.riskNumber, color: gap > 0 ? "#E74C3C" : "#2ECC71", id: "portfolio", label: t("portfolio").toLowerCase() },
   ];
 
   return (
     <>
-      <div className="flex between mb"><span style={{ fontWeight: 600, color: "var(--tx)" }}>{client.name}</span><span className={`v ${gap > 0 ? "neg" : "pos"}`}>{gap > 0 ? `▲ +${gap}` : "✓ within"}</span></div>
+      <div className="flex between mb"><span style={{ fontWeight: 600, color: "var(--tx)" }}>{client.name}</span><span className={`v ${gap > 0 ? "neg" : "pos"}`}>{gap > 0 ? `▲ +${gap}` : `✓ ${t("within")}`}</span></div>
       <div style={{ position: "relative", height: 26, margin: "6px 4px 4px" }}>
         <div style={{ position: "absolute", top: 11, left: 0, right: 0, height: 6, borderRadius: 3, background: "linear-gradient(90deg,#2ECC71,#F39C12,#E74C3C)" }} />
         {markers.map((m) => (
-          <div key={m.label} title={`${m.label} ${m.v}`} style={{ position: "absolute", top: 8, left: `${m.v}%`, transform: "translateX(-50%)", width: 3, height: 12, borderRadius: 2, background: m.color }} />
+          <div key={m.id} title={`${m.label} ${m.v}`} style={{ position: "absolute", top: 8, left: `${m.v}%`, transform: "translateX(-50%)", width: 3, height: 12, borderRadius: 2, background: m.color }} />
         ))}
       </div>
       <div className="legend" style={{ fontSize: 11.5, marginTop: 4, rowGap: 4 }}>
-        <i><b style={{ background: "#C9A02C" }} />Product {HPC22_RN}</i>
-        <i><b style={{ background: "#4A90D9" }} />Mandate {client.mandate}</i>
-        <i><b style={{ background: "#EAF0F7" }} />Tolerance {tol}</i>
-        <i><b style={{ background: gap > 0 ? "#E74C3C" : "#2ECC71" }} />Portfolio {client.riskNumber}</i>
+        <i><b style={{ background: "#C9A02C" }} />{t("product")} {HPC22_RN}</i>
+        <i><b style={{ background: "#4A90D9" }} />{t("mandate")} {client.mandate}</i>
+        <i><b style={{ background: "#EAF0F7" }} />{t("tolerance")} {tol}</i>
+        <i><b style={{ background: gap > 0 ? "#E74C3C" : "#2ECC71" }} />{t("portfolio")} {client.riskNumber}</i>
       </div>
-      <div className="mt"><button className="btn ghost" onClick={() => go("risco")}><i className="ti ti-arrow-right" />See full ruler</button></div>
+      <div className="mt"><button className="btn ghost" onClick={() => go("risco")}><i className="ti ti-arrow-right" />{t("seeFullRuler")}</button></div>
     </>
   );
 }
 
 // ---- All clients on the ruler — comparative overview, a single module (no config) ----
 function TodosClientesReguaWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }) {
+  const { lang } = useI18n();
+  const t = (k: TKey) => TR[k][lang];
   const [clients, setClients] = useState(CLIENTS);
   useEffect(() => setClients(allClients()), []);
   const fora = clients.filter((c) => c.riskNumber > c.mandate);
 
   return (
     <>
-      <div className="flex between mb"><span className="muted">{clients.length} clients</span><span className={`tag ${fora.length ? "r" : "g"}`}>{fora.length ? `${fora.length} outside mandate` : "all within"}</span></div>
+      <div className="flex between mb"><span className="muted">{clients.length} {t("clientsWord")}</span><span className={`tag ${fora.length ? "r" : "g"}`}>{fora.length ? `${fora.length} ${t("outsideMandateLc")}` : t("allWithin")}</span></div>
       <div style={{ overflowX: "auto" }}>
         <table>
           <thead><tr>
-            <th>Client</th><th className="num">Portfolio</th><th className="num">Mandate</th><th>Distribution</th><th>Alignment</th>
+            <th>{t("colClient")}</th><th className="num">{t("portfolio")}</th><th className="num">{t("mandate")}</th><th>{t("colDistribution")}</th><th>{t("colAlignment")}</th>
           </tr></thead>
           <tbody>
             {clients.map((c) => {
               const aligned = c.riskNumber <= c.mandate;
-              const t = TOLERANCE[c.profile];
+              const tol = TOLERANCE[c.profile];
               return (
                 <tr key={c.id} style={{ cursor: "pointer" }} onClick={() => go("risco")}>
                   <td style={{ fontWeight: 600, color: "var(--tx)", fontSize: 12 }}>{c.name}</td>
                   <td className="num" style={{ color: aligned ? "var(--tx)" : "var(--red)", fontWeight: 600 }}>{c.riskNumber}</td>
                   <td className="num" style={{ color: "var(--tx2)" }}>{c.mandate}</td>
-                  <td><MiniRegua portfolio={c.riskNumber} tolerance={t} mandate={c.mandate} /></td>
-                  <td>{aligned ? <span className="tag g">within</span> : <span className="tag r">▲ +{c.riskNumber - c.mandate}</span>}</td>
+                  <td><MiniRegua portfolio={c.riskNumber} tolerance={tol} mandate={c.mandate} /></td>
+                  <td>{aligned ? <span className="tag g">{t("within")}</span> : <span className="tag r">▲ +{c.riskNumber - c.mandate}</span>}</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
-      <div className="mt"><button className="btn ghost" onClick={() => go("risco")}><i className="ti ti-arrow-right" />See detail by client</button></div>
+      <div className="mt"><button className="btn ghost" onClick={() => go("risco")}><i className="ti ti-arrow-right" />{t("seeDetailByClient")}</button></div>
     </>
   );
 }
 
 // ---- Market Regime (180° gauge — how we read the market) ----
 const REGIME_GAUGE_LABEL: Record<string, string> = { BULL: "RISK-ON", CAUTELA: "CAUTION", NEUTRO: "NEUTRAL", BEAR: "RISK-OFF" };
-const REGIME_GAUGE_SUB: Record<string, string> = {
-  BULL: "full exposure · defense on standby",
-  CAUTELA: "reducing risk · defense activating",
-  NEUTRO: "moderate exposure · monitoring",
-  BEAR: "active defense · reduced exposure",
-};
+function regimeGaugeSub(t: TFn): Record<string, string> {
+  return {
+    BULL: t("fullExposureStandby"),
+    CAUTELA: t("reducingRiskActivating"),
+    NEUTRO: t("moderateMonitoring"),
+    BEAR: t("activeDefenseReduced"),
+  };
+}
 function RegimeGaugeWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }) {
+  const { lang } = useI18n();
+  const t = (k: TKey) => TR[k][lang];
   const [regime, setRegime] = useState<RegimeState>("BULL");
   useEffect(() => {
     fetchSnapshot().then((s) => { if (s.ok && s.regime) setRegime(s.regime.state); }).catch(() => {});
@@ -578,14 +859,16 @@ function RegimeGaugeWidgetBody({ go }: { go: (id: ScreenId, param?: string) => v
   const label = REGIME_GAUGE_LABEL[regime] || "NEUTRO";
   return (
     <>
-      <RegimeGauge state={label} sub={REGIME_GAUGE_SUB[regime]} />
-      <div className="mt"><button className="btn ghost" onClick={() => go("regime")}><i className="ti ti-arrow-right" />See Market Overview</button></div>
+      <RegimeGauge state={label} sub={regimeGaugeSub(t)[regime]} />
+      <div className="mt"><button className="btn ghost" onClick={() => go("regime")}><i className="ti ti-arrow-right" />{t("seeMarketOverview")}</button></div>
     </>
   );
 }
 
 // ---- Intelligence Radar (live Market DNA radar) ----
 function IntelRadarWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }) {
+  const { lang } = useI18n();
+  const t = (k: TKey) => TR[k][lang];
   const [layers, setLayers] = useState<IntelLayer[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -594,24 +877,26 @@ function IntelRadarWidgetBody({ go }: { go: (id: ScreenId, param?: string) => vo
       .then((d) => { setLayers(buildLayersFromApi(d)); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
-  if (loading) return <div className="muted" style={{ padding: "24px 0", textAlign: "center" }}>Loading radar…</div>;
-  if (!layers.length) return <div className="muted" style={{ padding: "12px 0" }}>Radar unavailable.</div>;
+  if (loading) return <div className="muted" style={{ padding: "24px 0", textAlign: "center" }}>{t("loadingRadar")}</div>;
+  if (!layers.length) return <div className="muted" style={{ padding: "12px 0" }}>{t("radarUnavailable")}</div>;
   const avg = Math.round(layers.reduce((s, l) => s + l.score, 0) / layers.length);
   const reg = regimeLabel(avg);
   return (
     <>
       <div className="flex between mb">
-        <div><span className="big" style={{ fontSize: 26, color: reg.color }}>{avg}</span> <span className="muted" style={{ fontSize: 11 }}>conviction</span></div>
+        <div><span className="big" style={{ fontSize: 26, color: reg.color }}>{avg}</span> <span className="muted" style={{ fontSize: 11 }}>{t("conviction")}</span></div>
         <span className="tag" style={{ background: "transparent", border: `1px solid ${reg.color}`, color: reg.color }}>{reg.label}</span>
       </div>
       <RadarSvg layers={layers} />
-      <div className="mt"><button className="btn ghost" onClick={() => go("market-dna")}><i className="ti ti-arrow-right" />See Market DNA</button></div>
+      <div className="mt"><button className="btn ghost" onClick={() => go("market-dna")}><i className="ti ti-arrow-right" />{t("seeMarketDna")}</button></div>
     </>
   );
 }
 
 // ---- News Broadcast (live headlines, filtered by impact) ----
 function NewsWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }) {
+  const { lang } = useI18n();
+  const t = (k: TKey) => TR[k][lang];
   const [items, setItems] = useState<NewsHeadline[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -623,8 +908,8 @@ function NewsWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }) 
       })
       .catch(() => setLoading(false));
   }, []);
-  if (loading) return <div className="muted" style={{ padding: "10px 0" }}>Loading news…</div>;
-  if (!items.length) return <div className="muted" style={{ padding: "10px 0" }}>No news at the moment.</div>;
+  if (loading) return <div className="muted" style={{ padding: "10px 0" }}>{t("loadingNews")}</div>;
+  if (!items.length) return <div className="muted" style={{ padding: "10px 0" }}>{t("noNews")}</div>;
   return (
     <>
       {items.map((h) => (
@@ -635,13 +920,15 @@ function NewsWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }) 
           </span>
         </div>
       ))}
-      <div className="mt"><button className="btn ghost" onClick={() => go("news-broadcast")}><i className="ti ti-arrow-right" />See News Broadcast</button></div>
+      <div className="mt"><button className="btn ghost" onClick={() => go("news-broadcast")}><i className="ti ti-arrow-right" />{t("seeNewsBroadcast")}</button></div>
     </>
   );
 }
 
 // ---- Social Radar (live StockTwits) ----
 function SocialWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }) {
+  const { lang } = useI18n();
+  const t = (k: TKey) => TR[k][lang];
   const [posts, setPosts] = useState<SocialPost[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -649,8 +936,8 @@ function SocialWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }
       .then((d) => { setPosts((d.posts || []).slice(0, 3)); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
-  if (loading) return <div className="muted" style={{ padding: "10px 0" }}>Loading social radar…</div>;
-  if (!posts.length) return <div className="muted" style={{ padding: "10px 0" }}>No posts at the moment.</div>;
+  if (loading) return <div className="muted" style={{ padding: "10px 0" }}>{t("loadingSocial")}</div>;
+  if (!posts.length) return <div className="muted" style={{ padding: "10px 0" }}>{t("noPosts")}</div>;
   return (
     <>
       {posts.map((p) => (
@@ -659,7 +946,7 @@ function SocialWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }
           <span style={{ fontSize: 12, fontWeight: 700, color: SENTIMENT_COLOR[p.sentiment] || "var(--tx3)" }}>{p.sentiment}</span>
         </div>
       ))}
-      <div className="mt"><button className="btn ghost" onClick={() => go("social-radar")}><i className="ti ti-arrow-right" />See Social Radar</button></div>
+      <div className="mt"><button className="btn ghost" onClick={() => go("social-radar")}><i className="ti ti-arrow-right" />{t("seeSocialRadar")}</button></div>
     </>
   );
 }
@@ -668,20 +955,24 @@ function SocialWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }
 // Merges the previous Regime & Defense card with the Market Regime gauge into
 // one "daily verdict" strip. Fetches the same overnight snapshot + /api/xri.
 interface XriMini { ok: boolean; state?: string; score?: number; streak_days?: number }
-const REGIME_TILE: Record<RegimeState, { label: string; color: string; sub: string }> = {
-  BULL:    { label: "RISK-ON",  color: "var(--green)", sub: "sustained trend" },
-  CAUTELA: { label: "CAUTION",  color: "var(--gold)",  sub: "active defense" },
-  NEUTRO:  { label: "NEUTRAL",  color: "var(--tx2)",   sub: "mixed signals" },
-  BEAR:    { label: "RISK-OFF", color: "var(--red)",   sub: "broad stress" },
-};
+function regimeTile(t: TFn): Record<RegimeState, { label: string; color: string; sub: string }> {
+  return {
+    BULL:    { label: "RISK-ON",  color: "var(--green)", sub: t("sustainedTrend") },
+    CAUTELA: { label: "CAUTION",  color: "var(--gold)",  sub: t("activeDefenseSub") },
+    NEUTRO:  { label: "NEUTRAL",  color: "var(--tx2)",   sub: t("mixedSignals") },
+    BEAR:    { label: "RISK-OFF", color: "var(--red)",   sub: t("broadStress") },
+  };
+}
 function VereditoWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }) {
+  const { lang } = useI18n();
+  const t = (k: TKey) => TR[k][lang];
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [xri, setXri] = useState<XriMini | null>(null);
   useEffect(() => {
     fetchSnapshot().then(setSnap).catch(() => setSnap({ ok: false, offline: true }));
     fetch("/api/xri").then((r) => r.json()).then(setXri).catch(() => setXri({ ok: false }));
   }, []);
-  const ari = snap?.ok && snap.regime ? REGIME_TILE[snap.regime.state] : null;
+  const ari = snap?.ok && snap.regime ? regimeTile(t)[snap.regime.state] : null;
   const xriColor = xri?.state === "BULL" ? "var(--green)"
     : xri?.state === "CAUTELA" ? "var(--gold)"
     : xri?.state === "BEAR" ? "var(--red)"
@@ -694,34 +985,34 @@ function VereditoWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void
           background: "var(--panel2)", borderRadius: 8, padding: "12px 10px", textAlign: "center",
           borderTop: `3px solid ${ari?.color || "var(--tx3)"}`,
         }}>
-          <div style={{ fontSize: 9.5, color: "var(--tx3)", fontWeight: 700, letterSpacing: 1 }}>INTERNAL · ARI</div>
+          <div style={{ fontSize: 9.5, color: "var(--tx3)", fontWeight: 700, letterSpacing: 1 }}>{t("internalAri")}</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: ari?.color || "var(--tx2)", marginTop: 6 }}>{ari?.label || "—"}</div>
-          <div style={{ fontSize: 10, color: "var(--tx3)", marginTop: 3 }}>{ari?.sub || "waiting…"}</div>
+          <div style={{ fontSize: 10, color: "var(--tx3)", marginTop: 3 }}>{ari?.sub || t("waiting")}</div>
         </div>
         <div style={{
           background: "var(--panel2)", borderRadius: 8, padding: "12px 10px", textAlign: "center",
           borderTop: `3px solid ${xriColor}`,
         }}>
-          <div style={{ fontSize: 9.5, color: "var(--tx3)", fontWeight: 700, letterSpacing: 1 }}>EXTERNAL · XRI</div>
+          <div style={{ fontSize: 9.5, color: "var(--tx3)", fontWeight: 700, letterSpacing: 1 }}>{t("externalXri")}</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: xriColor, marginTop: 6 }}>{xri?.state || "—"}</div>
           <div style={{ fontSize: 10, color: "var(--tx3)", marginTop: 3 }}>
-            {xri?.score != null ? `score ${xri.score.toFixed(0)}` : "waiting…"}
+            {xri?.score != null ? `${t("scoreLc")} ${xri.score.toFixed(0)}` : t("waiting")}
           </div>
         </div>
         <div style={{
           background: "var(--panel2)", borderRadius: 8, padding: "12px 10px", textAlign: "center",
           borderTop: `3px solid ${defenseArmed ? "var(--gold)" : "var(--tx2)"}`,
         }}>
-          <div style={{ fontSize: 9.5, color: "var(--tx3)", fontWeight: 700, letterSpacing: 1 }}>DEFENSE</div>
+          <div style={{ fontSize: 9.5, color: "var(--tx3)", fontWeight: 700, letterSpacing: 1 }}>{t("defenseUpper")}</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: defenseArmed ? "var(--gold)" : "var(--tx2)", marginTop: 6 }}>
             {defenseArmed ? "ARMED" : "DISARMED"}
           </div>
           <div style={{ fontSize: 10, color: "var(--tx3)", marginTop: 3 }}>
-            {snap?.defense?.label || (defenseArmed ? "rotating in" : "full exposure")}
+            {snap?.defense?.label || (defenseArmed ? t("rotatingIn") : t("fullExposureLc"))}
           </div>
         </div>
       </div>
-      <div className="mt"><button className="btn ghost" onClick={() => go("regime")}><i className="ti ti-arrow-right" />See Market Overview</button></div>
+      <div className="mt"><button className="btn ghost" onClick={() => go("regime")}><i className="ti ti-arrow-right" />{t("seeMarketOverview")}</button></div>
     </>
   );
 }
@@ -740,11 +1031,13 @@ const XRI_STATE_COLOR: Record<string, string> = {
   BEAR: "var(--red)",  STRESS: "var(--red)",
 };
 function XriWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }) {
+  const { lang } = useI18n();
+  const t = (k: TKey) => TR[k][lang];
   const [data, setData] = useState<XriFull | null>(null);
   useEffect(() => {
     fetch("/api/xri").then((r) => r.json()).then(setData).catch(() => setData({ ok: false }));
   }, []);
-  if (!data?.ok) return <div className="muted" style={{ padding: "10px 0", fontSize: 12 }}>Loading XRI…</div>;
+  if (!data?.ok) return <div className="muted" style={{ padding: "10px 0", fontSize: 12 }}>{t("loadingXri")}</div>;
   const color = XRI_STATE_COLOR[data.state || ""] || "var(--tx2)";
   const topDrivers = (data.drivers || []).slice(0, 2);
   return (
@@ -757,19 +1050,19 @@ function XriWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }) {
           background: "var(--panel2)",
         }}>
           <div style={{ fontSize: 20, fontWeight: 700, color, lineHeight: 1 }}>{data.score}</div>
-          <div style={{ fontSize: 8, color: "var(--tx3)", marginTop: 2, letterSpacing: 0.5 }}>SCORE</div>
+          <div style={{ fontSize: 8, color: "var(--tx3)", marginTop: 2, letterSpacing: 0.5 }}>{t("scoreUpper")}</div>
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color, letterSpacing: 0.5 }}>{data.state}</div>
           <div className="muted" style={{ fontSize: 11, marginTop: 2 }}>
-            Direction: <b style={{ color: "var(--tx2)" }}>{data.direction || "—"}</b>
-            {data.confidence_pct != null && <> · Conf. <b style={{ color: "var(--tx2)" }}>{data.confidence_pct}%</b></>}
+            {t("direction")} <b style={{ color: "var(--tx2)" }}>{data.direction || "—"}</b>
+            {data.confidence_pct != null && <> · {t("conf")} <b style={{ color: "var(--tx2)" }}>{data.confidence_pct}%</b></>}
           </div>
         </div>
       </div>
       {topDrivers.length > 0 && (
         <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid var(--line2)" }}>
-          <div style={{ fontSize: 9.5, color: "var(--tx3)", fontWeight: 700, letterSpacing: 0.8, marginBottom: 6 }}>TOP DRIVERS</div>
+          <div style={{ fontSize: 9.5, color: "var(--tx3)", fontWeight: 700, letterSpacing: 0.8, marginBottom: 6 }}>{t("topDrivers")}</div>
           {topDrivers.map((d) => (
             <div key={d.country} className="kv" style={{ fontSize: 12 }}>
               <span>{d.country}</span>
@@ -778,7 +1071,7 @@ function XriWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }) {
           ))}
         </div>
       )}
-      <div className="mt"><button className="btn ghost" onClick={() => go("xri")}><i className="ti ti-arrow-right" />See XRI detail</button></div>
+      <div className="mt"><button className="btn ghost" onClick={() => go("xri")}><i className="ti ti-arrow-right" />{t("seeXriDetail")}</button></div>
     </>
   );
 }
@@ -792,13 +1085,15 @@ interface VaultMini {
   next_rotation?: string;
 }
 function VaultPreviewWidgetBody({ go }: { go: (id: ScreenId, param?: string) => void }) {
+  const { lang } = useI18n();
+  const t = (k: TKey) => TR[k][lang];
   const [data, setData] = useState<VaultMini | null>(null);
   useEffect(() => {
     fetch("/api/etp-vault").then((r) => r.json()).then(setData).catch(() => setData({ ok: false }));
   }, []);
   const v = data?.ok ? data.vault : null;
   const nextFmt = data?.next_rotation
-    ? new Date(data.next_rotation).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })
+    ? new Date(data.next_rotation).toLocaleDateString(lang === "pt" ? "pt-BR" : "en-US", { day: "2-digit", month: "short" })
     : null;
   return (
     <>
@@ -806,10 +1101,10 @@ function VaultPreviewWidgetBody({ go }: { go: (id: ScreenId, param?: string) => 
         <>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8 }}>
             {[
-              { l: "POSITIONS", v: String(v.n_positions), c: "var(--gold)" },
-              { l: "AUM INV.", v: v.aum_alloc_pct + "%", c: "var(--gold)" },
-              { l: "HIT 90d", v: v.hit_rate_90d_pct + "%", c: "var(--green)" },
-              { l: "AVG HOLD", v: v.avg_holding_days + "d", c: "var(--gold)" },
+              { l: t("kpiPositions"), v: String(v.n_positions), c: "var(--gold)" },
+              { l: t("kpiAumInv"), v: v.aum_alloc_pct + "%", c: "var(--gold)" },
+              { l: t("kpiHit90d"), v: v.hit_rate_90d_pct + "%", c: "var(--green)" },
+              { l: t("kpiAvgHold"), v: v.avg_holding_days + "d", c: "var(--gold)" },
             ].map((k) => (
               <div key={k.l} style={{ background: "var(--panel2)", borderRadius: 6, padding: "8px 4px", textAlign: "center" }}>
                 <div style={{ fontSize: 9, color: "var(--tx3)", fontWeight: 700, letterSpacing: 0.5 }}>{k.l}</div>
@@ -819,26 +1114,27 @@ function VaultPreviewWidgetBody({ go }: { go: (id: ScreenId, param?: string) => 
           </div>
           {nextFmt && (
             <div className="muted" style={{ fontSize: 10.5, marginTop: 8, textAlign: "right" }}>
-              Next Showcase rotation · <b style={{ color: "var(--tx2)" }}>{nextFmt} · 06:00 BRT</b>
+              {t("nextShowcaseRotation")} · <b style={{ color: "var(--tx2)" }}>{nextFmt} · 06:00 BRT</b>
             </div>
           )}
         </>
       ) : (
-        <div className="muted" style={{ padding: "10px 0", fontSize: 12 }}>Loading Vault…</div>
+        <div className="muted" style={{ padding: "10px 0", fontSize: 12 }}>{t("loadingVault")}</div>
       )}
-      <div className="mt"><button className="btn ghost" onClick={() => go("fundo", "HPC22")}><i className="ti ti-arrow-right" />Open The Vault</button></div>
+      <div className="mt"><button className="btn ghost" onClick={() => go("fundo", "HPC22")}><i className="ti ti-arrow-right" />{t("openTheVault")}</button></div>
     </>
   );
 }
 
-const CATALOG: Record<string, WidgetDef> = {
+function makeCatalog(t: TFn): Record<string, WidgetDef> {
+  return {
   fundos: {
-    id: "fundos", title: "Your funds", icon: "ti-coin",
+    id: "fundos", title: t("yourFunds"), icon: "ti-coin",
     render: (go) => {
       // Mock periodic performance — replace with /api/fund-perf endpoint later.
       // Same schema for both funds so the card stays uniform.
       const F = [
-        { id: "HPC22", name: "HPC22 · Aggressive", d: 2.31, w: 4.20, m: 6.80, y: 24.30, vsSpxYtd: 13.10 },
+        { id: "HPC22", name: `HPC22 · ${t("aggressive")}`, d: 2.31, w: 4.20, m: 6.80, y: 24.30, vsSpxYtd: 13.10 },
         { id: "HPC11", name: "HPC11 · I.G.",       d: 1.44, w: 2.10, m: 3.20, y: 7.50,  vsSpxYtd: -3.70 },
       ];
       const cell = (v: number) => ({
@@ -884,7 +1180,7 @@ const CATALOG: Record<string, WidgetDef> = {
               </div>
             </div>
           ))}
-          <div className="mt"><button className="btn ghost" onClick={() => go("fundo", "HPC22")}><i className="ti ti-arrow-right" />Open HPC22</button></div>
+          <div className="mt"><button className="btn ghost" onClick={() => go("fundo", "HPC22")}><i className="ti ti-arrow-right" />{t("openHpc22")}</button></div>
         </>
       );
     },
@@ -893,77 +1189,77 @@ const CATALOG: Record<string, WidgetDef> = {
   // which contradicts the Verified Opacity Protocol on the fund page. The Vault
   // Preview widget below is the VOP-compliant replacement.
   veredito: {
-    id: "veredito", title: "Verdict — ARI · XRI · Defense", icon: "ti-checkbox",
+    id: "veredito", title: t("verdictTitle"), icon: "ti-checkbox",
     Component: VereditoWidgetBody,
   },
   "vault-preview": {
-    id: "vault-preview", title: "The Vault — aggregate", icon: "ti-shield-lock",
+    id: "vault-preview", title: t("vaultAggregate"), icon: "ti-shield-lock",
     Component: VaultPreviewWidgetBody,
   },
   xri: {
-    id: "xri", title: "XRI — External Regime", icon: "ti-world",
+    id: "xri", title: t("xriExternalRegime"), icon: "ti-world",
     Component: XriWidgetBody,
   },
   regime: {
-    id: "regime", title: "Market Regime (gauge)", icon: "ti-gauge",
+    id: "regime", title: t("marketRegimeGauge"), icon: "ti-gauge",
     Component: RegimeGaugeWidgetBody,
   },
   "intel-radar": {
-    id: "intel-radar", title: "Intelligence Radar", icon: "ti-chart-radar",
+    id: "intel-radar", title: t("intelligenceRadar"), icon: "ti-chart-radar",
     Component: IntelRadarWidgetBody,
   },
   noticias: {
-    id: "noticias", title: "News Broadcast", icon: "ti-broadcast",
+    id: "noticias", title: t("newsBroadcastTitle"), icon: "ti-broadcast",
     Component: NewsWidgetBody,
   },
   cotacoes: {
-    id: "cotacoes", title: "Quotes", icon: "ti-table",
+    id: "cotacoes", title: t("quotesTitle"), icon: "ti-table",
     allowMultiple: true,
-    configFields: [{ key: "classe", label: "Class", options: QUOTE_CLASSES.map((c) => ({ value: c, label: c })) }],
-    titleFor: (config) => `Quotes · ${config?.classe || QUOTE_CLASSES[0]}`,
+    configFields: [{ key: "classe", label: t("classLabel"), options: QUOTE_CLASSES.map((c) => ({ value: c, label: c })) }],
+    titleFor: (config) => `${t("quotesTitle")} · ${config?.classe || QUOTE_CLASSES[0]}`,
     Component: CotacoesWidgetBody,
   },
   carteira: {
-    id: "carteira", title: "Client portfolio", icon: "ti-briefcase",
+    id: "carteira", title: t("clientPortfolioTitle"), icon: "ti-briefcase",
     allowMultiple: true,
-    configFields: [{ key: "clientId", label: "Client", options: CLIENTS.map((c) => ({ value: c.id, label: c.name })) }],
+    configFields: [{ key: "clientId", label: t("clientLabel"), options: CLIENTS.map((c) => ({ value: c.id, label: c.name })) }],
     titleFor: (config) => {
       const c = config?.clientId ? CLIENTS.find((x) => x.id === config.clientId) : null;
-      return `Portfolio · ${c?.name || CLIENTS[0].name}`;
+      return `${t("portfolio")} · ${c?.name || CLIENTS[0].name}`;
     },
     Component: CarteiraWidgetBody,
   },
   alocacao: {
-    id: "alocacao", title: "Allocation by fund", icon: "ti-chart-donut",
+    id: "alocacao", title: t("allocationByFund"), icon: "ti-chart-donut",
     render: () => (
       <>
-        <div className="kv"><span>HPC22 · Aggressive</span><span className="v">62%</span></div>
+        <div className="kv"><span>HPC22 · {t("aggressive")}</span><span className="v">62%</span></div>
         <div className="kv"><span>HPC11 · I.G.</span><span className="v">28%</span></div>
-        <div className="kv"><span>Cash</span><span className="v">10%</span></div>
+        <div className="kv"><span>{t("cash")}</span><span className="v">10%</span></div>
       </>
     ),
   },
   social: {
-    id: "social", title: "Social Radar", icon: "ti-radar-2",
+    id: "social", title: t("socialRadarTitle"), icon: "ti-radar-2",
     Component: SocialWidgetBody,
   },
   clientes: {
-    id: "clientes", title: "Clients", icon: "ti-users",
+    id: "clientes", title: t("clientsTitle"), icon: "ti-users",
     render: (go) => {
       const aum = CLIENTS.reduce((s, c) => s + c.current, 0);
       const fora = CLIENTS.filter((c) => c.riskNumber > c.mandate).length;
       return (
         <>
-          <div className="kv"><span>Total AUM</span><span className="v">{brl(aum)}</span></div>
-          <div className="kv"><span>Clients</span><span className="v">{CLIENTS.length}</span></div>
-          <div className="kv"><span>Outside mandate</span><span className="v" style={{ color: fora ? "var(--red)" : "var(--green)" }}>{fora}</span></div>
-          <div className="mt"><button className="btn ghost" onClick={() => go("clientes")}><i className="ti ti-arrow-right" />See clients</button></div>
+          <div className="kv"><span>{t("totalAum")}</span><span className="v">{brl(aum)}</span></div>
+          <div className="kv"><span>{t("clientsTitle")}</span><span className="v">{CLIENTS.length}</span></div>
+          <div className="kv"><span>{t("outsideMandate")}</span><span className="v" style={{ color: fora ? "var(--red)" : "var(--green)" }}>{fora}</span></div>
+          <div className="mt"><button className="btn ghost" onClick={() => go("clientes")}><i className="ti ti-arrow-right" />{t("seeClients")}</button></div>
         </>
       );
     },
   },
   alertas: {
-    id: "alertas", title: "Alerts", icon: "ti-bell",
+    id: "alertas", title: t("alertsTitle"), icon: "ti-bell",
     render: (go) => {
       // Rules, worst-first, so the widget shows SOMETHING useful even when
       // no one is outside mandate (previous version rendered blank).
@@ -972,8 +1268,8 @@ const CATALOG: Record<string, WidgetDef> = {
         .filter((c) => c.riskNumber <= c.mandate && c.mandate - c.riskNumber <= 8)
         .sort((a, b) => (a.mandate - a.riskNumber) - (b.mandate - b.riskNumber));
       const items: { key: string; tag: string; tone: "r" | "a" | "g"; text: string }[] = [];
-      outside.slice(0, 3).forEach((c) => items.push({ key: `o-${c.id}`, tag: "outside", tone: "r", text: `${c.name} · RN ${c.riskNumber} vs mandate ${c.mandate}` }));
-      nearMandate.slice(0, 3 - items.length).forEach((c) => items.push({ key: `n-${c.id}`, tag: "watch", tone: "a", text: `${c.name} · RN ${c.riskNumber} · ${c.mandate - c.riskNumber} pt below mandate ${c.mandate}` }));
+      outside.slice(0, 3).forEach((c) => items.push({ key: `o-${c.id}`, tag: t("outsideTag"), tone: "r", text: `${c.name} · RN ${c.riskNumber} vs ${t("mandateLc")} ${c.mandate}` }));
+      nearMandate.slice(0, 3 - items.length).forEach((c) => items.push({ key: `n-${c.id}`, tag: t("watchTag"), tone: "a", text: `${c.name} · RN ${c.riskNumber} · ${c.mandate - c.riskNumber} ${t("ptBelowMandate")} ${c.mandate}` }));
       return (
         <>
           {items.length ? items.map((it) => (
@@ -981,28 +1277,29 @@ const CATALOG: Record<string, WidgetDef> = {
               <span style={{ fontSize: 12.5 }}><span className={`tag ${it.tone}`}>{it.tag}</span> {it.text}</span>
             </div>
           )) : (
-            <div className="muted" style={{ padding: "10px 0", fontSize: 12.5 }}>All clients within mandate · nothing to flag right now.</div>
+            <div className="muted" style={{ padding: "10px 0", fontSize: 12.5 }}>{t("allWithinNothingFlag")}</div>
           )}
-          <div className="mt"><button className="btn ghost" onClick={() => go("alertas")}><i className="ti ti-arrow-right" />See alerts</button></div>
+          <div className="mt"><button className="btn ghost" onClick={() => go("alertas")}><i className="ti ti-arrow-right" />{t("seeAlerts")}</button></div>
         </>
       );
     },
   },
   risco: {
-    id: "risco", title: "Risk · 4 levels per client", icon: "ti-scale",
+    id: "risco", title: t("riskLevelsTitle"), icon: "ti-scale",
     allowMultiple: true,
-    configFields: [{ key: "clientId", label: "Client", options: CLIENTS.map((c) => ({ value: c.id, label: c.name })) }],
+    configFields: [{ key: "clientId", label: t("clientLabel"), options: CLIENTS.map((c) => ({ value: c.id, label: c.name })) }],
     titleFor: (config) => {
       const c = config?.clientId ? CLIENTS.find((x) => x.id === config.clientId) : null;
-      return `Risk · ${c?.name || CLIENTS[0].name}`;
+      return `${t("riskWord")} · ${c?.name || CLIENTS[0].name}`;
     },
     Component: RiscoClienteWidgetBody,
   },
   "risco-todos": {
-    id: "risco-todos", title: "All clients on the ruler", icon: "ti-users-group",
+    id: "risco-todos", title: t("allClientsRuler"), icon: "ti-users-group",
     Component: TodosClientesReguaWidgetBody,
   },
-};
+  };
+}
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 // Inverted-pyramid default layout:
@@ -1044,6 +1341,8 @@ function SortableCard({
   instance: WidgetInstance; def: WidgetDef; editing: boolean;
   onRemove: () => void; onConfigChange: (config: Record<string, string>) => void; children: ReactNode;
 }) {
+  const { lang } = useI18n();
+  const t = (k: TKey) => TR[k][lang];
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: instance.instanceId, disabled: !editing });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1, zIndex: isDragging ? 10 : undefined };
   const [configuring, setConfiguring] = useState(false);
@@ -1056,7 +1355,7 @@ function SortableCard({
           <div className="drag-handle" {...attributes} {...listeners}><i className="ti ti-grip-vertical" /></div>
           <div className="rm-btn" onClick={onRemove}><i className="ti ti-x" /></div>
           {def.configFields && (
-            <div className="rm-btn" style={{ right: 34 }} onClick={() => setConfiguring((v) => !v)} title="Configure module">
+            <div className="rm-btn" style={{ right: 34 }} onClick={() => setConfiguring((v) => !v)} title={t("configureModule")}>
               <i className="ti ti-settings" />
             </div>
           )}
@@ -1085,6 +1384,9 @@ function SortableCard({
 }
 
 export default function Painel({ go }: { go: (id: ScreenId, param?: string) => void }) {
+  const { lang } = useI18n();
+  const t = (k: TKey) => TR[k][lang];
+  const CATALOG = useMemo(() => makeCatalog(t), [lang]); // eslint-disable-line react-hooks/exhaustive-deps
   const [widgets, setWidgets] = useState<WidgetInstance[]>(DEFAULT_INSTANCES);
   const [editing, setEditing] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
@@ -1109,12 +1411,12 @@ export default function Painel({ go }: { go: (id: ScreenId, param?: string) => v
       },
       {
         briefing:
-          `Good morning! Today's summary: **HPC22 +2.31%**, **HPC11 +1.44%**. Regime **RISK-ON** (defense disarmed). ` +
-          `${CLIENTS.length} clients, AUM ${brl(aum)}` + (fora ? `, **${fora} outside mandate**.` : ", all within mandate."),
+          `${t("jimGoodMorningSummary")} **HPC22 +2.31%**, **HPC11 +1.44%**. ${t("jimRegimeRiskOnDefense")} ` +
+          `${CLIENTS.length} ${t("clientsWord")}, AUM ${brl(aum)}` + (fora ? `, **${fora} ${t("outsideMandateLc")}**.` : `, ${t("allWithinMandateLc")}`),
         suggestions: [
-          "How are the funds doing today?",
-          fora ? "Which clients are outside the mandate?" : "Does any client need attention?",
-          "Why is the regime RISK-ON?",
+          t("suggestFunds"),
+          fora ? t("suggestOutside") : t("suggestAttention"),
+          t("suggestWhyRiskOn"),
         ],
       }
     );
@@ -1154,34 +1456,34 @@ export default function Painel({ go }: { go: (id: ScreenId, param?: string) => v
     <div className={`screen${editing ? " editing" : ""}`}>
       <div className="flex between" style={{ alignItems: "flex-start" }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
-          <div className="h1" style={{ margin: 0 }}>Good morning, João</div>
-          <div className="sub" style={{ margin: 0 }}>The essentials of the day. {editing ? "Drag to reorganize, add modules (Quotes and Portfolio can repeat, each with its own configuration — click the gear) or remove them." : "Everything else is a click away in the top menus."}</div>
+          <div className="h1" style={{ margin: 0 }}>{t("goodMorning")}, João</div>
+          <div className="sub" style={{ margin: 0 }}>{t("essentials")} {editing ? t("dragToReorganize") : t("everythingClickAway")}</div>
         </div>
         <div className="flex" style={{ gap: 8, alignItems: "center" }}>
           {editing && (
             <>
               <div style={{ position: "relative" }}>
                 <button className="btn ghost" style={{ padding: "6px 11px", fontSize: 12 }} onClick={() => setShowAdd((v) => !v)}>
-                  <i className="ti ti-plus" />Add module<i className="ti ti-chevron-down" style={{ fontSize: 12 }} />
+                  <i className="ti ti-plus" />{t("addModule")}<i className="ti ti-chevron-down" style={{ fontSize: 12 }} />
                 </button>
                 {showAdd && (
                   <div style={{ position: "absolute", top: "100%", right: 0, marginTop: 4, background: "var(--panel)", border: "1px solid var(--line2)", borderRadius: 10, boxShadow: "0 18px 50px rgba(0,0,0,.55)", padding: 6, minWidth: 230, zIndex: 60, maxHeight: 340, overflowY: "auto" }}>
                     {available.length === 0
-                      ? <div className="muted" style={{ padding: 10, fontSize: 12 }}>All modules are already on the dashboard.</div>
+                      ? <div className="muted" style={{ padding: 10, fontSize: 12 }}>{t("allModulesOnDashboard")}</div>
                       : available.map((w) => (
                         <div key={w.id} className="dd-item" onClick={() => addWidget(w.id)}>
-                          <i className={`ti ${w.icon}`} />{w.title}{w.allowMultiple && <span className="muted" style={{ marginLeft: "auto", fontSize: 10 }}>+ add another</span>}
+                          <i className={`ti ${w.icon}`} />{w.title}{w.allowMultiple && <span className="muted" style={{ marginLeft: "auto", fontSize: 10 }}>{t("addAnother")}</span>}
                         </div>
                       ))}
                   </div>
                 )}
               </div>
-              <button className="btn ghost" style={{ padding: "6px 10px", fontSize: 12 }} onClick={() => setWidgets(DEFAULT_INSTANCES)} title="Restore default"><i className="ti ti-rotate" /></button>
+              <button className="btn ghost" style={{ padding: "6px 10px", fontSize: 12 }} onClick={() => setWidgets(DEFAULT_INSTANCES)} title={t("restoreDefault")}><i className="ti ti-rotate" /></button>
             </>
           )}
           <button
             onClick={() => { setEditing((v) => !v); setShowAdd(false); }}
-            title={editing ? "Done" : "Customize dashboard"}
+            title={editing ? t("done") : t("customizeDashboard")}
             style={{
               display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer",
               fontSize: 12, padding: "6px 11px", borderRadius: 7, fontFamily: "var(--sans)",
@@ -1189,7 +1491,7 @@ export default function Painel({ go }: { go: (id: ScreenId, param?: string) => v
               background: editing ? "rgba(201,160,44,.15)" : "transparent",
               color: editing ? "var(--gold)" : "var(--tx3)",
             }}>
-            <i className={`ti ${editing ? "ti-check" : "ti-layout-grid-add"}`} />{editing ? "Done" : "Customize"}
+            <i className={`ti ${editing ? "ti-check" : "ti-layout-grid-add"}`} />{editing ? t("done") : t("customize")}
           </button>
         </div>
       </div>
@@ -1217,7 +1519,7 @@ export default function Painel({ go }: { go: (id: ScreenId, param?: string) => v
       </DndContext>
 
       {editing && available.length > 0 && (
-        <div className="muted mt" style={{ fontSize: 11 }}>{available.length} module(s) available to add · Quotes and Client portfolio can be added multiple times, each with its own configuration.</div>
+        <div className="muted mt" style={{ fontSize: 11 }}>{available.length} {t("modulesAvailableSuffix")}</div>
       )}
     </div>
   );

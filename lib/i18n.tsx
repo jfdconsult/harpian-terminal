@@ -47,7 +47,7 @@ const Ctx = createContext<I18nCtx>({ lang: "pt", setLang: () => {}, t: (k) => k 
 const STORAGE_KEY = "harpian-lang";
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>("en");
+  const [lang, setLangState] = useState<Lang>("pt");
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY) as Lang | null;
