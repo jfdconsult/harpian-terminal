@@ -344,13 +344,18 @@ export function simulate(
     const sc = scoresEm(t);
     const bruto = scoresBrutoEm(t);
     // piso de momento: numerico se `momentumFloor` foi definido, senao o
-    // corte binario em 0 do `dropNegative` de sempre. Estrategia sem dado no
-    // dia (bruto == null) sempre cai — nao tem score pra avaliar.
+    // corte binario em 0 do `dropNegative` de sempre. SEM PISO CONFIGURADO
+    // (o caso dos SETs, e do custom sem a opcao ligada), nada e avaliado —
+    // score nulo (caso dos blocos sinteticos, de proposito) nao derruba
+    // ninguem, exatamente como sempre foi. So com um piso ativo, dado
+    // faltante vira motivo de cautela (cai, por seguranca).
+    const pisoAtivo = cfg.momentumFloor != null || cfg.dropNegative;
     const abaixoDoPiso = (i: number): boolean => {
+      if (!pisoAtivo) return false;
       const v = bruto[i];
       if (v == null) return true;
       if (cfg.momentumFloor != null) return v < cfg.momentumFloor;
-      return cfg.dropNegative && v <= 0;
+      return v <= 0;
     };
     const mins = sleeves.map((s, i) => {
       if (!vivos[i]) return 0;
