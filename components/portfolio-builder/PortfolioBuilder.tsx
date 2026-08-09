@@ -242,6 +242,24 @@ export default function PortfolioBuilder() {
   const [setsData, setSetsData] = useState<BenchmarkSetsData | null>(null);
   const [setAtivo, setSetAtivo] = useState<string | null>(null);
   const [descAberta, setDescAberta] = useState(false);
+
+  // Portfolios salvos pelo usuario logado (persistidos no hqp-api, por email
+  // — ver app/api/portfolios/*). Diferente de um SET pronto: e uma config
+  // livre (sleeves arbitrarios), nao um dos 3 blocos fixos.
+  interface PortfolioSalvo { id: string; name: string; config: PortfolioConfig; createdAt: number; updatedAt: number }
+  const [meusPortfolios, setMeusPortfolios] = useState<PortfolioSalvo[]>([]);
+  const [portfolioSalvoAtivo, setPortfolioSalvoAtivo] = useState<string | null>(null);
+  const [salvandoPortfolio, setSalvandoPortfolio] = useState(false);
+  const [erroSalvarPortfolio, setErroSalvarPortfolio] = useState<string | null>(null);
+
+  const recarregarMeusPortfolios = useCallback(() => {
+    fetch("/api/portfolios")
+      .then((r) => r.json())
+      .then((j) => { if (j?.ok) setMeusPortfolios(j.portfolios || []); })
+      .catch(() => { /* sem login ou offline — a tela segue funcionando normalmente */ });
+  }, []);
+
+  useEffect(() => { recarregarMeusPortfolios(); }, [recarregarMeusPortfolios]);
   // Relatório imprimível
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportAutor, setReportAutor] = useState("");
@@ -370,6 +388,74 @@ export default function PortfolioBuilder() {
     setVolTarget(null);
     setPeriodoFixo(null);
     setSetAtivo(null);
+  };
+
+  /**
+   * Carrega um portfolio salvo pelo proprio usuario — diferente de um SET
+   * pronto (3 blocos fixos com peso travado), e uma config livre: aplica o
+   * PortfolioConfig salvo direto nos estados, sem passar por configDoSet.
+   * Mantem o `capital` atual da tela (o portfolio salvo e uma composicao,
+   * nao o valor investido de um cliente especifico).
+   */
+  const carregarPortfolioSalvo = (id: string) => {
+    const salvo = meusPortfolios.find((p) => p.id === id);
+    if (!salvo) return;
+    if (portfolioSalvoAtivo === id) { limparSet(); setPortfolioSalvoAtivo(null); return; }
+    const cfg = salvo.config;
+    setSleeves(cfg.sleeves);
+    setMode(cfg.mode);
+    setBasis(cfg.basis);
+    setRebalance(cfg.rebalance);
+    setJanela(cfg.janela);
+    setWindowMode(cfg.window);
+    setDropNegative(cfg.dropNegative);
+    setMomentumFloor(cfg.momentumFloor ?? null);
+    setVolTarget(cfg.volTarget ?? null);
+    setPeriodoFixo(cfg.periodoFixo ?? null);
+    setSetAtivo(null); // nao e um SET pre-montado
+    setPortfolioSalvoAtivo(id);
+    setCursor(null);
+    cfg.sleeves.forEach((s) => { void carregarSerie(s.id); });
+  };
+
+  /** Salva a config atual do builder — nova entrada, ou atualiza a ativa. */
+  const salvarPortfolioAtual = async (nome: string, comoNovo: boolean) => {
+    setSalvandoPortfolio(true);
+    setErroSalvarPortfolio(null);
+    try {
+      const alvo = !comoNovo && portfolioSalvoAtivo ? portfolioSalvoAtivo : null;
+      const r = await fetch(alvo ? `/api/portfolios/${alvo}` : "/api/portfolios", {
+        method: alvo ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: nome, config: cfg }),
+      });
+      const j = await r.json();
+      if (!j.ok) throw new Error(j.error || `erro ${r.status}`);
+      recarregarMeusPortfolios();
+      setPortfolioSalvoAtivo(j.portfolio.id);
+      setSetAtivo(null);
+    } catch (e) {
+      setErroSalvarPortfolio(String((e as Error).message ?? e));
+    } finally {
+      setSalvandoPortfolio(false);
+    }
+  };
+
+  const apagarPortfolioAtual = async () => {
+    if (!portfolioSalvoAtivo) return;
+    if (!window.confirm("Apagar este portfolio salvo? Não dá pra desfazer.")) return;
+    setSalvandoPortfolio(true);
+    try {
+      const r = await fetch(`/api/portfolios/${portfolioSalvoAtivo}`, { method: "DELETE" });
+      const j = await r.json();
+      if (!j.ok) throw new Error(j.error || `erro ${r.status}`);
+      setPortfolioSalvoAtivo(null);
+      recarregarMeusPortfolios();
+    } catch (e) {
+      setErroSalvarPortfolio(String((e as Error).message ?? e));
+    } finally {
+      setSalvandoPortfolio(false);
+    }
   };
 
   /** Qualquer mexida na composicao solta o SET: deixou de ser o validado. */
@@ -826,13 +912,14 @@ export default function PortfolioBuilder() {
                     color: setAtivo ? "#0b1220" : "var(--tx2)",
                   }}>SET</span>
                   <select
-                    value={setAtivo ?? ""}
+                    value={setAtivo ?? (portfolioSalvoAtivo ? `saved:${portfolioSalvoAtivo}` : "")}
                     onChange={(e) => {
                       const v = e.target.value;
-                      if (!v) { limparSet(); return; }
-                      if (v !== setAtivo) carregarSet(v);
+                      if (!v) { limparSet(); setPortfolioSalvoAtivo(null); return; }
+                      if (v.startsWith("saved:")) { carregarPortfolioSalvo(v.slice(6)); return; }
+                      if (v !== setAtivo) { setPortfolioSalvoAtivo(null); carregarSet(v); }
                     }}
-                    title="Carregar um SET pronto"
+                    title="Carregar um SET pronto ou um portfolio salvo"
                     style={{
                       font: "inherit", fontSize: 12.5,
                       fontWeight: setAtivo ? 650 : 550,
@@ -868,6 +955,13 @@ export default function PortfolioBuilder() {
                         ))}
                       </optgroup>
                     )}
+                    {meusPortfolios.length > 0 && (
+                      <optgroup label="Meus portfólios">
+                        {meusPortfolios.map((p) => (
+                          <option key={p.id} value={`saved:${p.id}`}>{p.name}</option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
                 </div>
                 {setAtivo && (
@@ -888,6 +982,58 @@ export default function PortfolioBuilder() {
                       color: "var(--tx3)", cursor: "pointer", textDecoration: "underline",
                       textUnderlineOffset: 3,
                     }}>limpar</button>
+                  </div>
+                )}
+                {!setAtivo && sleeves.length > 0 && (
+                  <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                    <button
+                      disabled={salvandoPortfolio}
+                      onClick={async () => {
+                        const nome = window.prompt(
+                          "Nome do portfólio",
+                          portfolioSalvoAtivo ? meusPortfolios.find((p) => p.id === portfolioSalvoAtivo)?.name : "",
+                        );
+                        if (!nome || !nome.trim()) return;
+                        await salvarPortfolioAtual(nome.trim(), !portfolioSalvoAtivo);
+                      }}
+                      title="Salvar esta composição na sua lista de portfólios"
+                      style={{
+                        font: "inherit", fontSize: 11.5, background: "transparent", border: 0,
+                        color: "var(--gold)", cursor: "pointer", textDecoration: "underline",
+                        textUnderlineOffset: 3, padding: 0,
+                      }}
+                    >{portfolioSalvoAtivo ? "salvar alterações" : "salvar portfólio"}</button>
+                    {portfolioSalvoAtivo && (
+                      <>
+                        <button
+                          disabled={salvandoPortfolio}
+                          onClick={async () => {
+                            const nome = window.prompt("Nome do novo portfólio", "");
+                            if (!nome || !nome.trim()) return;
+                            await salvarPortfolioAtual(nome.trim(), true);
+                          }}
+                          title="Salvar como um portfólio novo, sem alterar o original"
+                          style={{
+                            font: "inherit", fontSize: 11.5, background: "transparent", border: 0,
+                            color: "var(--tx2)", cursor: "pointer", textDecoration: "underline",
+                            textUnderlineOffset: 3, padding: 0,
+                          }}
+                        >salvar como novo</button>
+                        <button
+                          disabled={salvandoPortfolio}
+                          onClick={apagarPortfolioAtual}
+                          title="Apagar este portfólio salvo"
+                          style={{
+                            font: "inherit", fontSize: 11.5, background: "transparent", border: 0,
+                            color: "var(--red, #c0392b)", cursor: "pointer", textDecoration: "underline",
+                            textUnderlineOffset: 3, padding: 0,
+                          }}
+                        >apagar</button>
+                      </>
+                    )}
+                    {erroSalvarPortfolio && (
+                      <span style={{ fontSize: 11, color: "var(--red, #c0392b)" }}>{erroSalvarPortfolio}</span>
+                    )}
                   </div>
                 )}
               </div>
