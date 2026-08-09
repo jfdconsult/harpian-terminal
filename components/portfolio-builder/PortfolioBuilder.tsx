@@ -1283,24 +1283,43 @@ export default function PortfolioBuilder() {
                 </Campo>
                 <Campo
                   label="Piso de momento para comprar"
-                  hint={`estratégia com ${basis === "ir" ? "IR" : "RetMes%"} abaixo do piso zera a posição, mesmo com o ativo líder dela em alta`}
+                  hint={
+                    basis === "ir"
+                      ? "IR abaixo do piso zera a posição. Faixa típica do IR nestas estratégias: -1,6 a +1,6 — passos de 0,5 já fazem diferença."
+                      : "RetMes% abaixo do piso zera a posição. Faixa típica do RetMes%: -11% a +47% (ações mais agressivas oscilam bem mais que isso) — vale testar de +5 a -5, não só perto de 0."
+                  }
                 >
-                  <select
-                    value={momentumFloor == null ? "none" : String(momentumFloor)}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (v === "none") { setMomentumFloor(null); setDropNegative(false); return; }
-                      setMomentumFloor(Number(v));
-                      setDropNegative(false); // momentumFloor manda; nao precisa dos dois
-                    }}
-                    style={sel}
-                  >
-                    <option value="none">Sem piso (so sai do 0 pro fundo, como sempre)</option>
-                    <option value="0">0 — zera quem está com momento negativo</option>
-                    <option value="-1">-1 — aceita momento levemente negativo</option>
-                    <option value="-2">-2 — aceita momento mais negativo</option>
-                    <option value="-3">-3 — piso mais permissivo</option>
-                  </select>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12, color: "var(--tx2)" }}>
+                      <input
+                        type="checkbox"
+                        checked={momentumFloor != null}
+                        onChange={(e) => {
+                          if (e.target.checked) setMomentumFloor(0);
+                          else { setMomentumFloor(null); setDropNegative(false); }
+                        }}
+                      />
+                      usar piso
+                    </label>
+                    {momentumFloor != null && (
+                      <input
+                        type="number"
+                        step={basis === "ir" ? 0.1 : 1}
+                        value={momentumFloor}
+                        onChange={(e) => {
+                          const n = Number(e.target.value);
+                          setMomentumFloor(Number.isFinite(n) ? n : 0);
+                          setDropNegative(false); // momentumFloor manda; nao precisa dos dois
+                        }}
+                        style={{ ...sel, width: 90, textAlign: "right" }}
+                      />
+                    )}
+                    {momentumFloor != null && (
+                      <span style={{ fontSize: 11.5, color: "var(--tx3)" }}>
+                        {basis === "ir" ? "pontos de IR" : "% ao mês (RetMes%)"}
+                      </span>
+                    )}
+                  </div>
                 </Campo>
               </>
             )}
