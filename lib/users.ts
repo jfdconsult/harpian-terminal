@@ -34,19 +34,19 @@ export const USERS: readonly TerminalUser[] = [
   },
   {
     email: "ds@harpian.com",
-    passwordHash: "$2b$12$4jAE5dqNwWtA.zvg/5Gin.gO90QNrEFlHZn4xCATh4Wy/6lFHmVWO",
+    passwordHash: "$2b$12$sSwRXF5/5EL5qhOKGVwE9eT8JHSZO24KF6QqJjlPDaCNH1tDuHhJ6",
     label: "DS (equipe)",
     active: true,
   },
   {
     email: "jfd@harpian.com",
-    passwordHash: "$2b$12$4jAE5dqNwWtA.zvg/5Gin.gO90QNrEFlHZn4xCATh4Wy/6lFHmVWO",
+    passwordHash: "$2b$12$sSwRXF5/5EL5qhOKGVwE9eT8JHSZO24KF6QqJjlPDaCNH1tDuHhJ6",
     label: "JFD (equipe)",
     active: true,
   },
   {
     email: "jz@harpian.com",
-    passwordHash: "$2b$12$4jAE5dqNwWtA.zvg/5Gin.gO90QNrEFlHZn4xCATh4Wy/6lFHmVWO",
+    passwordHash: "$2b$12$sSwRXF5/5EL5qhOKGVwE9eT8JHSZO24KF6QqJjlPDaCNH1tDuHhJ6",
     label: "JZ (equipe)",
     active: true,
   },
