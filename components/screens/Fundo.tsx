@@ -24,7 +24,7 @@ const TR = {
   performance: { pt: "Performance", en: "Performance" },
   riskJourney: { pt: "Risco & Trajetória", en: "Risk & Journey" },
   crisisDefense: { pt: "Defesa em Crises", en: "Crisis Defense" },
-  composition5w: { pt: "Composição · 5s", en: "Composition · 5w" },
+  composition5w: { pt: "Composição · 5 sem", en: "Composition · 5w" },
   economicsArchitecture: { pt: "Economia & Arquitetura", en: "Economics & Architecture" },
   howToBuy: { pt: "Como Comprar", en: "How to Buy" },
   validated: { pt: "Validado", en: "Validated" },
