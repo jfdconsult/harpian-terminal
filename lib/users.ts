@@ -5,10 +5,17 @@
  * compartilhada). Visao do Terminal e igual para todos os usuarios ativos
  * (nao ha isolamento de dados por cliente).
  *
- * Para adicionar um cliente:
+ * Os hashes abaixo (`passwordHash`) sao o fallback commitado no repo — ainda
+ * todos identicos (herdados da senha compartilhada antiga), ate as senhas
+ * individuais serem definidas. Em producao, sobrescrever via env var
+ * TERMINAL_USER_HASHES na Vercel: JSON `{ "email": "hashBcrypt" }`, fora do
+ * Git. O que estiver no env tem prioridade; o que faltar cai no hash do
+ * codigo abaixo.
+ *
+ * Para gerar um hash novo:
  *   node scripts/generate-user-hash.js "senha-do-cliente"
- * Copiar o hash gerado para a lista abaixo, ao lado do email do cliente,
- * e commitar.
+ * Copiar o hash para o env TERMINAL_USER_HASHES (producao) ou, se preferir
+ * manter em codigo, para a lista abaixo, e commitar.
  */
 
 export interface TerminalUser {
@@ -51,9 +58,28 @@ export const USERS: readonly TerminalUser[] = [
   },
 ] as const;
 
+function envHashOverrides(): Record<string, string> {
+  const raw = process.env.TERMINAL_USER_HASHES;
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return {};
+    const out: Record<string, string> = {};
+    for (const [email, hash] of Object.entries(parsed)) {
+      if (typeof hash === "string") out[email.trim().toLowerCase()] = hash;
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
 export function findUser(email: string): TerminalUser | undefined {
   const normalized = email.trim().toLowerCase();
-  return USERS.find(
-    (user) => user.active && user.email.toLowerCase() === normalized
+  const user = USERS.find(
+    (u) => u.active && u.email.toLowerCase() === normalized
   );
+  if (!user) return undefined;
+  const override = envHashOverrides()[normalized];
+  return override ? { ...user, passwordHash: override } : user;
 }
