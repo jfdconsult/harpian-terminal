@@ -60,21 +60,12 @@ const TR = {
 
 const FUNDS = [
   { id: "HPC22", isin: "XS3386635109", nav: 22.10, rn: 38 },
-  { id: "HPC11", isin: "—", nav: 20.40, rn: 34 },
 ];
 const MIN = 50000, MULT = 5000;
 const usd = (n: number) => "US$ " + n.toLocaleString("en-US");
 
-const PENDING = [
-  { ref: "ORD-2041", produto: "HPC22", cliente: "Aurora Capital MFO", tipo: "Subscription", caixa: 500000, status: "Routing" },
-  { ref: "ORD-2043", produto: "HPC11", cliente: "Instituto MarAzul", tipo: "Subscription", caixa: 250000, status: "Awaiting DvP" },
-];
-const TRADES = [
-  { ref: "TRD-1988", produto: "HPC22", cliente: "Ricardo Menezes", data: "2026-06-18", tipo: "Subscription", caixa: 150000, status: "Settled" },
-  { ref: "TRD-1975", produto: "HPC22", cliente: "Aurora Capital MFO", data: "2026-06-11", tipo: "Subscription", caixa: 1000000, status: "Settled" },
-  { ref: "TRD-1969", produto: "HPC11", cliente: "Helena Prado", data: "2026-06-04", tipo: "Subscription", caixa: 90000, status: "Settled" },
-  { ref: "TRD-1950", produto: "HPC22", cliente: "Silveira Family Office", data: "2026-05-27", tipo: "Redemption", caixa: 300000, status: "Settled" },
-];
+const PENDING: { ref: string; produto: string; cliente: string; tipo: string; caixa: number; status: string }[] = [];
+const TRADES: { ref: string; produto: string; cliente: string; data: string; tipo: string; caixa: number; status: string }[] = [];
 
 function statusTag(s: string) {
   if (s === "Settled") return "g";
@@ -90,7 +81,7 @@ export default function Ordem({ preselect }: { preselect?: string }) {
   const [view, setView] = useState<"hist" | "nova">(presetFund || presetClient ? "nova" : "hist");
   const [side, setSide] = useState<"sub" | "res">("sub");
   const [fundId, setFundId] = useState(presetFund?.id || "HPC22");
-  const [clientId, setClientId] = useState(presetClient?.id || CLIENTS[0].id);
+  const [clientId, setClientId] = useState(presetClient?.id || CLIENTS[0]?.id || "");
   const [value, setValue] = useState(250000);
   const [sent, setSent] = useState<null | { ref: string }>(null);
   const [clients, setClients] = useState(CLIENTS);   // includes new clients (localStorage) on the client side

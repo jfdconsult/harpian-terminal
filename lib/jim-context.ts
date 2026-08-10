@@ -10,7 +10,7 @@ export interface ScreenContext {
 const SCREEN_MAP: Record<ScreenId, Omit<ScreenContext, "id">> = {
   painel: {
     title: "Painel Principal",
-    description: "Painel do gestor: os fundos do dia (HPC22 Agressivo, HPC11 I.G.), as maiores posições compradas no ETP, o regime de mercado (RISK-ON/OFF) e o estado de defesa.",
+    description: "Painel do gestor: o fundo do dia (HPC22 Agressivo), as maiores posições compradas no ETP, o regime de mercado (RISK-ON/OFF) e o estado de defesa.",
     dataAvailable: ["fund NAVs", "long positions", "market regime", "defense state"],
   },
   fundo: {

@@ -2,7 +2,7 @@
 // Client store with local persistence (localStorage). Merges the seed (lib/clients.ts)
 // with the clients added by the manager — survives a refresh. Phase 2: swap for the
 // MFO's management system API. Until then, this makes "add client" actually work.
-import { CLIENTS, type Client, type Alloc, type ImportedPosition, type Portfolio } from "./clients";
+import { CLIENTS, EMPTY_CLIENT, type Client, type Alloc, type ImportedPosition, type Portfolio } from "./clients";
 
 const KEY = "harpian_clients_added";
 const OVERRIDE_KEY = "harpian_client_overrides";
@@ -45,7 +45,7 @@ export function allClients(): Client[] {
 
 /** Finds by id across the whole base (seed + added + overrides). */
 export function findClient(id: string): Client {
-  return allClients().find((c) => c.id === id) || CLIENTS[0];
+  return allClients().find((c) => c.id === id) || EMPTY_CLIENT;
 }
 
 /** Applies an imported spreadsheet (positions) to the client: recalculates the current
@@ -116,7 +116,7 @@ export function addClient(data: NewClientInput): Client {
     mandate: data.mandate,
     harpianPct: 0,
     alloc,
-    note: "New client — portfolio still outside Harpian. Send the risk profile questionnaire and evaluate migration to the HPC.",
+    note: "Suba aqui seu portfólio — comece por você mesmo a analisar seu risco x retorno.",
   };
   saveAdded([...added, client]);
   return client;

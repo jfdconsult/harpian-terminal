@@ -349,5 +349,5 @@ const LCORE22: Fund = {
   disclaimer: "Hypothetical / modeled performance. Exact replica of the AlphaDroid CORE22+ MAX architecture. Backtest 1988–2026. Hypothetical results have inherent limitations: they are prepared retrospectively, do not involve real financial risk, and do not reflect decisions made under actual market conditions. Past performance does not guarantee future returns. Harpian does not receive funds, does not execute orders, and does not act as custodian. Confidential document — does not constitute an offer or recommendation.",
 };
 
-export const FUNDS: Record<string, Fund> = { HPC22, HPC11, LCORE22 };
-export const FUND_LIST = [HPC22, HPC11, LCORE22];
+export const FUNDS: Record<string, Fund> = { HPC22 };
+export const FUND_LIST = [HPC22];

@@ -14,7 +14,7 @@ import RegimeGauge from "../RegimeGauge";
 import { fetchSnapshot, type RegimeState, type Snapshot } from "@/lib/snapshot";
 import { fetchCalendar, type CalendarResp } from "@/lib/calendar";
 import { type DnaRaw } from "@/lib/jim-market-analysis";
-import { CLIENTS, brl } from "@/lib/clients";
+import { CLIENTS, EMPTY_CLIENT, brl } from "@/lib/clients";
 import { allClients, findClient } from "@/lib/clientStore";
 import { MARKET_GROUPS } from "@/lib/market";
 import { pctText, pctClass, numShort } from "@/lib/format";
@@ -324,7 +324,6 @@ function generateBriefingSections(
     title: t("portfolio"), icon: "ti-coin", color: "var(--green)", screenId: "fundo" as ScreenId,
     items: [
       { label: `HPC22 ${t("aggressive")}`, value: `+2.31% ${t("today")}`, color: "var(--green)", detail: t("fullExposureNoHedge") },
-      { label: "HPC11 I.G.", value: `+1.44% ${t("today")}`, color: "var(--green)", detail: t("investmentGradeRange") },
       { label: t("activity"), value: t("noAdjustments"), detail: t("lastRebalancing") },
     ],
   });
@@ -1135,7 +1134,6 @@ function makeCatalog(t: TFn): Record<string, WidgetDef> {
       // Same schema for both funds so the card stays uniform.
       const F = [
         { id: "HPC22", name: `HPC22 · ${t("aggressive")}`, d: 2.31, w: 4.20, m: 6.80, y: 24.30, vsSpxYtd: 13.10 },
-        { id: "HPC11", name: "HPC11 · I.G.",       d: 1.44, w: 2.10, m: 3.20, y: 7.50,  vsSpxYtd: -3.70 },
       ];
       const cell = (v: number) => ({
         color: v >= 0 ? "var(--green)" : "var(--red)",
@@ -1225,7 +1223,7 @@ function makeCatalog(t: TFn): Record<string, WidgetDef> {
     configFields: [{ key: "clientId", label: t("clientLabel"), options: CLIENTS.map((c) => ({ value: c.id, label: c.name })) }],
     titleFor: (config) => {
       const c = config?.clientId ? CLIENTS.find((x) => x.id === config.clientId) : null;
-      return `${t("portfolio")} · ${c?.name || CLIENTS[0].name}`;
+      return `${t("portfolio")} · ${c?.name || EMPTY_CLIENT.name}`;
     },
     Component: CarteiraWidgetBody,
   },
@@ -1233,8 +1231,7 @@ function makeCatalog(t: TFn): Record<string, WidgetDef> {
     id: "alocacao", title: t("allocationByFund"), icon: "ti-chart-donut",
     render: () => (
       <>
-        <div className="kv"><span>HPC22 · {t("aggressive")}</span><span className="v">62%</span></div>
-        <div className="kv"><span>HPC11 · I.G.</span><span className="v">28%</span></div>
+        <div className="kv"><span>HPC22 · {t("aggressive")}</span><span className="v">90%</span></div>
         <div className="kv"><span>{t("cash")}</span><span className="v">10%</span></div>
       </>
     ),
@@ -1290,7 +1287,7 @@ function makeCatalog(t: TFn): Record<string, WidgetDef> {
     configFields: [{ key: "clientId", label: t("clientLabel"), options: CLIENTS.map((c) => ({ value: c.id, label: c.name })) }],
     titleFor: (config) => {
       const c = config?.clientId ? CLIENTS.find((x) => x.id === config.clientId) : null;
-      return `${t("riskWord")} · ${c?.name || CLIENTS[0].name}`;
+      return `${t("riskWord")} · ${c?.name || EMPTY_CLIENT.name}`;
     },
     Component: RiscoClienteWidgetBody,
   },
@@ -1403,15 +1400,15 @@ export default function Painel({ go }: { go: (id: ScreenId, param?: string) => v
     const fora = CLIENTS.filter((c) => c.riskNumber > c.mandate).length;
     publishScreenData(
       "painel",
-      "Manager dashboard: today's funds (HPC22 Aggressive, HPC11 I.G.), market regime, defense, and client summary (AUM, outside mandate). The dashboard is customizable: Quotes modules (by asset class) and Client portfolio modules can be added multiple times, each with a different configuration.",
+      "Manager dashboard: today's fund (HPC22 Aggressive), market regime, defense, and client summary (AUM, outside mandate). The dashboard is customizable: Quotes modules (by asset class) and Client portfolio modules can be added multiple times, each with a different configuration.",
       {
-        HPC22_hoje: "+2.31%", HPC11_hoje: "+1.44%",
+        HPC22_hoje: "+2.31%",
         regime: "RISK-ON", defesa: "disarmed · full exposure",
         clientes: CLIENTS.length, aumTotal: aum, foraDoMandato: fora,
       },
       {
         briefing:
-          `${t("jimGoodMorningSummary")} **HPC22 +2.31%**, **HPC11 +1.44%**. ${t("jimRegimeRiskOnDefense")} ` +
+          `${t("jimGoodMorningSummary")} **HPC22 +2.31%**. ${t("jimRegimeRiskOnDefense")} ` +
           `${CLIENTS.length} ${t("clientsWord")}, AUM ${brl(aum)}` + (fora ? `, **${fora} ${t("outsideMandateLc")}**.` : `, ${t("allWithinMandateLc")}`),
         suggestions: [
           t("suggestFunds"),

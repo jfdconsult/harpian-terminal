@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { CLIENTS, brl, type Client } from "@/lib/clients";
+import { CLIENTS, EMPTY_CLIENT, brl, type Client } from "@/lib/clients";
 import { allClients } from "@/lib/clientStore";
 import { publishScreenData } from "@/lib/jim-data";
-import { HPC22_RN, HPC11_RN, TOLERANCE, OBJETIVO } from "@/lib/riskLevels";
+import { HPC22_RN, TOLERANCE, OBJETIVO } from "@/lib/riskLevels";
 import { useI18n } from "@/lib/i18n";
 
 const TR = {
@@ -11,7 +11,7 @@ const TR = {
   subtitle: { pt: "Onde o portfólio de cada cliente está em relação à tolerância do perfil e ao teto do mandato. Tudo no Risk Number (0-100).", en: "Where each client's portfolio stands vs. the profile tolerance and the mandate ceiling. All on the Risk Number (0-100)." },
   client: { pt: "Cliente:", en: "Client:" },
   productRisk: { pt: "Risco do produto", en: "Product risk" },
-  productMuted: { pt: "HPC22 (o fundo). HPC11 =", en: "HPC22 (the fund). HPC11 =" },
+  productMuted: { pt: "HPC22 (o fundo).", en: "HPC22 (the fund)." },
   clientTolerance: { pt: "Tolerância do cliente", en: "Client tolerance" },
   profileObjective: { pt: "perfil · objetivo", en: "profile · objective" },
   mandate: { pt: "Mandato", en: "Mandate" },
@@ -74,12 +74,12 @@ export default function Risco() {
   const { lang } = useI18n();
   const t = (k: keyof typeof TR) => TR[k][lang];
   const [clients, setClients] = useState<Client[]>(CLIENTS);   // seed on SSR; localStorage on client
-  const [sel, setSel] = useState(CLIENTS[0].id);
+  const [sel, setSel] = useState(CLIENTS[0]?.id || "");
   const [migrate, setMigrate] = useState(0); // % migrated to HPC22
 
   useEffect(() => { setClients(allClients()); }, []);
 
-  const client = clients.find((c) => c.id === sel) || clients[0];
+  const client = clients.find((c) => c.id === sel) || clients[0] || EMPTY_CLIENT;
   const tol = TOLERANCE[client.profile];
   const objetivo = OBJETIVO[client.profile];
 
@@ -150,7 +150,7 @@ export default function Risco() {
 
       {/* 4 levels of the selected client */}
       <div className="grid g4 mt mb">
-        <div className="card"><h3><i className="ti ti-coin" />{t("productRisk")}</h3><div className="big" style={{ color: "var(--orange)" }}>{HPC22_RN}</div><div className="muted mt">{t("productMuted")} {HPC11_RN}.</div></div>
+        <div className="card"><h3><i className="ti ti-coin" />{t("productRisk")}</h3><div className="big" style={{ color: "var(--orange)" }}>{HPC22_RN}</div><div className="muted mt">{t("productMuted")}</div></div>
         <div className="card"><h3><i className="ti ti-user-heart" />{t("clientTolerance")}</h3><div className="big">{tol}</div><div className="muted mt">{client.profile} {t("profileObjective")} {objetivo}.</div></div>
         <div className="card"><h3><i className="ti ti-file-certificate" />{t("mandate")}</h3><div className="big">{client.mandate}</div><div className="muted mt">{t("mandateMuted")}</div></div>
         <div className="card" style={{ borderColor: gap > 0 ? "rgba(231,76,60,.3)" : "var(--line2)" }}>

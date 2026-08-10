@@ -55,7 +55,7 @@ const TR = {
   painelT0B1T: { pt: "Veredito — ARI · XRI · Defesa", en: "Verdict — ARI · XRI · Defense" },
   painelT0B1D: { pt: "Três cartões: regime interno (ARI, nosso motor), regime externo (XRI, o índice de estresse de 26 países) e se a Defesa está armada. Os três verdes = risk-on. Qualquer âmbar/vermelho = leia com atenção.", en: "Three cards: internal regime (ARI, our engine), external regime (XRI, the 26-country stress index), and whether Defense is armed. All three green = risk-on. Any amber/red = read carefully." },
   painelT0B2T: { pt: "Seus Fundos", en: "Your Funds" },
-  painelT0B2D: { pt: "HPC22 e HPC11 lado a lado, com chips 1D / 5D / MTD / YTD e o delta vs S&P no ano. Clique para abrir a página do fundo.", en: "HPC22 and HPC11 side by side, with 1D / 5D / MTD / YTD chips and the delta vs S&P year-to-date. Click to open the fund page." },
+  painelT0B2D: { pt: "HPC22 com chips 1D / 5D / MTD / YTD e o delta vs S&P no ano. Clique para abrir a página do fundo.", en: "HPC22 with 1D / 5D / MTD / YTD chips and the delta vs S&P year-to-date. Click to open the fund page." },
   painelT0B3T: { pt: "XRI — Regime Externo", en: "XRI — External Regime" },
   painelT0B3D: { pt: "Score 0–100 + estado (MODERADO/CAUTELA/BEAR), direção, confiança e os 2 principais países que empurram o índice.", en: "Score 0–100 + state (MODERATE/CAUTION/BEAR), direction, confidence, and the top 2 countries driving the index." },
   painelT0B4T: { pt: "Alertas", en: "Alerts" },
@@ -324,7 +324,7 @@ const TR = {
   riscoImporta: { pt: "Compliance transformado em argumento de venda. Produto · Mandato · Tolerância · Carteira, todos na MESMA régua de 0-100. Mostra ao cliente se ele está (ou não) dentro do que foi combinado.", en: "Compliance turned into a sales argument. Product · Mandate · Tolerance · Portfolio, all on the SAME 0-100 ruler. Shows the client whether they're (or aren't) within what was agreed." },
 
   riscoT0Nome: { pt: "Comparação · 4 níveis", en: "Comparison · 4 levels" },
-  riscoT0Why: { pt: "4 riscos lado a lado. Pontos de referência: o S&P 500 está em ≈72, o HPC22 em ≈38, o HPC11 em ≈34 — ambos bem abaixo do mercado.", en: "4 risk levels side by side. Reference points: the S&P 500 sits at ≈72, HPC22 at ≈38, HPC11 at ≈34 — both well below the market." },
+  riscoT0Why: { pt: "4 riscos lado a lado. Pontos de referência: o S&P 500 está em ≈72, o HPC22 em ≈38 — bem abaixo do mercado.", en: "4 risk levels side by side. Reference points: the S&P 500 sits at ≈72, HPC22 at ≈38 — well below the market." },
   riscoT0B0T: { pt: "4 cartões de nível", en: "4 level cards" },
   riscoT0B0D: { pt: "Risco do produto · Tolerância do cliente · Teto do mandato · Risco da carteira.", en: "Product risk · Client tolerance · Mandate ceiling · Portfolio risk." },
   riscoT0B0W: { pt: "A palavra 'risco' não significa nada sem uma escala. Quando você mostra o S&P em 72, o HPC22 em 38 e o mandato do cliente em 40 — a conversa acaba, a imagem vence.", en: "The word 'risk' means nothing without a scale. When you show the S&P at 72, HPC22 at 38, and the client's mandate at 40 — the conversation ends, the picture wins." },

@@ -157,7 +157,6 @@ async function fetchAll(origin: string): Promise<TickerGroup[]> {
   groups.push({
     div: "HARPIAN",
     items: [
-      { lbl: "HPC11", v: "+7.5% YTD", dir: "up" },
       { lbl: "HPC22", v: "+24.3% YTD", dir: "up" },
     ],
   });

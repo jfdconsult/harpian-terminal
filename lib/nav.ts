@@ -146,8 +146,6 @@ export const MENUS: Menu[] = [
         labelKey: "col.escolha_fundo",
         items: [
           { id: "fundo", labelKey: "item.hpc22", icon: "ti-coin", param: "HPC22" },
-          { id: "fundo", labelKey: "item.hpc11", icon: "ti-coin", param: "HPC11" },
-          { id: "fundo", labelKey: "item.lynk_core22", icon: "ti-coin", param: "LCORE22", tag: "new" },
           { id: "fundo", labelKey: "item.white_label", icon: "ti-tag", param: "HPC22" },
         ],
       },

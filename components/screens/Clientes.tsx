@@ -26,7 +26,10 @@ const TR = {
   addClient: { pt: "Adicionar cliente", en: "Add client" },
   clientCreated: { pt: "criado", en: "created" },
   clientPrefix: { pt: "Cliente", en: "Client" },
-  sendQuestionnaireHint: { pt: "Envie o link do questionário de perfil para ele preencher. O resultado ajusta o mandato e a recomendação de carteira.", en: "Send the profile questionnaire link for them to fill out. The result adjusts the mandate and portfolio recommendation." },
+  sendQuestionnaireHint: { pt: "Suba aqui seu portfólio — comece por você mesmo a analisar seu risco x retorno. Envie também o link do questionário de perfil para ele preencher.", en: "Upload your portfolio here — start by analyzing your own risk x return. Also send the profile questionnaire link for them to fill out." },
+  emptyClientsTitle: { pt: "Nenhum cliente cadastrado ainda", en: "No clients registered yet" },
+  emptyClientsHint: { pt: "Suba aqui seu portfólio — comece por você mesmo a analisar seu risco x retorno.", en: "Upload your portfolio here — start by analyzing your own risk x return." },
+  uploadPortfolio: { pt: "Subir portfólio →", en: "Upload portfolio →" },
   copyLink: { pt: "Copiar link", en: "Copy link" },
   openPortfolio: { pt: "Abrir carteira →", en: "Open portfolio →" },
   close: { pt: "Fechar", en: "Close" },
@@ -163,6 +166,17 @@ export default function Clientes({ go }: { go: (id: ScreenId, param?: string) =>
             </div>
             <button className="btn ghost" aria-label={t("close")} onClick={() => setNovoCliente(null)}><i className="ti ti-x" /></button>
           </div>
+        </div>
+      )}
+
+      {clients.length === 0 && (
+        <div className="card mb" style={{ textAlign: "center", padding: "36px 20px" }}>
+          <i className="ti ti-upload" style={{ fontSize: 28, color: "var(--gold)" }} />
+          <div style={{ fontWeight: 600, color: "var(--tx)", marginTop: 10 }}>{t("emptyClientsTitle")}</div>
+          <div className="muted" style={{ fontSize: 13, marginTop: 6 }}>{t("emptyClientsHint")}</div>
+          <button className="btn" style={{ background: "var(--gold)", color: "#000", fontWeight: 600, marginTop: 14 }} onClick={() => go("importar")}>
+            <i className="ti ti-upload" style={{ marginRight: 6 }} />{t("uploadPortfolio")}
+          </button>
         </div>
       )}
 

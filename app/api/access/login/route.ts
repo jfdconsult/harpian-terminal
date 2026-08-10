@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { SignJWT } from "jose";
-import {
-  ACCESS_COOKIE,
-  ACCESS_MAX_AGE_SECONDS,
-  getPasswordHash,
-  isEmailAllowed,
-} from "@/lib/access";
+import { ACCESS_COOKIE, ACCESS_MAX_AGE_SECONDS } from "@/lib/access";
+import { findUser } from "@/lib/users";
 
 /**
  * POST /api/access/login
@@ -44,11 +40,15 @@ export async function POST(request: Request) {
     "unknown";
   const ua = request.headers.get("user-agent") || "unknown";
 
-  const emailOk = email !== "" && isEmailAllowed(email);
+  const user = email !== "" ? findUser(email) : undefined;
+  const emailOk = user !== undefined;
 
   // Constant-time-ish: sempre executa bcrypt.compare, mesmo se email invalido,
-  // para evitar timing oracle que revele a existencia do email.
-  const passwordHash = getPasswordHash();
+  // contra um hash dummy, para evitar timing oracle que revele a existencia
+  // do email.
+  const passwordHash =
+    user?.passwordHash ??
+    "$2b$12$4jAE5dqNwWtA.zvg/5Gin.gO90QNrEFlHZn4xCATh4Wy/6lFHmVWO";
   let passwordOk = false;
   try {
     passwordOk = await bcrypt.compare(password, passwordHash);
