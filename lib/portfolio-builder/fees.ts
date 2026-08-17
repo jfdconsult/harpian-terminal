@@ -17,13 +17,25 @@
 //   compounding acontece naturalmente pelo produto (1 + R_liquido_dia).
 // ============================================================
 
+import { HURDLE_30Y } from "./hurdle-30y";
+
 export interface FeeConfig {
   /** Taxa de administracao anual (ex.: 0.02 = 2% aa). Aplicada pro-rata diario. */
   adm: number;
   /** Taxa de performance sobre excesso (ex.: 0.20 = 20%). Apurada anualmente. */
   perf: number;
-  /** Hurdle rate anual acima do qual a perf incide (ex.: 0.05 = 5% aa). */
+  /**
+   * PISO do hurdle anual (ex.: 0.05 = 5% aa). O hurdle efetivo de cada ano e
+   * `max(hurdle, hurdlePorAno[ano])` — a politica Harpian cobra performance
+   * sobre o que exceder o MAIOR entre o piso contratual e o juro soberano de
+   * 30 anos, porque entregar o que um Treasury entregaria nao e gestao.
+   */
   hurdle: number;
+  /**
+   * Yield do Treasury de 30 anos por ano-calendario ("2008": 0.0432).
+   * Ausente => usa so o piso `hurdle`. Ver data/strategies/hurdle-30y.json.
+   */
+  hurdlePorAno?: Record<string, number>;
   /**
    * Custo de execucao anualizado (0.005 = 0,5% aa), deduzido pro-rata diario
    * ANTES das taxas. Modela corretagem + spread do giro da carteira.
@@ -61,13 +73,22 @@ export const FEE_INSTITUCIONAL: FeeConfig = {
 
 /**
  * Retorna a politica de taxas apropriada para um SET.
- * REGRA: SET com perfil Institucional NAO paga perf. Casamos pelo sufixo `ins`
- * do id (com versao opcional) para a regra valer em qualquer familia — hoje
- * `d105ins` da 10.5 e `d4mins` da 4 MOTORES.
+ *
+ * REGRA: qualquer SET cujo perfil e Institucional NAO paga perf (perfil
+ * conservador demais para justificar).
+ *
+ * Casamos pelo SUFIXO `ins` do id, com versao opcional, em vez de por prefixo
+ * de familia. Assim a regra vale por si: pega `d105ins`, `d105ins-v2` e o
+ * `d4mins` da familia 4 MOTORES sem precisar de uma linha nova por familia —
+ * era exatamente esse o buraco, porque o prefixo `d105ins` deixava o
+ * institucional de qualquer familia nova pagando performance por omissao.
  */
 export function politicaDoSet(setId: string | undefined | null): FeeConfig {
-  if (setId && /ins(-v\d+)?$/.test(setId)) return FEE_INSTITUCIONAL;
-  return FEE_HARPIAN_DEFAULT;
+  const ehInstitucional = !!setId && /ins(-v\d+)?$/.test(setId);
+  const base = ehInstitucional ? FEE_INSTITUCIONAL : FEE_HARPIAN_DEFAULT;
+  // O hurdle movel entra aqui e nao em cada chamador — assim tela, relatorio
+  // e qualquer script novo herdam a mesma politica sem precisar lembrar dela.
+  return { ...base, hurdlePorAno: HURDLE_30Y };
 }
 
 /** Descricao textual da politica de taxas (para o cabecalho do relatorio). */
@@ -78,7 +99,10 @@ export function descrevehTaxas(cfg: FeeConfig = FEE_HARPIAN_DEFAULT): string {
   }
   const perf = (cfg.perf * 100).toFixed(0);
   const hurdle = (cfg.hurdle * 100).toFixed(0);
-  return `Taxa de administração ${adm}% aa (pro-rata diária) · Taxa de performance ${perf}% sobre o retorno anual bruto que exceder ${hurdle}%`;
+  return `Taxa de administração ${adm}% aa (pro-rata diária) · Taxa de performance ${perf}% ` +
+    `sobre o ganho do ano que superar a marca d'água histórica corrigida pelo hurdle — ` +
+    `o maior entre ${hurdle}% e o Treasury de 30 anos do ano. Após uma queda, não há ` +
+    `performance até o patrimônio reconquistar o topo anterior`;
 }
 
 /**
@@ -120,6 +144,13 @@ export function apurarLiquido(
   let cumBruto = 1;
   let cumLiq = 1;
 
+  /**
+   * MARCA D'AGUA — topo historico do NAV entregue (base 1) sobre o qual a
+   * performance e apurada. So sobe: depois de uma queda, o cliente nao volta
+   * a pagar performance ate reconquistar o topo anterior.
+   */
+  let navHWM = 1;
+
   for (let i = 0; i < n; i++) {
     const rB = retornosDiarios[i];
     // custo de execucao sai primeiro: e o retorno que o gestor ENTREGOU
@@ -146,24 +177,41 @@ export function apurarLiquido(
       const rBrutoAno = acumBrutoAno - 1;
       const rEntregueAno = acumEntregueAno - 1;  // ja liquido de custo de execucao
       const rLiqAntesPerf = acumLiqAno - 1;
-      // Perf sobre o excesso do retorno ENTREGUE (bruto menos custo de
-      // execucao) acima do hurdle — nao sobre o bruto: o custo de execucao ja
-      // saiu do NAV, entao o cliente nunca viu aquele pedaco. DESLIGADA quando
-      // perfEnabled === false (caso do Institucional).
-      const excesso = cfg.perfEnabled === false ? 0 : Math.max(0, rEntregueAno - cfg.hurdle);
-      const perfPct = cfg.perf * excesso;
-      // aplica perf no ULTIMO dia do ano-calendario, sacando do NAV entregue
-      const capEntregueAno = 1 + rEntregueAno;
-      const perfSacada = perfPct * capEntregueAno;
-      const capLiqAposPerf = (1 + rLiqAntesPerf) - perfSacada;
-      const rLiqAno = capLiqAposPerf - 1;
 
-      // desconta o efeito da perf no retorno do ULTIMO DIA (empurra para o dia)
-      const fatorAjuste = (1 + rLiqAno) / (1 + rLiqAntesPerf);
+      // HURDLE DO ANO: o maior entre o piso contratual e o juro de 30 anos
+      // daquele ano-calendario. Cobrar performance sobre um retorno que o
+      // cliente teria obtido num titulo soberano nao remunera gestao.
+      const hurdleAno = Math.max(cfg.hurdle, cfg.hurdlePorAno?.[anoAtual] ?? 0);
+
+      // MARCA D'AGUA (high-water mark), em NAV ABSOLUTO — nao em retorno do
+      // ano. A performance so incide sobre o que supera o TOPO HISTORICO ja
+      // taxado, corrigido pelo hurdle do ano. Sem isso o cliente paga duas
+      // vezes pela mesma valorizacao: paga no ano bom, o portfolio cai, e
+      // paga de novo ao reconquistar terreno que ja era dele.
+      //
+      // Raciocinar em fracao do ano NAO funciona aqui: a marca se cancela na
+      // divisao e a formula degenera de volta para "excesso = retorno do ano
+      // menos hurdle", que e exatamente o comportamento sem marca. E preciso
+      // comparar patrimonio contra patrimonio.
+      //
+      // `cumLiq` neste ponto ja e o NAV liquido do fim do ano ANTES da perf
+      // (exec e adm ja sairam dia a dia), com base 1 = capital inicial.
+      const navAntesPerf = cumLiq;
+      const navInicioAno = acumLiqAno !== 0 ? navAntesPerf / acumLiqAno : navAntesPerf;
+      const alvo = navHWM * (1 + hurdleAno);
+      const excessoNav = cfg.perfEnabled === false ? 0 : Math.max(0, navAntesPerf - alvo);
+      const perfAbs = cfg.perf * excessoNav;
+      const navAposPerf = navAntesPerf - perfAbs;
+
+      // perf como fracao do capital do INICIO do ano — e assim que a tabela
+      // anual do relatorio reporta, ao lado de bruto/exec/adm.
+      const perfPct = navInicioAno > 0 ? perfAbs / navInicioAno : 0;
+      const rLiqAno = navInicioAno > 0 ? navAposPerf / navInicioAno - 1 : 0;
+
+      // empurra o saque da perf para o retorno do ULTIMO DIA do ano
+      const fatorAjuste = navAntesPerf > 0 ? navAposPerf / navAntesPerf : 1;
       liquido[i] = (1 + liquido[i]) * fatorAjuste - 1;
-
-      // reajusta cumLiq
-      cumLiq *= fatorAjuste;
+      cumLiq = navAposPerf;
 
       porAno.push({
         ano: anoAtual,
@@ -173,7 +221,13 @@ export function apurarLiquido(
         perf: perfPct,
         liquido: rLiqAno,
       });
-      totalPerf += perfSacada / cumLiq; // fracao do capital consumida por perf
+      totalPerf += cumLiq > 0 ? perfAbs / cumLiq : 0;
+
+      // A marca sobe para o NAV JA descontada a performance — e sobre o
+      // patrimonio que ficou que a proxima apuracao incide. Nunca desce: e
+      // esse "nunca desce" que impede a cobranca em duplicidade.
+      navHWM = Math.max(navHWM, navAposPerf);
+
       // reset para proximo ano
       anoAtual = proxAno ?? anoAtual;
       acumBrutoAno = 1;
