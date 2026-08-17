@@ -199,6 +199,11 @@ export interface Preset {
  *  ocupa a espinha dorsal da escala; familia 41 (top-K rotativo) e Max Retorno
  *  aparecem depois. Numeros validados na janela 20 anos (2006-2026). */
 const ORDEM_VITRINE = [
+  // Familia 4 MOTORES (bloco combo4m · trial 451 da reengenharia AlphaDroid).
+  // Abre a vitrine porque e a arquitetura mais eficiente que a casa produziu:
+  // Sharpe 2,335 no cru e 2,203 no institucional. Ordem interna por risco.
+  "d4mins",    // vol-target 5% (Institucional) · Sharpe 2,203 · DD -8,8%
+  "d4mmax",    // motor cru, sem overlay        · Sharpe 2,335 · DD -20,2%
   "d105ins",   // 3,5% vol-target (Institucional)
   "d105con",   // 5,0% (Conservador)
   "d105mod",   // 8,0% (Moderado)

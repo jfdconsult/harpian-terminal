@@ -86,6 +86,16 @@ function regraDoBloco(
         regra: `Motor Max Retorno · piso de 1% em cada · ${conv.maxcagr.k} ataque + ${conv.gatilho.idsDefesa.length} defesa`,
         idsFixas: [...conv.maxcagr.idsAtaque, ...conv.gatilho.idsDefesa],
       };
+    // Familia 4 MOTORES. As pecas por baixo sao CESTAS (nao as 41 diretamente),
+    // entao `idsFixas: []` â o painel mostra a regra, nao a lista de estrategias.
+    case "combo4m":
+      return {
+        minLocal: 0,
+        maxLocal: 0.08,
+        regra:
+          "4 motores com fatia fixa 35/35/15/15 Â· teto de 8% por cesta Â· alocaÃ§Ã£o pela forÃ§a do momento (Ï=91)",
+        idsFixas: [],
+      };
   }
 }
 

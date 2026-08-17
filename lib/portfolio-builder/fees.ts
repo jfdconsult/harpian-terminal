@@ -61,10 +61,12 @@ export const FEE_INSTITUCIONAL: FeeConfig = {
 
 /**
  * Retorna a politica de taxas apropriada para um SET.
- * Institucional Dinamico (d105ins) e o unico que NAO paga perf.
+ * REGRA: SET com perfil Institucional NAO paga perf. Casamos pelo sufixo `ins`
+ * do id (com versao opcional) para a regra valer em qualquer familia — hoje
+ * `d105ins` da 10.5 e `d4mins` da 4 MOTORES.
  */
 export function politicaDoSet(setId: string | undefined | null): FeeConfig {
-  if (setId === "d105ins") return FEE_INSTITUCIONAL;
+  if (setId && /ins(-v\d+)?$/.test(setId)) return FEE_INSTITUCIONAL;
   return FEE_HARPIAN_DEFAULT;
 }
 
