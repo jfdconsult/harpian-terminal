@@ -397,50 +397,50 @@ export const SETS: SetDef[] = [
     volTarget: { alvo: 0.250, lookback: 21 },
   },
   // ============================================================
-  // FAMILIA 4 MOTORES â arquitetura da reengenharia AlphaDroid (trial 451,
-  // familia `core11-4motores`, contador em 457).
+  // FAMILIA 4 MOTORES — a arquitetura da reengenharia AlphaDroid
+  // (trial 451, familia de trials `core11-4motores`, contador em 457).
   //
-  // Ataque CORE11 35% + correlacao minima 35% + retorno maximo 15% + hedge
-  // tatico 15%, fatia FIXA entre motores. Dentro de cada um a alocacao segue a
-  // forca do momento (tau=91) com teto de 8% por cesta; K=15 venceu 20/25/30.
+  // Quatro motores com fatia FIXA: ataque CORE11 35% + correlacao minima 35% +
+  // retorno maximo 15% + hedge tatico 15%. Dentro de cada motor a alocacao
+  // segue a forca do momento (tau=91) com teto de 8% por cesta; K=15 na
+  // correlacao minima venceu 20/25/30. Custo de 10bps embutido na serie.
   //
-  // JANELA DO MOTOR: 2006-08-14 -> 2026-06-04 (4.983 pregoes) contra o eixo do
-  // dataset 2006-01-03 -> 2026-07-31 (5.176). O bloco vale 0 em 193 dias â 154
-  // antes da inception, 39 no fim porque o motor ainda nao foi reprocessado ate
-  // 31/07. Isso SUBESTIMA o SET: no eixo cheio o cru da 2,335/54,6% contra
-  // 2,381/57,3% na janela propria. Fim da serie coincide com
-  // `convencoes.artefatoHcusigExpurgado` (2026-06-05) â e a mesma fronteira de dado.
+  // JANELA DO MOTOR: 2006-08-14 -> 2026-06-04 (4.983 pregoes). O eixo do
+  // dataset e mais largo (2006-01-03 -> 2026-07-31, 5.176), entao o bloco vale
+  // 0 em 193 dias — 154 antes da inception e 39 no fim, porque o motor ainda
+  // nao foi reprocessado ate 31/07. Isso SUBESTIMA o SET, nunca o contrario:
+  // no eixo cheio o cru da Sharpe 2,335 / CAGR 54,6% contra 2,381 / 57,3% na
+  // janela propria, e o institucional 2,203 / 13,4% contra 2,248 / 14,0%.
+  // Numeros de referencia do dossie em
+  // `_DOSSIE_COMPLETO_DIOGO/DOSSIE_COMPLETO_ALPHADROID.md`.
   //
-  // A serie ja vem liquida de 10bps de custo de transacao, ao contrario dos
-  // outros blocos que sao brutos. O custo de execucao da plataforma entra por
-  // cima, entao ha leve dupla contagem â sempre contra o produto, nunca a favor.
-  //
-  // KERNEL QIA: 5 de 7 portoes. G0 resolvido por pre-registro; G1 (survivorship
-  // bias) reprovado por decisao consciente do Joao.
+  // SOBE SEM SELO DE VALIDACAO COMPLETO: o kernel QIA passa 5 de 7 portoes.
+  // G0 resolvido por pre-registro; G1 (survivorship bias) reprovado por
+  // decisao consciente do Joao — nao comprar base paga por enquanto.
   // ============================================================
   {
     id: "d4mmax",
-    nome: "DINÃMICO 4 MOTORES MAX",
-    rotuloCurto: "DinÃ¢mico 4 Motores Max",
+    nome: "DYNAMIC 4 ENGINES AGGRESSIVE",
+    rotuloCurto: "Dynamic 4 Engines Aggressive",
     linha: 1,
     perfil: "agressivo",
     tese:
-      "Quatro motores independentes com fatia fixa â dois de ataque, um de retorno " +
-      "mÃ¡ximo e um de hedge tÃ¡tico â sobre o universo CORE11. A defesa vem da " +
-      "diversificaÃ§Ã£o por correlaÃ§Ã£o mÃ­nima, nÃ£o de renda fixa. Motor cru, sem freio " +
-      "de volatilidade.",
+      "Nada aqui é peso parado. Quatro motores de momento dividem o capital; dentro de " +
+      "cada motor as estratégias competem entre si; e dentro de cada estratégia os ativos " +
+      "competem entre si. A cada rebalance quem está mais forte assume a frente. Sem freio " +
+      "de volatilidade — é o motor entregando tudo que tem.",
     composicao: [{ bloco: "combo4m", peso: 1 }],
   },
   {
     id: "d4mins",
-    nome: "DINÃMICO 4 MOTORES INSTITUCIONAL",
-    rotuloCurto: "DinÃ¢mico 4 Motores Institucional",
+    nome: "DYNAMIC 4 ENGINES INSTITUTIONAL",
+    rotuloCurto: "Dynamic 4 Engines Institutional",
     linha: 1,
     perfil: "conservador",
     tese:
-      "O mesmo motor de quatro engines com overlay de volatilidade-alvo de 5% ao ano. " +
-      "A exposiÃ§Ã£o Ã© decidida toda semana e o resto fica em caixa â mantÃ©m o Sharpe do " +
-      "motor cru com uma fraÃ§Ã£o da sua queda mÃ¡xima.",
+      "A mesma máquina de três níveis de competição — motores, estratégias e ativos — " +
+      "com um freio por cima: volatilidade-alvo de 5% ao ano, decidida toda semana, o resto " +
+      "em caixa. Mesmo Sharpe do motor cru com uma fração da queda máxima.",
     composicao: [{ bloco: "combo4m", peso: 1 }],
     volTarget: { alvo: 0.050, lookback: 21 },
   },
@@ -516,13 +516,16 @@ export const EXPLICACAO_BLOCO: Record<BlocoId, string> = {
     "É a base dos seis perfis da família 10.5 — cada um com um alvo de volatilidade " +
     "diferente, do mais conservador ao mais agressivo, com a mesma engenharia por baixo.",
   combo4m:
-    "Quatro motores independentes dividindo o capital em partes fixas: dois de ataque " +
-    "(35% cada) — um que persegue as estratégias de maior momento no universo CORE11 e " +
-    "outro que escolhe as quinze menos correlacionadas entre si — mais um de retorno " +
-    "máximo e um de hedge tático (15% cada). A alocação dentro de cada motor acompanha a " +
-    "força do momento, com teto de 8% por cesta. A defesa é estrutural: vem da própria " +
-    "diversificação por correlação mínima, não de uma aposta em renda fixa — que foi " +
-    "justamente o que não protegeu em 2022.",
+    "TODA alocação aqui é dinâmica, em três níveis que rodam ao mesmo tempo. " +
+    "PRIMEIRO, quatro motores de momento dividem o capital em faixas: duas de ataque " +
+    "(35% cada) — uma que persegue as estratégias de maior momento no universo CORE11 e " +
+    "outra que escolhe as quinze menos correlacionadas entre si — mais retorno máximo e " +
+    "hedge tático (15% cada). SEGUNDO, dentro de cada motor as estratégias competem entre " +
+    "si pelo momento, com teto de 8% por cesta. TERCEIRO, dentro de cada estratégia os " +
+    "ativos competem entre si, e só o líder do momento fica comprado. O resultado é que a " +
+    "cada rebalance a carteira muda de mãos: quem está forte assume a frente, quem esfriou " +
+    "cede espaço. A defesa é estrutural, da própria diversificação por correlação " +
+    "mínima, não de uma aposta em renda fixa — que foi justamente o que não protegeu em 2022.",
 };
 
 // ── composicao ───────────────────────────────────────────────────────────────
