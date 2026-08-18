@@ -62,7 +62,13 @@ export const FEE_HARPIAN_DEFAULT: FeeConfig = {
   diasAno: 252,
 };
 
-/** Politica do Institucional Dinamico: SO admin, sem perf. */
+/**
+ * @deprecated Nao mais usada por politicaDoSet — mantida so para nao quebrar
+ * import direto em algum script antigo. A regra de isencao de performance para
+ * SETs institucionais foi REVOGADA em 18/08/2026 (decisao do Joao: "SEMPRE
+ * havera cobranca de 2% adm + 20% performance o que exceder 5% a.a., sempre" —
+ * sem excecao para nenhum perfil, incluindo o Institucional Dinamico).
+ */
 export const FEE_INSTITUCIONAL: FeeConfig = {
   adm: 0.02,
   perf: 0.20,
@@ -72,23 +78,19 @@ export const FEE_INSTITUCIONAL: FeeConfig = {
 };
 
 /**
- * Retorna a politica de taxas apropriada para um SET.
+ * Retorna a politica de taxas do SET.
  *
- * REGRA: qualquer SET cujo perfil e Institucional NAO paga perf (perfil
- * conservador demais para justificar).
- *
- * Casamos pelo SUFIXO `ins` do id, com versao opcional, em vez de por prefixo
- * de familia. Assim a regra vale por si: pega `d105ins`, `d105ins-v2` e o
- * `d4mins` da familia 4 MOTORES sem precisar de uma linha nova por familia —
- * era exatamente esse o buraco, porque o prefixo `d105ins` deixava o
- * institucional de qualquer familia nova pagando performance por omissao.
+ * REGRA UNICA, sem excecao por perfil (decisao do Joao, 18/08/2026): todo SET
+ * paga 2% adm + 20% de performance sobre o que exceder o hurdle de 5% a.a.
+ * (ou o Treasury de 30 anos do ano, se maior), com marca d'agua. Isso revoga a
+ * isencao que existia para SETs institucionais (`FEE_INSTITUCIONAL`, acima) —
+ * inclusive o Institucional Dinamico (`suavemin15`/`dsuave`), que antes era
+ * vendido como "so admin, sem performance".
  */
 export function politicaDoSet(setId: string | undefined | null): FeeConfig {
-  const ehInstitucional = !!setId && /ins(-v\d+)?$/.test(setId);
-  const base = ehInstitucional ? FEE_INSTITUCIONAL : FEE_HARPIAN_DEFAULT;
   // O hurdle movel entra aqui e nao em cada chamador — assim tela, relatorio
   // e qualquer script novo herdam a mesma politica sem precisar lembrar dela.
-  return { ...base, hurdlePorAno: HURDLE_30Y };
+  return { ...FEE_HARPIAN_DEFAULT, hurdlePorAno: HURDLE_30Y };
 }
 
 /** Descricao textual da politica de taxas (para o cabecalho do relatorio). */
